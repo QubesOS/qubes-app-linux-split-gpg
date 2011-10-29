@@ -11,7 +11,7 @@
 #include "multiplex.h"
 
 #define QREXEC_CLIENT_PATH "/usr/lib/qubes/qrexec_client_vm"
-#define PIPE_CAT_PATH "/usr/lib/qubes/pipe-cat"
+#define PIPE_CAT_PATH "/usr/lib/qubes-gpg-split/pipe-cat"
 
 char *client_tempdir;
 
