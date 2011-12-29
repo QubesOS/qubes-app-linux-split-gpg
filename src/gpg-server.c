@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <fcntl.h>
+#include <string.h>
 
 #include "gpg-common.h"
 #include "multiplex.h"
@@ -55,9 +56,10 @@ int ask_the_user(char *domain) {
 
 int main(int argc, char *argv[], char *envp[])
 {
-	struct command_hdr hdr;
+	struct command_hdr hdr, untrusted_hdr;
 	int len, i;
 	int remote_argc;
+	char *(untrusted_remote_argv[COMMAND_MAX_LEN]);	// far to big should not harm
 	char *(remote_argv[COMMAND_MAX_LEN]);	// far to big should not harm
 	int input_fds[MAX_FDS], output_fds[MAX_FDS];
 	int input_fds_count, output_fds_count;
@@ -74,7 +76,7 @@ int main(int argc, char *argv[], char *envp[])
 		exit(1);
 	}
 
-	len = read(0, &hdr, sizeof(hdr));
+	len = read(0, &untrusted_hdr, sizeof(hdr));
 	if (len < 0) {
 		perror("read header");
 		exit(1);
@@ -82,27 +84,29 @@ int main(int argc, char *argv[], char *envp[])
 		fprintf(stderr, "ERROR: Invalid header size: %d\n", len);
 		exit(1);
 	}
-	if (hdr.len > COMMAND_MAX_LEN) {
+	if (untrusted_hdr.len > COMMAND_MAX_LEN) {
 		fprintf(stderr, "ERROR: Command to long\n");
 		exit(1);
 	}
 	// split command line into argv
 	remote_argc = 0;
-	remote_argv[remote_argc++] = hdr.command;
+	untrusted_remote_argv[remote_argc++] = untrusted_hdr.command;
 	for (i = 0; i < hdr.len; i++) {
-		if (hdr.command[i] == 0) {
-			remote_argv[remote_argc++] = &hdr.command[i + 1];
+		if (untrusted_hdr.command[i] == 0) {
+			untrusted_remote_argv[remote_argc++] = &untrusted_hdr.command[i + 1];
 		}
 	}
 
 	// parse arguments and do not allow any non-option argument
 	if (parse_options
-	    (remote_argc, remote_argv, input_fds, &input_fds_count,
+	    (remote_argc, untrusted_remote_argv, input_fds, &input_fds_count,
 	     output_fds, &output_fds_count) < remote_argc) {
 		fprintf(stderr,
 			"ERROR: Non-option arguments not allowed\n");
 		exit(1);
 	}
+	memcpy(remote_argv, untrusted_remote_argv, sizeof(untrusted_remote_argv));
+	/* now options are verified and we get here only when all are allowed */
 	// Add NULL terminator to argv list
 	remote_argv[remote_argc] = NULL;
 

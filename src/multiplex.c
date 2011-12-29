@@ -61,7 +61,7 @@ int process_io(int fd_input, int fd_output, int *read_fds,
 	char buf[BUF_SIZE];
 	int i, read_len;
 	fd_set read_set;
-	struct header hdr;
+	struct header hdr, untrusted_hdr;
 	int closed_fds[MAX_FDS];
 	int closed_fds_count = 0;
 	int max_fd;
@@ -119,7 +119,7 @@ int process_io(int fd_input, int fd_output, int *read_fds,
 		if (FD_ISSET(fd_input, &read_set)) {
 			// TODO: EOF
 			switch (read
-				(fd_input, &hdr, sizeof(struct header))) {
+				(fd_input, &untrusted_hdr, sizeof(struct header))) {
 			case sizeof(struct header):
 				// OK
 				break;
@@ -133,25 +133,29 @@ int process_io(int fd_input, int fd_output, int *read_fds,
 				fprintf(stderr, "ERROR: header to small");
 				exit(1);
 			}
-			if (hdr.fd_num < 0) {
-				// received exit status from another side
-				exit(-(hdr.fd_num + 1));
-			}
-			if (hdr.len > BUF_SIZE) {
+			/* header sanitization begin */
+			if (untrusted_hdr.len > BUF_SIZE) {
 				fprintf(stderr,
 					"ERROR: Invalid block size received");
 				exit(1);
 			}
-			if (hdr.fd_num >= write_fds_len) {
+			if (untrusted_hdr.fd_num >= write_fds_len) {
 				fprintf(stderr,
 					"ERROR: invalid fd number");
 				exit(1);
+			}
+			hdr = untrusted_hdr;
+			/* header sanitization end */
+			if (hdr.fd_num < 0) {
+				// received exit status from another side
+				exit(-(hdr.fd_num + 1));
 			}
 			if (hdr.len == 0) {
 				// EOF received at the other side
 				close(write_fds[hdr.fd_num]);
 			} else {
 				read_len = read(fd_input, buf, hdr.len);
+				/* we are not validating data passed to/from gpg */
 				if (read_len < 0) {
 					perror("read");
 					return 1;
@@ -174,6 +178,7 @@ int process_io(int fd_input, int fd_output, int *read_fds,
 				// just one block
 				read_len =
 				    read(read_fds[i], buf, BUF_SIZE);
+				/* we are not validating data passed to/from gpg */
 				if (read_len < 0) {
 					perror("read");
 					return 1;
