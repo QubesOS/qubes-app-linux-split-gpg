@@ -1,1 +1,1 @@
-/usr/lib/qubes-gpg-split/gpg-server /usr/bin/gpg
+/usr/lib/qubes-gpg-split/gpg-server /usr/bin/gpg $QREXEC_REMOTE_DOMAIN
