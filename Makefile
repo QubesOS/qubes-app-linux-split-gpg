@@ -62,6 +62,12 @@ update-repo-unstable:
 	done
 	ln -f $(RPMS_DIR)/x86_64/qubes-gpg-split-dom0-*$(VERSION)*.rpm ../yum/current-release/unstable/dom0/rpm/
 
+update-repo-template:
+	for vmrepo in ../template-builder/yum_repo_qubes/* ; do \
+		dist=$$(basename $$vmrepo) ;\
+		ln -f $(RPMS_DIR)/x86_64/qubes-gpg-split*$(VERSION)*$$dist*.rpm $$vmrepo/rpm/ ;\
+	done
+
 update-repo-installer:
 	ln -f $(RPMS_DIR)/x86_64/qubes-gpg-split-dom0-*$(VERSION)*.rpm ../installer/yum/qubes-dom0/rpm/
 
