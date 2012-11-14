@@ -33,7 +33,11 @@ help:
 	    echo "make update-repo-installer -- copy dom0 rpms to installer repo"
 	    @exit 0;
 
-rpms:
+rpms: rpms-vm
+
+rpms-dom0:
+
+rpms-vm:
 	rpmbuild --define "_rpmdir rpm/" -bb rpm_spec/gpg-split.spec
 	rpm --addsign rpm/x86_64/qubes-gpg-split*$(VERSION)*.rpm
 
