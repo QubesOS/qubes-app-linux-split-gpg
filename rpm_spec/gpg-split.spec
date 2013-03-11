@@ -66,6 +66,7 @@ install -D qubes.Gpg.service $RPM_BUILD_ROOT/etc/qubes_rpc/qubes.Gpg
 install -D qubes_gpg.sh $RPM_BUILD_ROOT/etc/profile.d/qubes_gpg.sh
 install -D qubes.Gpg.policy $RPM_BUILD_ROOT/etc/qubes_rpc/policy/qubes.Gpg
 install -d $RPM_BUILD_ROOT/var/run/qubes-gpg-split
+install -D qubes-gpg-split.tmpfiles $RPM_BUILD_ROOT/etc/tmpfiles.d/qubes-gpg-split.conf
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -79,6 +80,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(0644,root,root) /etc/qubes_rpc/qubes.Gpg
 /etc/profile.d/qubes_gpg.sh
 %dir %attr(0777,root,root) /var/run/qubes-gpg-split
+/etc/tmpfiles.d/qubes-gpg-split.conf
 
 %files dom0
 %config(noreplace) %attr(0664,root,qubes) /etc/qubes_rpc/policy/qubes.Gpg
