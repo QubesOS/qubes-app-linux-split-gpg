@@ -59,7 +59,7 @@ int process_io(int fd_input, int fd_output, int *read_fds,
 	       int read_fds_len, int *write_fds, int write_fds_len)
 {
 	char buf[BUF_SIZE];
-	int i, read_len;
+	int i, read_len, total_read_len;
 	fd_set read_set;
 	struct header hdr, untrusted_hdr;
 	int closed_fds[MAX_FDS];
@@ -154,20 +154,27 @@ int process_io(int fd_input, int fd_output, int *read_fds,
 				// EOF received at the other side
 				close(write_fds[hdr.fd_num]);
 			} else {
-				read_len = read(fd_input, buf, hdr.len);
+				/* data block can be sent in more than one chunk via vchan
+				 * (because of vchan buffer size) */
+				total_read_len = 0;
+				while ((read_len = read(fd_input, buf+total_read_len,
+								hdr.len-total_read_len)) > 0) {
+					total_read_len += read_len;
+				}
 				/* we are not validating data passed to/from gpg */
 				if (read_len < 0) {
 					perror("read");
 					return 1;
-				} else if (read_len < hdr.len) {
+				} else if (total_read_len < hdr.len) {
 					fprintf(stderr,
-						"ERROR: received incomplete block");
+						"ERROR: received incomplete block "
+						"(expected %d, got %d)", hdr.len, total_read_len);
 					exit(1);
 				}
 				// writes to pipes <4kB are atomic, so no other cases
 				if (write
 				    (write_fds[hdr.fd_num], buf,
-				     read_len) < 0) {
+				     total_read_len) < 0) {
 					perror("write");
 					return 1;
 				}
