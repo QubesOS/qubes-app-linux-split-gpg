@@ -88,6 +88,7 @@ int main(int argc, char *argv[], char *envp[])
 		fprintf(stderr, "ERROR: Command to long\n");
 		exit(1);
 	}
+	hdr.len = untrusted_hdr.len;
 	// split command line into argv
 	remote_argc = 0;
 	untrusted_remote_argv[remote_argc++] = untrusted_hdr.command;
