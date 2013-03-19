@@ -24,10 +24,10 @@
 
 %{!?version: %define version %(cat version)}
 
-Name:		qubes-gpg-split
+Name:		qubes-gpg-split-dom0
 Version:	%{version}
 Release:	1%{dist}
-Summary:	The Qubes service for secure gpg separation
+Summary:    Qubes policy for gpg split
 
 Group:		Qubes
 Vendor:		Invisible Things Lab
@@ -39,37 +39,18 @@ Requires:	gpg
 %define _builddir %(pwd)
 
 %description
-The Qubes service for delegating gpg actions to other VM. You can keep keys in
-secure (even network isolated) VM and only pass data to it for
-signing/decryption.
 
 %prep
 # we operate on the current directory, so no need to unpack anything
 
 %build
-make clean
-make build
 
 %install
 rm -rf $RPM_BUILD_ROOT
-install -d $RPM_BUILD_ROOT/usr/lib/qubes-gpg-split
-install -t $RPM_BUILD_ROOT/usr/lib/qubes-gpg-split src/pipe-cat src/gpg-server
-install -D src/gpg-client $RPM_BUILD_ROOT/usr/bin/qubes-gpg-client
-install -D qubes.Gpg.service $RPM_BUILD_ROOT/etc/qubes_rpc/qubes.Gpg
-install -D qubes_gpg.sh $RPM_BUILD_ROOT/etc/profile.d/qubes_gpg.sh
-install -d $RPM_BUILD_ROOT/var/run/qubes-gpg-split
-install -D qubes-gpg-split.tmpfiles $RPM_BUILD_ROOT/etc/tmpfiles.d/qubes-gpg-split.conf
+install -D qubes.Gpg.policy $RPM_BUILD_ROOT/etc/qubes_rpc/policy/qubes.Gpg
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
-%defattr(-,root,root,-)
-%dir /usr/lib/qubes-gpg-split
-/usr/lib/qubes-gpg-split/gpg-server
-/usr/lib/qubes-gpg-split/pipe-cat
-/usr/bin/qubes-gpg-client
-%attr(0644,root,root) /etc/qubes_rpc/qubes.Gpg
-/etc/profile.d/qubes_gpg.sh
-%dir %attr(0777,root,root) /var/run/qubes-gpg-split
-/etc/tmpfiles.d/qubes-gpg-split.conf
+%config(noreplace) %attr(0664,root,qubes) /etc/qubes_rpc/policy/qubes.Gpg
