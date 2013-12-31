@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 	}
-	hdr.len = len - 1;
+	hdr.len = len ? len - 1 : 0;
 
 	atexit(unlink_temps);
 #ifndef DEBUG
