@@ -61,8 +61,8 @@ int main(int argc, char *argv[], char *envp[])
 	struct command_hdr hdr, untrusted_hdr;
 	int len, i;
 	int remote_argc;
-	char *(untrusted_remote_argv[COMMAND_MAX_LEN]);	// far too big should not harm
-	char *(remote_argv[COMMAND_MAX_LEN]);	// far too big should not harm
+	char *(untrusted_remote_argv[COMMAND_MAX_LEN+1]);	// far too big should not harm
+	char *(remote_argv[COMMAND_MAX_LEN+1]);	// far too big should not harm
 	int input_fds[MAX_FDS], output_fds[MAX_FDS];
 	int input_fds_count, output_fds_count;
 
@@ -93,11 +93,16 @@ int main(int argc, char *argv[], char *envp[])
 	hdr.len = untrusted_hdr.len;
 	// split command line into argv
 	remote_argc = 0;
-	untrusted_remote_argv[remote_argc++] = untrusted_hdr.command;
-	for (i = 0; i < hdr.len; i++) {
-		if (untrusted_hdr.command[i] == 0) {
-			untrusted_remote_argv[remote_argc++] = &untrusted_hdr.command[i + 1];
+	untrusted_remote_argv[remote_argc] = untrusted_hdr.command;
+	if (hdr.len) {
+		remote_argc++;
+		for (i = 0; i < hdr.len-1; i++) {
+			if (untrusted_hdr.command[i] == 0) {
+				untrusted_remote_argv[remote_argc++] = &untrusted_hdr.command[i + 1];
+			}
 		}
+		// don't read off the end of the buffer if sender does not NUL terminate
+		untrusted_hdr.command[untrusted_hdr.len-1] = 0;
 	}
 
 	// parse arguments and do not allow any non-option argument
