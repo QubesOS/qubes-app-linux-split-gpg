@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
 	}
 
 	len = write(output_pipe, &hdr, sizeof(hdr));
-	if (len < 0) {
+	if (len != sizeof(hdr)) {
 		perror("write header");
 		exit(1);
 	}
