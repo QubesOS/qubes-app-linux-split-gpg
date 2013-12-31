@@ -78,11 +78,11 @@ int main(int argc, char *argv[], char *envp[])
 		exit(1);
 	}
 
-	len = read(0, &untrusted_hdr, sizeof(hdr));
+	len = read(0, &untrusted_hdr, sizeof(untrusted_hdr));
 	if (len < 0) {
 		perror("read header");
 		exit(1);
-	} else if (len != sizeof(hdr)) {
+	} else if (len != sizeof(untrusted_hdr)) {
 		fprintf(stderr, "ERROR: Invalid header size: %d\n", len);
 		exit(1);
 	}
