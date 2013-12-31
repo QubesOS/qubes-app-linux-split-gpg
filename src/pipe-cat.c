@@ -23,12 +23,12 @@ int main(int argc, char *argv[])
 	}
 
 	pipe_stdin = open(argv[1], O_WRONLY);
-	if (!pipe_stdin) {
+	if (pipe_stdin < 0) {
 		perror("open");
 		exit(1);
 	}
 	pipe_stdout = open(argv[2], O_RDONLY);
-	if (!pipe_stdout) {
+	if (pipe_stdout < 0) {
 		perror("open");
 		exit(1);
 	}
