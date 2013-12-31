@@ -99,7 +99,7 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
 #if 0
 		} else if (opt == opt_passphrase_fd) {
 			// this is senseless to enter password for private key in the source vm
-			add_arg_to_fd_list(input_fds, &input_fds_count);
+			add_arg_to_fd_list(input_fds, input_fds_count);
 #endif
 		} else if (opt == opt_command_fd) {
 			add_arg_to_fd_list(input_fds, input_fds_count);
