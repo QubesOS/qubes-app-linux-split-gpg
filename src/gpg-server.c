@@ -20,10 +20,12 @@ int ask_the_user(const char *domain) {
 	char ask_cmd[512];
 	time_t now;
 	int autoaccept_time;
+	const char *env;
 
 	autoaccept_time = DEFAULT_AUTOACCEPT_TIME;
-	if (getenv("QUBES_GPG_AUTOACCEPT"))
-		autoaccept_time = atoi(getenv("QUBES_GPG_AUTOACCEPT"));
+	env = getenv("QUBES_GPG_AUTOACCEPT");
+	if (env)
+		autoaccept_time = atoi(env);
 
 	snprintf(stat_file_path, sizeof(stat_file_path), "%s/stat.%s", RUNDIR, domain);
 	now = time(NULL);

@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 	char fifo_in[50], fifo_out[50];
 	int devnull;
 	int input_pipe, output_pipe;
-	char *qrexec_client_path = QREXEC_CLIENT_PATH;
+	char *qrexec_client_path = QREXEC_CLIENT_PATH, *qcp;
 	char *remote_domain;
 	pid_t pid;
 
@@ -121,8 +121,9 @@ int main(int argc, char *argv[])
 		dup2(devnull, 1);
 		close(devnull);
 
-		if (getenv("QREXEC_CLIENT_PATH"))
-			qrexec_client_path = getenv("QREXEC_CLIENT_PATH");
+		qcp = getenv("QREXEC_CLIENT_PATH");
+		if (qcp)
+			qrexec_client_path = qcp;
 		execl(qrexec_client_path, "qrexec_client_vm",
 		      remote_domain, "qubes.Gpg", PIPE_CAT_PATH, fifo_in,
 		      fifo_out, (char *) NULL);
