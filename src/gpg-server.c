@@ -13,7 +13,7 @@
 #define RUNDIR "/var/run/qubes-gpg-split"
 #define DEFAULT_AUTOACCEPT_TIME 300
 
-int ask_the_user(char *domain) {
+int ask_the_user(const char *domain) {
 	struct stat stat_buf;
 	char stat_file_path[100];
 	int stat_file_fd;

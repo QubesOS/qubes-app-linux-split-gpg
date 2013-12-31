@@ -73,7 +73,7 @@ enum {
 int parse_options(int argc, char *argv[], int *input_fds,
 		  int *input_fds_count, int *output_fds,
 		  int *output_fds_count);
-int prepare_pipes_and_run(char *run_file, char **run_argv, int *input_fds,
+int prepare_pipes_and_run(const char *run_file, char **run_argv, int *input_fds,
 			  int input_fds_count, int *output_fds,
 			  int output_fds_count);
 

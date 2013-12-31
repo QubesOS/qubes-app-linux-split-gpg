@@ -13,9 +13,9 @@
 #define QREXEC_CLIENT_PATH "/usr/lib/qubes/qrexec_client_vm"
 #define PIPE_CAT_PATH "/usr/lib/qubes-gpg-split/pipe-cat"
 
-char *client_tempdir;
+static char *client_tempdir;
 
-void unlink_temps()
+void unlink_temps(void)
 {
 	char tmpnam[50];
 	snprintf(tmpnam, 50, "%s/input", client_tempdir);

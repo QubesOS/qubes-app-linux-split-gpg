@@ -44,7 +44,7 @@ void sigchld_handler(int arg)
 		child_status = WEXITSTATUS(stat_loc);
 }
 
-void setup_sigchld()
+void setup_sigchld(void)
 {
 	struct sigaction sa;
 
