@@ -14,14 +14,19 @@
 #define PIPE_CAT_PATH "/usr/lib/qubes-gpg-split/pipe-cat"
 
 static char *client_tempdir;
+static int fifo_in_created = 0, fifo_out_created = 0;
 
 void unlink_temps(void)
 {
 	char tmpnam[50];
-	snprintf(tmpnam, 50, "%s/input", client_tempdir);
-	unlink(tmpnam);
-	snprintf(tmpnam, 50, "%s/output", client_tempdir);
-	unlink(tmpnam);
+	if (fifo_in_created) {
+		snprintf(tmpnam, sizeof(tmpnam), "%s/input", client_tempdir);
+		unlink(tmpnam);
+	}
+	if (fifo_out_created) {
+		snprintf(tmpnam, sizeof(tmpnam), "%s/output", client_tempdir);
+		unlink(tmpnam);
+	}
 	rmdir(client_tempdir);
 }
 
@@ -72,6 +77,7 @@ int main(int argc, char *argv[])
 	}
 	hdr.len = len - 1;
 
+	atexit(unlink_temps);
 #ifndef DEBUG
 	// setup fifos and run qrexec client
 	if ((client_tempdir = mkdtemp(tempdir)) == NULL) {
@@ -82,16 +88,18 @@ int main(int argc, char *argv[])
 	client_tempdir = tempdir;
 	mkdir(tempdir, 0700);
 #endif
-	snprintf(fifo_in, 50, "%s/input", client_tempdir);
+	snprintf(fifo_in, sizeof fifo_in, "%s/input", client_tempdir);
 	if (mkfifo(fifo_in, 0600) < 0) {
 		perror("mkfifo");
 		exit(1);
 	}
-	snprintf(fifo_out, 50, "%s/output", client_tempdir);
+	fifo_in_created = 1;
+	snprintf(fifo_out, sizeof fifo_out, "%s/output", client_tempdir);
 	if (mkfifo(fifo_out, 0600) < 0) {
 		perror("mkfifo");
 		exit(1);
 	}
+	fifo_out_created = 1;
 
 	switch (pid = fork()) {
 	case -1:
@@ -123,7 +131,6 @@ int main(int argc, char *argv[])
 	}
 	// parent
 
-	atexit(unlink_temps);
 #ifdef DEBUG
 	fprintf(stderr, "in: %s out: %s\n", fifo_in, fifo_out);
 #endif
