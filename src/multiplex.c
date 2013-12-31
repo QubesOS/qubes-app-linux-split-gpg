@@ -130,7 +130,7 @@ int process_io(int fd_input, int fd_output, int *read_fds,
 				perror("read(hdr)");
 				return 1;
 			default:
-				fprintf(stderr, "ERROR: header to small");
+				fprintf(stderr, "ERROR: header too small");
 				exit(1);
 			}
 			/* header sanitization begin */

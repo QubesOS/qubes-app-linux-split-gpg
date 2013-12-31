@@ -59,13 +59,13 @@ int main(int argc, char *argv[], char *envp[])
 	struct command_hdr hdr, untrusted_hdr;
 	int len, i;
 	int remote_argc;
-	char *(untrusted_remote_argv[COMMAND_MAX_LEN]);	// far to big should not harm
-	char *(remote_argv[COMMAND_MAX_LEN]);	// far to big should not harm
+	char *(untrusted_remote_argv[COMMAND_MAX_LEN]);	// far too big should not harm
+	char *(remote_argv[COMMAND_MAX_LEN]);	// far too big should not harm
 	int input_fds[MAX_FDS], output_fds[MAX_FDS];
 	int input_fds_count, output_fds_count;
 
 	if (argc < 3) {
-		fprintf(stderr, "ERROR: To few arguments\n");
+		fprintf(stderr, "ERROR: Too few arguments\n");
 		fprintf(stderr, "Usage: %s <gpg-path> <remote-domain>\n",
 			argv[0]);
 		exit(1);
@@ -85,7 +85,7 @@ int main(int argc, char *argv[], char *envp[])
 		exit(1);
 	}
 	if (untrusted_hdr.len > COMMAND_MAX_LEN) {
-		fprintf(stderr, "ERROR: Command to long\n");
+		fprintf(stderr, "ERROR: Command too long\n");
 		exit(1);
 	}
 	hdr.len = untrusted_hdr.len;

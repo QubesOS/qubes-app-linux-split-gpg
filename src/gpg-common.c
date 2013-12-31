@@ -20,7 +20,7 @@ void add_arg_to_fd_list(int *list, int *list_count)
 	int cur_fd, untrusted_cur_fd;
 
 	if (*list_count >= MAX_FDS - 1) {
-		fprintf(stderr, "To many FDs specified\n");
+		fprintf(stderr, "Too many FDs specified\n");
 		exit(1);
 	}
 	/* optarg is untrusted! */
@@ -28,7 +28,7 @@ void add_arg_to_fd_list(int *list, int *list_count)
 		untrusted_cur_fd = strtol(optarg, &endptr, 0);
 		// limit fd value
 		if (untrusted_cur_fd > MAX_FD_VALUE) {
-			fprintf(stderr, "FD value to big (%d > %d)\n",
+			fprintf(stderr, "FD value too big (%d > %d)\n",
 				untrusted_cur_fd, MAX_FD_VALUE);
 			exit(1);
 		}

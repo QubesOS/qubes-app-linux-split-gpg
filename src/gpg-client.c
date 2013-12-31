@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 			strcpy(&hdr.command[len], argv[i]);
 			len += strlen(argv[i]) + 1;
 		} else {
-			fprintf(stderr, "ERROR: Command line to long\n");
+			fprintf(stderr, "ERROR: Command line too long\n");
 			exit(1);
 		}
 	}
