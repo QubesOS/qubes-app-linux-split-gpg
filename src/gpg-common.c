@@ -24,8 +24,12 @@ void add_arg_to_fd_list(int *list, int *list_count)
 		exit(1);
 	}
 	/* optarg is untrusted! */
-	if (optarg[0] != 0 && endptr != NULL && endptr[0] == 0) {
-		untrusted_cur_fd = strtol(optarg, &endptr, 0);
+	if (optarg[0] == 0)
+		goto fail;
+	untrusted_cur_fd = strtol(optarg, &endptr, 0);
+	if (untrusted_cur_fd < 0)
+		goto fail;
+	if (endptr != NULL && endptr[0] == 0) {
 		// limit fd value
 		if (untrusted_cur_fd > MAX_FD_VALUE) {
 			fprintf(stderr, "FD value too big (%d > %d)\n",
@@ -42,6 +46,7 @@ void add_arg_to_fd_list(int *list, int *list_count)
 		if (i == *list_count)
 			list[(*list_count)++] = cur_fd;
 	} else {
+fail:
 		fprintf(stderr, "Invalid fd argument\n");
 		exit(1);
 	}
