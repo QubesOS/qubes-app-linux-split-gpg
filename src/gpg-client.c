@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 		close(input_file);
 	}
 	len = 0;
-	memset(hdr.command, 0, COMMAND_MAX_LEN);
+	memset(hdr.command, 0, sizeof hdr.command);
 	for (i = 0; i < last_opt; i++) {
 		if (len + strlen(argv[i]) < COMMAND_MAX_LEN) {
 			strcpy(&hdr.command[len], argv[i]);
