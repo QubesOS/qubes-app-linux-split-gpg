@@ -71,8 +71,8 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
 	while ((opt =
 		getopt_long(argc, untrusted_argv, gpg_short_options,
 			    gpg_long_options, NULL)) != -1) {
-		if (opt == '?') {
-			/* forbidden option - abort execution */
+		if (opt == '?' || opt == ':') {
+			/* forbidden/missing option - abort execution */
 			//error message already printed by getopt
 			exit(1);
 		}
