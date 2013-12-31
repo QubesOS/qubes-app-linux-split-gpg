@@ -49,8 +49,11 @@ int main(int argc, char *argv[])
 			if (len == 0) {
 				closed_stdin = 1;
 				close(pipe_stdin);
+			} else if (len < 0) {
+				perror("read");
+				exit(1);
 			} else {
-				if (write(pipe_stdin, buf, len) < 0) {
+				if (write(pipe_stdin, buf, len) < len) {
 					perror("write");
 					exit(1);
 				}
@@ -61,8 +64,11 @@ int main(int argc, char *argv[])
 			if (len == 0) {
 				closed_pipe = 1;
 				close(1);
+			} else if (len < 0) {
+				perror("read");
+				exit(1);
 			} else {
-				if (write(1, buf, len) < 0) {
+				if (write(1, buf, len) < len) {
 					perror("write");
 					exit(1);
 				}
