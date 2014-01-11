@@ -132,7 +132,6 @@ static const int gpg_allowed_options[] = {
 	opt_use_agent,
 	opt_verify,
 	opt_version,
-	opt_version,
 	opt_with_fingerprint,
 	opt_with_keygrip,
 	0
