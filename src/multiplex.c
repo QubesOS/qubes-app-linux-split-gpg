@@ -36,7 +36,7 @@
 
 int child_status = -1;
 
-void sigchld_handler(int arg)
+void sigchld_handler(int arg __attribute__((__unused__)))
 {
 	int stat_loc;
 	wait(&stat_loc);
@@ -59,7 +59,8 @@ int process_io(int fd_input, int fd_output, int *read_fds,
 	       int read_fds_len, int *write_fds, int write_fds_len)
 {
 	char buf[BUF_SIZE];
-	int i, read_len, total_read_len;
+	int i, read_len;
+	unsigned total_read_len;
 	fd_set read_set;
 	struct header hdr, untrusted_hdr;
 	int closed_fds[MAX_FDS];

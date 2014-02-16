@@ -56,10 +56,11 @@ int ask_the_user(const char *domain) {
 }
 
 
-int main(int argc, char *argv[], char *envp[])
+int main(int argc, char *argv[])
 {
 	struct command_hdr hdr, untrusted_hdr;
-	int len, i;
+	int len;
+	unsigned i;
 	int remote_argc;
 	char *(untrusted_remote_argv[COMMAND_MAX_LEN+1]);	// far too big should not harm
 	char *(remote_argv[COMMAND_MAX_LEN+1]);	// far too big should not harm

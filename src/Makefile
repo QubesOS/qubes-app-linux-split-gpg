@@ -1,5 +1,5 @@
 #CFLAGS=-Wall -Werror -g -DDEBUG
-CFLAGS=-Wall -Werror
+CFLAGS=-Wall -Wextra -Werror
 
 all: gpg-client gpg-server pipe-cat
 
