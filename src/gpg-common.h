@@ -15,7 +15,8 @@ struct command_hdr {
 #define MAX_FD_VALUE 1024
 
 enum {
-	opt_attribute_fd = 257,
+	opt_always_trust = 257,
+	opt_attribute_fd,
 	opt_batch,
 	opt_cert_digest_algo,
 	opt_charset,
@@ -28,6 +29,7 @@ enum {
 	opt_disable_cipher_algo,
 	opt_disable_mdc,
 	opt_disable_pubkey_algo,
+	opt_display_charset,
 	opt_emit_version,
 	opt_encrypt,
 	opt_encrypt_to,
@@ -89,11 +91,13 @@ static const int gpg_allowed_options[] = {
 	's',
 	't',
 	'u',
+	opt_always_trust,
 	opt_batch,
 	opt_charset,
 	opt_clearsign,
 	opt_comment,
 	opt_disable_mdc,
+	opt_display_charset,
 	opt_emit_version,
 	opt_encrypt,
 	opt_encrypt_to,
@@ -140,6 +144,7 @@ static const int gpg_allowed_options[] = {
 static const char gpg_short_options[] = "bacdeknr:stu:";
 
 static const struct option gpg_long_options[] = {
+	{"always-trust", 0, 0, opt_always_trust},
 	{"armor", 0, 0, 'a'},
 	{"batch", 0, 0, opt_batch},
 	{"cert-digest-algo", 1, 0, opt_cert_digest_algo},
@@ -154,6 +159,7 @@ static const struct option gpg_long_options[] = {
 	{"disable-cipher-algo", 1, 0, opt_disable_cipher_algo},
 	{"disable-mdc", 0, 0, opt_disable_mdc},
 	{"disable-pubkey-algo", 1, 0, opt_disable_pubkey_algo},
+	{"display-charset", 1, 0, opt_display_charset},
 	{"dry-run", 0, 0, 'n'},
 	{"emit-version", 0, 0, opt_emit_version},
 	{"encrypt", 0, 0, 'e'},
