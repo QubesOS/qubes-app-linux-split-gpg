@@ -58,9 +58,11 @@ int ask_the_user(const char *domain) {
 
 int main(int argc, char *argv[])
 {
-	struct command_hdr hdr, untrusted_hdr;
+	// make space for terminating NUL character
+	char untrusted_hdr_buf[sizeof(struct command_hdr)+1];
+	struct command_hdr *untrusted_hdr = (struct command_hdr*)untrusted_hdr_buf;
 	int len;
-	unsigned i;
+	int i;
 	int remote_argc;
 	char *(untrusted_remote_argv[COMMAND_MAX_LEN+1]);	// far too big should not harm
 	char *(remote_argv[COMMAND_MAX_LEN+1]);	// far too big should not harm
@@ -79,31 +81,33 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	len = read(0, &untrusted_hdr, sizeof(untrusted_hdr));
+	len = read(0, untrusted_hdr, sizeof(*untrusted_hdr));
 	if (len < 0) {
 		perror("read header");
 		exit(1);
-	} else if (len != sizeof(untrusted_hdr)) {
+	} else if (len != sizeof(*untrusted_hdr)) {
 		fprintf(stderr, "ERROR: Invalid header size: %d\n", len);
 		exit(1);
 	}
-	if (untrusted_hdr.len > COMMAND_MAX_LEN) {
+	if (untrusted_hdr->len > COMMAND_MAX_LEN) {
 		fprintf(stderr, "ERROR: Command too long\n");
 		exit(1);
 	}
-	hdr.len = untrusted_hdr.len;
+	len = untrusted_hdr->len;
 	// split command line into argv
 	remote_argc = 0;
-	untrusted_remote_argv[remote_argc] = untrusted_hdr.command;
-	if (hdr.len) {
+	untrusted_remote_argv[remote_argc] = untrusted_hdr->command;
+	if (len) {
 		remote_argc++;
-		for (i = 0; i < hdr.len-1; i++) {
-			if (untrusted_hdr.command[i] == 0) {
-				untrusted_remote_argv[remote_argc++] = &untrusted_hdr.command[i + 1];
+		for (i = 0; i < len-1; i++) {
+			if (untrusted_hdr->command[i] == 0) {
+				untrusted_remote_argv[remote_argc++] = &untrusted_hdr->command[i + 1];
 			}
 		}
-		// don't read off the end of the buffer if sender does not NUL terminate
-		untrusted_hdr.command[untrusted_hdr.len-1] = 0;
+		// don't read off the end of the buffer if sender does not NUL terminate;
+		// note that we've allocated one extra byte after the struct to make
+		// sure it will fit
+		untrusted_hdr->command[len] = 0;
 	}
 
 	// parse arguments and do not allow any non-option argument
