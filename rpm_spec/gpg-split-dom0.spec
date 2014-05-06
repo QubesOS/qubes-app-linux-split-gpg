@@ -47,10 +47,10 @@ Requires:	gpg
 
 %install
 rm -rf $RPM_BUILD_ROOT
-install -D qubes.Gpg.policy $RPM_BUILD_ROOT/etc/qubes_rpc/policy/qubes.Gpg
+install -D qubes.Gpg.policy $RPM_BUILD_ROOT/etc/qubes-rpc/policy/qubes.Gpg
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
-%config(noreplace) %attr(0664,root,qubes) /etc/qubes_rpc/policy/qubes.Gpg
+%config(noreplace) %attr(0664,root,qubes) /etc/qubes-rpc/policy/qubes.Gpg
