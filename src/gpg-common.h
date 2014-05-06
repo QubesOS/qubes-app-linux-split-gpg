@@ -96,6 +96,7 @@ static const int gpg_allowed_options[] = {
 	opt_charset,
 	opt_clearsign,
 	opt_comment,
+	opt_digest_algo,
 	opt_disable_mdc,
 	opt_display_charset,
 	opt_emit_version,
