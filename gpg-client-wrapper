@@ -1,0 +1,4 @@
+#!/bin/sh
+
+. /etc/profile.d/qubes-gpg.sh
+exec qubes-gpg-client "$@"

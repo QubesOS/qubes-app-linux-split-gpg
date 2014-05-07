@@ -55,6 +55,7 @@ rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/usr/lib/qubes-gpg-split
 install -t $RPM_BUILD_ROOT/usr/lib/qubes-gpg-split src/pipe-cat src/gpg-server
 install -D src/gpg-client $RPM_BUILD_ROOT/usr/bin/qubes-gpg-client
+install -D gpg-client-wrapper $RPM_BUILD_ROOT/usr/bin/qubes-gpg-client-wrapper
 install -D qubes.Gpg.service $RPM_BUILD_ROOT/etc/qubes-rpc/qubes.Gpg
 install -D qubes-gpg.sh $RPM_BUILD_ROOT/etc/profile.d/qubes-gpg.sh
 install -d $RPM_BUILD_ROOT/var/run/qubes-gpg-split
@@ -69,6 +70,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/lib/qubes-gpg-split/gpg-server
 /usr/lib/qubes-gpg-split/pipe-cat
 /usr/bin/qubes-gpg-client
+/usr/bin/qubes-gpg-client-wrapper
 %attr(0644,root,root) /etc/qubes-rpc/qubes.Gpg
 /etc/profile.d/qubes-gpg.sh
 %dir %attr(0777,root,root) /var/run/qubes-gpg-split
