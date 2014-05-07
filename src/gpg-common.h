@@ -40,6 +40,7 @@ enum {
 	opt_force_v4_certs,
 	opt_gnupg,
 	opt_list_only,
+	opt_list_sigs,
 	opt_logger_fd,
 	opt_no_comments,
 	opt_no_emit_version,
@@ -86,6 +87,7 @@ static const int gpg_allowed_options[] = {
 	'd',
 	'e',
 	'k',
+	'K',
 	'n',
 	'r',
 	's',
@@ -110,6 +112,7 @@ static const int gpg_allowed_options[] = {
 	opt_force_v4_certs,
 	opt_gnupg,
 	opt_list_only,
+	opt_list_sigs,
 	opt_no_comments,
 	opt_no_comments,
 	opt_no_emit_version,
@@ -142,7 +145,7 @@ static const int gpg_allowed_options[] = {
 	0
 };
 
-static const char gpg_short_options[] = "bacdeknr:stu:";
+static const char gpg_short_options[] = "bacdekKnr:stu:";
 
 static const struct option gpg_long_options[] = {
 	{"always-trust", 0, 0, opt_always_trust},
@@ -176,6 +179,8 @@ static const struct option gpg_long_options[] = {
 	{"list-keys", 0, 0, 'k'},
 	{"list-only", 0, 0, opt_list_only},
 	{"list-public-keys", 0, 0, 'k'},
+	{"list-secret-keys", 0, 0, 'K'},
+	{"list-sigs", 0, 0, opt_list_sigs},
 	{"local-user", 1, 0, 'u'},
 	{"no-comments", 0, 0, opt_no_comments},
 	{"no-comments", 0, 0, opt_no_comments},
