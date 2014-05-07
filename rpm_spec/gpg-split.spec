@@ -56,7 +56,9 @@ install -d $RPM_BUILD_ROOT/usr/lib/qubes-gpg-split
 install -t $RPM_BUILD_ROOT/usr/lib/qubes-gpg-split src/pipe-cat src/gpg-server
 install -D src/gpg-client $RPM_BUILD_ROOT/usr/bin/qubes-gpg-client
 install -D gpg-client-wrapper $RPM_BUILD_ROOT/usr/bin/qubes-gpg-client-wrapper
+install -D gpg-import-key $RPM_BUILD_ROOT/usr/bin/qubes-gpg-import-key
 install -D qubes.Gpg.service $RPM_BUILD_ROOT/etc/qubes-rpc/qubes.Gpg
+install -D qubes.GpgImportKey.service $RPM_BUILD_ROOT/etc/qubes-rpc/qubes.GpgImportKey
 install -D qubes-gpg.sh $RPM_BUILD_ROOT/etc/profile.d/qubes-gpg.sh
 install -d $RPM_BUILD_ROOT/var/run/qubes-gpg-split
 install -D qubes-gpg-split.tmpfiles $RPM_BUILD_ROOT/etc/tmpfiles.d/qubes-gpg-split.conf
@@ -71,7 +73,9 @@ rm -rf $RPM_BUILD_ROOT
 /usr/lib/qubes-gpg-split/pipe-cat
 /usr/bin/qubes-gpg-client
 /usr/bin/qubes-gpg-client-wrapper
+/usr/bin/qubes-gpg-import-key
 %attr(0644,root,root) /etc/qubes-rpc/qubes.Gpg
+%attr(0644,root,root) /etc/qubes-rpc/qubes.GpgImportKey
 /etc/profile.d/qubes-gpg.sh
 %dir %attr(0777,root,root) /var/run/qubes-gpg-split
 /etc/tmpfiles.d/qubes-gpg-split.conf
