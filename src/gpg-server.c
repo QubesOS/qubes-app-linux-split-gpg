@@ -21,6 +21,7 @@ int ask_the_user(const char *domain) {
 	time_t now;
 	int autoaccept_time;
 	const char *env;
+	struct timespec times[2];
 
 	autoaccept_time = DEFAULT_AUTOACCEPT_TIME;
 	env = getenv("QUBES_GPG_AUTOACCEPT");
@@ -46,8 +47,12 @@ int ask_the_user(const char *domain) {
 			if (stat_file_fd < 0) {
 				perror("Cannot touch stat-file");
 				// continue on this error
-			} else
+			} else {
+				times[0].tv_nsec = UTIME_OMIT;
+				times[1].tv_nsec = UTIME_NOW;
+				futimens(stat_file_fd, times);
 				close(stat_file_fd);
+			}
 			return 1;
 		default:
 			// "NO" or any other case
