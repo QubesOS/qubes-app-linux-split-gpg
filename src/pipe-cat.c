@@ -3,17 +3,48 @@
 #include <sys/select.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <pthread.h>
 
 #define BUF_SIZE 4096
 
+struct copy_thread_args {
+	int in;
+	int out;
+};
+
+void *copy_thread(void *arg) {
+	struct copy_thread_args *fds = arg;
+	char buf[BUF_SIZE];
+	int len_rd, len_wr, ret;
+
+	while (1) {
+		len_rd = read(fds->in, buf, sizeof(buf));
+		if (len_rd < 0) {
+			perror("read");
+			exit(1);
+		} else if (len_rd == 0) {
+			close(fds->out);
+			return NULL;
+		} else {
+			len_wr = 0;
+			while (len_wr < len_rd) {
+				ret = write(fds->out, buf+len_wr, len_rd-len_wr);
+				if (ret < 0) {
+					perror("write");
+					exit(1);
+				}
+				len_wr += ret;
+			}
+		}
+	}
+	return NULL;
+}
+
 int main(int argc, char *argv[])
 {
-	int len;
-	fd_set read_set;
-	int closed_pipe = 0;
-	int closed_stdin = 0;
 	int pipe_stdin, pipe_stdout;
-	char buf[BUF_SIZE];
+	pthread_t thread_in, thread_out;
+	struct copy_thread_args thread_in_args, thread_out_args;
 
 	if (argc != 3) {
 		fprintf(stderr,
@@ -33,50 +64,22 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while (1) {
-		FD_ZERO(&read_set);
-		if (!closed_stdin)
-			FD_SET(0, &read_set);
-		if (!closed_pipe)
-			FD_SET(pipe_stdout, &read_set);
-		if (select(pipe_stdout + 1, &read_set, NULL, NULL, NULL) <
-		    0) {
-			perror("select");
-			exit(1);
-		}
-		if (FD_ISSET(0, &read_set)) {
-			len = read(0, buf, BUF_SIZE);
-			if (len == 0) {
-				closed_stdin = 1;
-				close(pipe_stdin);
-			} else if (len < 0) {
-				perror("read");
-				exit(1);
-			} else {
-				if (write(pipe_stdin, buf, len) < len) {
-					perror("write");
-					exit(1);
-				}
-			}
-		}
-		if (FD_ISSET(pipe_stdout, &read_set)) {
-			len = read(pipe_stdout, buf, BUF_SIZE);
-			if (len == 0) {
-				closed_pipe = 1;
-				close(1);
-			} else if (len < 0) {
-				perror("read");
-				exit(1);
-			} else {
-				if (write(1, buf, len) < len) {
-					perror("write");
-					exit(1);
-				}
-			}
-		}
-		if (closed_pipe && closed_stdin)
-			break;
+	thread_in_args.in = 0;
+	thread_in_args.out = pipe_stdin;
+	thread_out_args.in = pipe_stdout;
+	thread_out_args.out = 1;
+	if (pthread_create(&thread_in, NULL, copy_thread, (void*)&thread_in_args) != 0) {
+		perror("pthread_create(thread_in)");
+		exit(1);
 	}
+
+	if (pthread_create(&thread_out, NULL, copy_thread, (void*)&thread_out_args) != 0) {
+		perror("pthread_create(thread_out)");
+		exit(1);
+	}
+
+	pthread_join(thread_in, NULL);
+	pthread_join(thread_out, NULL);
 
 	return 0;
 }
