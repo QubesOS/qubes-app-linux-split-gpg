@@ -79,10 +79,10 @@ int process_in(struct thread_args *args) {
 			switch (read_len) {
 				case 0:
 					fprintf(stderr, "EOF");
-					return 0;
+					exit(EXIT_SUCCESS);
 				case -1:
 					perror("read(hdr)");
-					return 1;
+					exit(EXIT_FAILURE);
 			}
 			total_read_len += read_len;
 		}
@@ -90,12 +90,12 @@ int process_in(struct thread_args *args) {
 		if (untrusted_hdr.len > BUF_SIZE) {
 			fprintf(stderr,
 					"ERROR: Invalid block size received (%d)", untrusted_hdr.len);
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 		if (untrusted_hdr.fd_num >= write_fds_len) {
 			fprintf(stderr,
 					"ERROR: invalid fd number");
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 		hdr = untrusted_hdr;
 		/* header sanitization end */
@@ -116,12 +116,12 @@ int process_in(struct thread_args *args) {
 						hdr.len-total_read_len);
 				if (read_len < 0) {
 					perror("read");
-					return 1;
+					exit(EXIT_FAILURE);
 				} else if (read_len == 0) {
 					fprintf(stderr,
 							"ERROR: received incomplete block "
 							"(expected %d, got %d)", hdr.len, total_read_len);
-					exit(1);
+					exit(EXIT_FAILURE);
 				}
 				total_read_len += read_len;
 			}
@@ -133,7 +133,17 @@ int process_in(struct thread_args *args) {
 						total_read_len-total_write_len);
 				if (write_len < 0) {
 					perror("write");
-					return 1;
+
+					switch (errno) {
+					case -EPIPE:
+					case -EBADF:
+						/* broken pipes are not fatal,
+						 * just discard all data */
+						total_write_len = total_read_len - write_len;
+						break;
+					default:
+						exit(EXIT_FAILURE);
+					}
 				}
 				total_write_len += write_len;
 			}
@@ -176,7 +186,7 @@ int process_out(struct thread_args *args) {
 				0) {
 			if (errno != EINTR) {
 				perror("select");
-				exit(1);
+				exit(EXIT_FAILURE);
 			} else {
 				//EINTR
 				if (closed_fds_count == read_fds_len) {
@@ -186,10 +196,10 @@ int process_out(struct thread_args *args) {
 						hdr.len = 0;
 						if (write(fd_output, &hdr, sizeof(hdr)) < 0) {
 							perror("write");
-							return 1;
+							exit(EXIT_FAILURE);
 						}
 					}
-					return 0;
+					exit(EXIT_SUCCESS);
 				} else
 					// read remaining data and then exit
 					continue;
@@ -202,14 +212,14 @@ int process_out(struct thread_args *args) {
 				/* we are not validating data passed to/from gpg */
 				if (read_len < 0) {
 					perror("read");
-					return 1;
+					exit(EXIT_FAILURE);
 				}
 				hdr.fd_num = i;
 				hdr.len = read_len;
 				// can blocks, but not a problem
 				if (write(fd_output, &hdr, sizeof(hdr)) < 0) {
 					perror("write");
-					return 1;
+					exit(EXIT_FAILURE);
 				}
 				if (read_len == 0) {
 					// closed pipe
@@ -222,15 +232,15 @@ int process_out(struct thread_args *args) {
 						hdr.len = 0;
 						if (write (fd_output, &hdr, sizeof(hdr)) < 0) {
 							perror("write");
-							return 1;
+							exit(EXIT_FAILURE);
 						}
-						return 0;
+						exit(EXIT_SUCCESS);
 					}
 				} else {
 					// can blocks, but not a problem
 					if (write(fd_output, buf, read_len) < 0) {
 						perror("write");
-						return 1;
+						exit(EXIT_FAILURE);
 					}
 				}
 			}
@@ -254,13 +264,13 @@ int process_io(int fd_input, int fd_output, int *read_fds,
 
 	if (pthread_create(&thread_in, NULL, (void * (*)(void *))process_in, (void*)&thread_in_args) != 0) {
 		perror("pthread_create(thread_in)");
-		return 1;
+		exit(EXIT_FAILURE);
 	}
 	if (pthread_create(&thread_out, NULL, (void * (*)(void *))process_out, (void*)&thread_out_args) != 0) {
 		perror("pthread_create(thread_out)");
-		return 1;
+		exit(EXIT_FAILURE);
 	}
 	pthread_join(thread_out, NULL);
 	pthread_join(thread_in, NULL);
-	return 0;
+	exit(EXIT_SUCCESS);
 }
