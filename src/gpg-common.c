@@ -52,12 +52,31 @@ fail:
 	}
 }
 
+/* returns: 1 if ok, 0 otherwise
+ */
+static int verify_key_id(const char *key_id) {
+	int i = 0;
+
+	while(key_id[i]) {
+		// allow only [a-fA-F0-9], additionally allow 'x' as the second character
+		if ((key_id[i] >= '0' && key_id[i] <= '9') ||
+				(key_id[i] >= 'a' && key_id[i] <= 'f') ||
+				(key_id[i] >= 'A' && key_id[i] <= 'F') ||
+				(key_id[i] == 'x' && i == 1))
+			i++;
+		else
+			return 0;
+	}
+	return 1;
+}
+
 int parse_options(int argc, char *untrusted_argv[], int *input_fds,
 		  int *input_fds_count, int *output_fds,
 		  int *output_fds_count)
 {
 	int opt;
 	int i, ok;
+	int key_ids = 0;
 
 	*input_fds_count = 0;
 	*output_fds_count = 0;
@@ -90,7 +109,10 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
 				untrusted_argv[optind - 1]);
 			exit(1);
 		}
-		if (opt == opt_status_fd) {
+		if (opt == 'k') {
+			// --list-keys can have multiple key IDs as arguments
+			key_ids = 1;
+		} else if (opt == opt_status_fd) {
 			add_arg_to_fd_list(output_fds, output_fds_count);
 		} else if (opt == opt_logger_fd) {
 			add_arg_to_fd_list(output_fds, output_fds_count);
@@ -103,6 +125,15 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
 #endif
 		} else if (opt == opt_command_fd) {
 			add_arg_to_fd_list(input_fds, input_fds_count);
+		}
+	}
+	if (key_ids) {
+		// verify key IDs
+		for (; optind < argc; optind++) {
+			if (!verify_key_id(untrusted_argv[optind])) {
+				fprintf(stderr, "Invalid key ID: %s\n", untrusted_argv[optind]);
+				exit(1);
+			}
 		}
 	}
 	return optind;
