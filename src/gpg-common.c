@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <assert.h>
+#include <string.h>
 
 
 #include "gpg-common.h"
@@ -52,6 +53,67 @@ fail:
 	}
 }
 
+void handle_opt_verify(char *untrusted_sig_path, int *list, int *list_count, int is_client)
+{
+	int i;
+	char *sig_path;
+	int cur_fd, untrusted_cur_fd;
+	int untrusted_sig_path_size;
+	int written;
+
+	if (*list_count >= MAX_FDS - 1) {
+		fprintf(stderr, "Too many FDs used\n");
+		exit(1);
+	}
+	if (untrusted_sig_path[0] == 0) {
+		fprintf(stderr, "Invalid fd argument\n");
+		exit(1);
+	}
+	if (sscanf(untrusted_sig_path, "/dev/fd/%d", &untrusted_cur_fd) > 0) {
+		if (untrusted_cur_fd < 0) {
+			fprintf(stderr, "Invalid fd argument\n");
+			exit(1);
+		}
+		// limit fd value
+		if (untrusted_cur_fd > MAX_FD_VALUE) {
+			fprintf(stderr, "FD value too big (%d > %d)\n",
+					untrusted_cur_fd, MAX_FD_VALUE);
+			exit(1);
+		}
+		cur_fd = untrusted_cur_fd;
+		/* FD sanitization end */
+	} else {
+		if (!is_client) {
+			fprintf(stderr, "--verify with filename allowed on the client side\n");
+		}
+		/* arguments on client side are trusted */
+		sig_path = untrusted_sig_path;
+		cur_fd = open(sig_path, O_RDONLY);
+		if (cur_fd < 0) {
+			perror("open sig");
+			exit(1);
+		}
+		/* HACK: override original file path with FD virtual path, hope it will
+		 * fit; use /dev/fd instead of /proc/self/fd because is is shorter and
+		 * space is critical here (for thunderbird it must fit in place of "/tmp/data.sig") */
+		untrusted_sig_path_size = strlen(untrusted_sig_path)+1;
+		written = snprintf(untrusted_sig_path, untrusted_sig_path_size, "/dev/fd/%d", cur_fd);
+		if (written < 0 || written > untrusted_sig_path_size) {
+			fprintf(stderr, "Failed to fit /dev/fd/%d in place of signature path\n", cur_fd);
+			exit(1);
+		}
+		/* leak FD intentionally - process_io will read from it */
+	}
+	// check if not already in list
+	for (i = 0; i < *list_count; i++) {
+		if (list[i] == cur_fd)
+			break;
+	}
+
+	if (i == *list_count)
+		list[(*list_count)++] = cur_fd;
+}
+
 /* returns: 1 if ok, 0 otherwise
  */
 static int verify_key_id(const char *key_id) {
@@ -72,11 +134,11 @@ static int verify_key_id(const char *key_id) {
 
 int parse_options(int argc, char *untrusted_argv[], int *input_fds,
 		  int *input_fds_count, int *output_fds,
-		  int *output_fds_count)
+		  int *output_fds_count, int is_client)
 {
 	int opt;
 	int i, ok;
-	int key_ids = 0;
+	int key_ids = 0, mode_verify = 0;
 
 	*input_fds_count = 0;
 	*output_fds_count = 0;
@@ -125,7 +187,10 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
 #endif
 		} else if (opt == opt_command_fd) {
 			add_arg_to_fd_list(input_fds, input_fds_count);
+		} else if (opt == opt_verify) {
+			mode_verify = 1;
 		}
+
 	}
 	if (key_ids) {
 		// verify key IDs
@@ -136,6 +201,12 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
 			}
 		}
 	}
+	if (mode_verify && optind < argc) {
+		handle_opt_verify(untrusted_argv[optind], input_fds, input_fds_count, is_client);
+		/* the first path already processed */
+		optind++;
+	}
+
 	return optind;
 }
 

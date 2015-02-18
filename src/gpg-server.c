@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 	struct command_hdr *untrusted_hdr = (struct command_hdr*)untrusted_hdr_buf;
 	int len;
 	int i;
-	int remote_argc;
+	int remote_argc, parsed_argc;
 	char *(untrusted_remote_argv[COMMAND_MAX_LEN+1]);	// far too big should not harm
 	char *(remote_argv[COMMAND_MAX_LEN+1]);	// far too big should not harm
 	int input_fds[MAX_FDS], output_fds[MAX_FDS];
@@ -116,12 +116,16 @@ int main(int argc, char *argv[])
 	}
 
 	// parse arguments and do not allow any non-option argument
-	if (parse_options
-	    (remote_argc, untrusted_remote_argv, input_fds, &input_fds_count,
-	     output_fds, &output_fds_count) < remote_argc) {
-		fprintf(stderr,
-			"ERROR: Non-option arguments not allowed\n");
-		exit(1);
+	if ((parsed_argc=parse_options
+		(remote_argc, untrusted_remote_argv, input_fds, &input_fds_count,
+		 output_fds, &output_fds_count, 0)) < remote_argc) {
+		/* allow single "-" argument */
+		if (parsed_argc+1 < remote_argc ||
+				strcmp(untrusted_remote_argv[parsed_argc], "-") != 0) {
+			fprintf(stderr,
+					"ERROR: Non-option arguments not allowed\n");
+			exit(1);
+		}
 	}
 	memcpy(remote_argv, untrusted_remote_argv, sizeof(untrusted_remote_argv));
 	/* now options are verified and we get here only when all are allowed */

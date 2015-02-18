@@ -33,7 +33,7 @@ void unlink_temps(void)
 int main(int argc, char *argv[])
 {
 	struct command_hdr hdr;
-	int len, last_opt, i;
+	int len, last_opt, i, add_dash_opt;
 	int input_fds[MAX_FDS], output_fds[MAX_FDS];
 	int input_fds_count, output_fds_count;
 	char tempdir[50] = "/tmp/qubes-gpg-split.XXXXXX";
@@ -50,19 +50,24 @@ int main(int argc, char *argv[])
 			"ERROR: Destination domain not defined! Set it with QUBES_GPG_DOMAIN env variable.\n");
 		exit(1);
 	}
+	add_dash_opt = 0;
 	last_opt = parse_options(argc, argv, input_fds, &input_fds_count,
-				 output_fds, &output_fds_count);
+				 output_fds, &output_fds_count, 1);
 	if (last_opt < argc) {
 		// open the first non-option argument as stdin
 		int input_file;
 
-		input_file = open(argv[last_opt], O_RDONLY);
-		if (input_file < 0) {
-			perror("open");
-			exit(1);
+		if (strcmp(argv[last_opt], "-") != 0) {
+			/* open only when not already pointing at stdin */
+			input_file = open(argv[last_opt], O_RDONLY);
+			if (input_file < 0) {
+				perror("open");
+				exit(1);
+			}
+			dup2(input_file, 0);
+			close(input_file);
 		}
-		dup2(input_file, 0);
-		close(input_file);
+		add_dash_opt = 1;
 	}
 	len = 0;
 	memset(hdr.command, 0, sizeof hdr.command);
@@ -75,6 +80,16 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 	}
+	if (add_dash_opt) {
+		if (len + 2 < COMMAND_MAX_LEN) {
+			strcpy(&hdr.command[len], "-");
+			len += 2;
+		} else {
+			fprintf(stderr, "ERROR: Command line too long\n");
+			exit(1);
+		}
+	}
+
 	hdr.len = len ? len - 1 : 0;
 
 	atexit(unlink_temps);
