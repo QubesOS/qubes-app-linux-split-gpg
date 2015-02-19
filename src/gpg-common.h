@@ -49,6 +49,7 @@ enum {
 	opt_no_force_v3_sigs,
 	opt_no_force_v4_certs,
 	opt_no_tty,
+	opt_no_verbose,
 	opt_openpgp,
 	opt_passphrase_fd,
 	opt_personal_cipher_preferences,
