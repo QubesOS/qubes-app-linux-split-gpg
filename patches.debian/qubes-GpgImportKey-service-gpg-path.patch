@@ -1,0 +1,6 @@
+Change path of gpg to /usr/bin/gpg from /bin/gpg
+--- a/qubes.GpgImportKey.service
++++ b/qubes.GpgImportKey.service
+@@ -1 +1 @@
+-/bin/gpg --import
++/usr/bin/gpg --import
