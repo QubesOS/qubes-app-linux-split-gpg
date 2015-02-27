@@ -1,0 +1,13 @@
+Source: qubes-gpg-split
+Section: admin
+Priority: extra
+Maintainer: Jason Mehring <nrgaway@gmail.com>
+Build-Depends: debhelper (>= 9~), quilt
+Standards-Version: 3.9.5
+Homepage: http://www.qubes-os.org
+
+Package: qubes-gpg-split
+Section: admin
+Architecture: amd64
+Depends: gpgv, ${misc:Depends}
+Description: The Qubes service for secure gpg separation

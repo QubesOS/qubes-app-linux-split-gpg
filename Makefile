@@ -76,5 +76,17 @@ update-repo-installer:
 build:
 	$(MAKE) -C src
 
+install-vm:
+	install -d $(DESTDIR)/usr/lib/qubes-gpg-split
+	install -t $(DESTDIR)/usr/lib/qubes-gpg-split src/pipe-cat src/gpg-server
+	install -D src/gpg-client $(DESTDIR)/usr/bin/qubes-gpg-client
+	install -D gpg-client-wrapper $(DESTDIR)/usr/bin/qubes-gpg-client-wrapper
+	install -D gpg-import-key $(DESTDIR)/usr/bin/qubes-gpg-import-key
+	install -D qubes.Gpg.service $(DESTDIR)/etc/qubes-rpc/qubes.Gpg
+	install -D qubes.GpgImportKey.service $(DESTDIR)/etc/qubes-rpc/qubes.GpgImportKey
+	install -D qubes-gpg.sh $(DESTDIR)/etc/profile.d/qubes-gpg.sh
+	install -d $(DESTDIR)/var/run/qubes-gpg-split
+	install -D qubes-gpg-split.tmpfiles $(DESTDIR)/etc/tmpfiles.d/qubes-gpg-split.conf
+
 clean:
 	$(MAKE) -C src clean
