@@ -52,16 +52,7 @@ make build
 
 %install
 rm -rf $RPM_BUILD_ROOT
-install -d $RPM_BUILD_ROOT/usr/lib/qubes-gpg-split
-install -t $RPM_BUILD_ROOT/usr/lib/qubes-gpg-split src/pipe-cat src/gpg-server
-install -D src/gpg-client $RPM_BUILD_ROOT/usr/bin/qubes-gpg-client
-install -D gpg-client-wrapper $RPM_BUILD_ROOT/usr/bin/qubes-gpg-client-wrapper
-install -D gpg-import-key $RPM_BUILD_ROOT/usr/bin/qubes-gpg-import-key
-install -D qubes.Gpg.service $RPM_BUILD_ROOT/etc/qubes-rpc/qubes.Gpg
-install -D qubes.GpgImportKey.service $RPM_BUILD_ROOT/etc/qubes-rpc/qubes.GpgImportKey
-install -D qubes-gpg.sh $RPM_BUILD_ROOT/etc/profile.d/qubes-gpg.sh
-install -d $RPM_BUILD_ROOT/var/run/qubes-gpg-split
-install -D qubes-gpg-split.tmpfiles $RPM_BUILD_ROOT/etc/tmpfiles.d/qubes-gpg-split.conf
+make install-vm DESTDIR=$RPM_BUILD_ROOT
 
 %clean
 rm -rf $RPM_BUILD_ROOT

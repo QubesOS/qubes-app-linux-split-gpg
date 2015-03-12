@@ -1,0 +1,9 @@
+usr/lib/qubes-gpg-split/gpg-server
+usr/lib/qubes-gpg-split/pipe-cat
+usr/bin/qubes-gpg-client
+usr/bin/qubes-gpg-client-wrapper
+usr/bin/qubes-gpg-import-key
+etc/qubes-rpc/qubes.Gpg
+etc/qubes-rpc/qubes.GpgImportKey
+etc/profile.d/qubes-gpg.sh
+etc/tmpfiles.d/qubes-gpg-split.conf
