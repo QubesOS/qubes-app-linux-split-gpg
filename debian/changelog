@@ -1,3 +1,16 @@
+qubes-gpg-split (2.0.11-1) wheezy; urgency=medium
+
+  [ Jason Mehring ]
+  * Added Debian packaging
+  * debian: Change path of gpg to /usr/bin/gpg from /bin/gpg
+  * debian: Added deb/ to .gitignore
+  * Use DEBIAN_PARSER variable provided by builder
+
+  [ Marek Marczykowski-Górecki ]
+  * Fix compile flags
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Fri, 27 Mar 2015 00:33:35 +0100
+
 qubes-gpg-split (2.0.10-1) unstable; urgency=low
 
   * Initial Release.
