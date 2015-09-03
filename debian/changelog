@@ -1,3 +1,9 @@
+qubes-gpg-split (2.0.12-1) wheezy; urgency=medium
+
+  * gitignore pkgs
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 03 Sep 2015 02:46:47 +0200
+
 qubes-gpg-split (2.0.11-1) wheezy; urgency=medium
 
   [ Jason Mehring ]
