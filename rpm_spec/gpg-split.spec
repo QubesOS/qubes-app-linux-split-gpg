@@ -35,6 +35,7 @@ License:	GPL
 URL:		http://www.qubes-os.org
 
 Requires:	gpg
+Requires:   zenity
 
 %define _builddir %(pwd)
 
