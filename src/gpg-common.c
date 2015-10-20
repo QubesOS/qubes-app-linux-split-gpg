@@ -171,6 +171,11 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
 			add_arg_to_fd_list(input_fds, input_fds_count);
 		} else if (opt == opt_verify) {
 			mode_verify = 1;
+		} else if (opt == 'o') {
+			if (strcmp(optarg, "-") != 0) {
+				fprintf(stderr, "Only '-' argument supported for --output option\n");
+				exit(1);
+			}
 		}
 
 	}
