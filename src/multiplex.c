@@ -135,8 +135,8 @@ int process_in(struct thread_args *args) {
 					perror("write");
 
 					switch (errno) {
-					case -EPIPE:
-					case -EBADF:
+					case EPIPE:
+					case EBADF:
 						/* broken pipes are not fatal,
 						 * just discard all data */
 						total_write_len = total_read_len - write_len;
