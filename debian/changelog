@@ -1,3 +1,9 @@
+qubes-gpg-split (2.0.15-1) wheezy; urgency=medium
+
+  * Fix handling stderr write errors
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Fri, 30 Oct 2015 15:20:05 +0100
+
 qubes-gpg-split (2.0.14-1) wheezy; urgency=medium
 
   * Add a couple of options useful in batch mode to allowed list
