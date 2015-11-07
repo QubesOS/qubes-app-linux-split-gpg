@@ -1,3 +1,10 @@
+qubes-gpg-split (2.0.16-1) wheezy; urgency=medium
+
+  [ Axon ]
+  * Use gpg2 by default
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sat, 07 Nov 2015 03:43:37 +0100
+
 qubes-gpg-split (2.0.15-1) wheezy; urgency=medium
 
   * Fix handling stderr write errors
