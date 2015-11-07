@@ -1,3 +1,10 @@
+qubes-gpg-split (2.0.17-1) wheezy; urgency=medium
+
+  [ Noah Vesely ]
+  * Split GPG depends on zenity for user prompts
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sat, 07 Nov 2015 04:36:01 +0100
+
 qubes-gpg-split (2.0.16-1) wheezy; urgency=medium
 
   [ Axon ]
