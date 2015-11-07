@@ -1,2 +1,2 @@
 notify-send "Keyring access from domain: $QREXEC_REMOTE_DOMAIN"
-/usr/lib/qubes-gpg-split/gpg-server /usr/bin/gpg $QREXEC_REMOTE_DOMAIN
+/usr/lib/qubes-gpg-split/gpg-server /usr/bin/gpg2 $QREXEC_REMOTE_DOMAIN
