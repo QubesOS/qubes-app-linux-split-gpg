@@ -1,4 +1,32 @@
-#!/bin/sh
+#!/bin/bash
+
+options=()  # the buffer array for the parameters
+eoo=0       # end of options reached
+
+while [[ $1 ]]; do
+    if ! ((eoo)); then
+        case "$1" in
+            # Keyserver options makes no sense for offline GPG VM, so it is
+            # rejected by qubes-gpg-client and qubes-gpg-server. But since
+            # it is forced by Torbirdy extension, simply ignore the option.
+            --keyserver-options) 
+                shift 2
+                ;;
+            --)
+                eoo=1
+                options+=("$1")
+                shift
+                ;;
+            *)
+                options+=("$1")
+                shift
+                ;;
+        esac
+    else
+        options+=("$1")
+        shift
+    fi
+done
 
 . /etc/profile.d/qubes-gpg.sh
-exec qubes-gpg-client "$@"
+exec qubes-gpg-client "${options[@]}"
