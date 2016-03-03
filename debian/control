@@ -11,3 +11,9 @@ Section: admin
 Architecture: amd64
 Depends: gnupg2, zenity, ${misc:Depends}
 Description: The Qubes service for secure gpg separation
+
+Package: qubes-gpg-split-tests
+Section: admin
+Architecture: amd64
+Depends: qubes-gpg-split, python-dogtail (>= 0.9.0), ${misc:Depends}
+Description: Helper files for Split GPG tests

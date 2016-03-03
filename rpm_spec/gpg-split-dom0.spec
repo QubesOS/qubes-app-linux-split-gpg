@@ -49,6 +49,7 @@ Requires:	gpg
 rm -rf $RPM_BUILD_ROOT
 install -D qubes.Gpg.policy $RPM_BUILD_ROOT/etc/qubes-rpc/policy/qubes.Gpg
 install -D qubes.GpgImportKey.policy $RPM_BUILD_ROOT/etc/qubes-rpc/policy/qubes.GpgImportKey
+make -C tests install-dom0 DESTDIR=$RPM_BUILD_ROOT
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -56,3 +57,6 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %config(noreplace) %attr(0664,root,qubes) /etc/qubes-rpc/policy/qubes.Gpg
 %config(noreplace) %attr(0664,root,qubes) /etc/qubes-rpc/policy/qubes.GpgImportKey
+%dir %{python_sitelib}/splitgpg-*.egg-info
+%{python_sitelib}/splitgpg-*.egg-info/*
+%{python_sitelib}/splitgpg

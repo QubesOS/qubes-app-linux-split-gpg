@@ -87,6 +87,7 @@ install-vm:
 	install -D qubes-gpg.sh $(DESTDIR)/etc/profile.d/qubes-gpg.sh
 	install -d $(DESTDIR)/var/run/qubes-gpg-split
 	install -D qubes-gpg-split.tmpfiles $(DESTDIR)/etc/tmpfiles.d/qubes-gpg-split.conf
+	make -C tests install-vm
 
 clean:
 	$(MAKE) -C src clean

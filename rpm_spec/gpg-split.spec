@@ -44,6 +44,14 @@ The Qubes service for delegating gpg actions to other VM. You can keep keys in
 secure (even network isolated) VM and only pass data to it for
 signing/decryption.
 
+%package tests
+Summary:    Tests for Split GPG
+Requires:   %{name}
+Requires:   dogtail
+
+%description tests
+Helper scripts for Split GPG tests.
+
 %prep
 # we operate on the current directory, so no need to unpack anything
 
@@ -71,3 +79,7 @@ rm -rf $RPM_BUILD_ROOT
 /etc/profile.d/qubes-gpg.sh
 %dir %attr(0777,root,root) /var/run/qubes-gpg-split
 /etc/tmpfiles.d/qubes-gpg-split.conf
+
+%files tests
+/usr/lib/qubes-gpg-split/test_thunderbird.py*
+/usr/lib/qubes-gpg-split/test_smtpd.py*
