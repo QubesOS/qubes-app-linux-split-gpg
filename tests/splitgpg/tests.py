@@ -28,6 +28,7 @@ import unittest
 class SplitGPGBase(unittest.TestCase):
     def setUp(self):
         super(SplitGPGBase, self).setUp()
+        self.enable_network()
         vms = self.create_vms(["backend", "frontend"])
         self.backend = vms[0]
         self.frontend = vms[1]
