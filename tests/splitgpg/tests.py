@@ -63,7 +63,9 @@ Expire-Date: 0
         p.stdin.close()
         p.wait()
 
-        self.qrexec_policy('qubes.Gpg', self.backend.name, self.frontend.name)
+        self.qrexec_policy('qubes.Gpg', self.frontend.name, self.backend.name)
+        self.qrexec_policy('qubes.GpgImportKey', self.frontend.name,
+            self.backend.name)
 
 
 class TC_00_Direct(SplitGPGBase):
