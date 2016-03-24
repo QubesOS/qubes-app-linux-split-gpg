@@ -1,3 +1,18 @@
+qubes-gpg-split (2.0.19-1) wheezy; urgency=medium
+
+  [ Boris Prüßmann ]
+  * Use gpg2 in GpgImportKey
+
+  [ Marek Marczykowski-Górecki ]
+  * Fix gpg version in package dependencies
+  * Add tests for direct usage and in Thunderbird
+  * tests: enable network access for test VMs
+  * Use /usr/bin/gpg2 instead of /bin/gpg2
+  * tests: fix qrexec policy setting
+  * tests: add qubes-gpg-import-key test
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 24 Mar 2016 20:47:02 +0100
+
 qubes-gpg-split (2.0.18-1) wheezy; urgency=medium
 
   * Ignore --keyserver-options
