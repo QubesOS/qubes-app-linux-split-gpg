@@ -1,1 +1,1 @@
-/bin/gpg --import
+/bin/gpg2 --import
