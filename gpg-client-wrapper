@@ -17,12 +17,6 @@ while [[ $1 ]]; do
             --yes)
                 shift
                 ;;
-            --compress-algo=*)
-                shift
-                ;;
-            --no-encrypt-to)
-                shift
-                ;;
             -o)
                 output=1
                 target=("$2")
