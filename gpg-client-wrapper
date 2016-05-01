@@ -2,6 +2,8 @@
 
 options=()  # the buffer array for the parameters
 eoo=0       # end of options reached
+output=0    # do we try to write to file
+target=()   # where do we try to write to
 
 while [[ $1 ]]; do
     if ! ((eoo)); then
@@ -9,7 +11,26 @@ while [[ $1 ]]; do
             # Keyserver options makes no sense for offline GPG VM, so it is
             # rejected by qubes-gpg-client and qubes-gpg-server. But since
             # it is forced by Torbirdy extension, simply ignore the option.
-            --keyserver-options) 
+            --keyserver-options)
+                shift 2
+                ;;
+            --yes)
+                shift
+                ;;
+            --compress-algo=*)
+                shift
+                ;;
+            --no-encrypt-to)
+                shift
+                ;;
+            -o)
+                output=1
+                target=("$2")
+                shift 2
+                ;;
+            --output)
+                output=1
+                target=("$2")
                 shift 2
                 ;;
             --)
@@ -29,4 +50,8 @@ while [[ $1 ]]; do
 done
 
 . /etc/profile.d/qubes-gpg.sh
-exec qubes-gpg-client "${options[@]}"
+if ! ((output)); then
+    exec qubes-gpg-client "${options[@]}"
+else
+    exec qubes-gpg-client "${options[@]}" > "$target"
+fi
