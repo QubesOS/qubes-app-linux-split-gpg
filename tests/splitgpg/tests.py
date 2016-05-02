@@ -22,10 +22,10 @@
 # USA.
 #
 
-import unittest
+import qubes.tests.extra
 
 
-class SplitGPGBase(unittest.TestCase):
+class SplitGPGBase(qubes.tests.extra.ExtraTestCase):
     def setUp(self):
         super(SplitGPGBase, self).setUp()
         self.enable_network()
@@ -198,6 +198,24 @@ Expire-Date: 0
             passio_popen=True)
         (key_list, _) = p.communicate()
         self.assertIn('user2@localhost', key_list)
+
+    def test_050_sign_verify_files(self):
+        """Test for --output option"""
+        msg = "Test message"
+        cmd = 'qubes-gpg-client-wrapper -a --sign --output /tmp/signed.asc'
+        p = self.frontend.run(cmd, passio_popen=True)
+        p.stdin.write(msg)
+        p.stdin.close()
+        p.wait()
+        self.assertEquals(p.returncode, 0, '{} failed'.format(cmd))
+
+        # verify first through gpg-split
+        cmd = 'qubes-gpg-client-wrapper /tmp/signed.asc'
+        p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
+        decoded_msg, verification_result = p.communicate()
+        self.assertEquals(p.returncode, 0, '{} failed'.format(cmd))
+        self.assertEquals(decoded_msg, msg)
+        self.assertIn('\ngpg: Good signature from', verification_result)
 
     # TODO:
     #  - encrypt/decrypt
