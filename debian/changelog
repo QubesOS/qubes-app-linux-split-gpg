@@ -1,3 +1,20 @@
+qubes-gpg-split (2.0.20-1) wheezy; urgency=medium
+
+  [ Marek Marczykowski-Górecki ]
+  * Remove duplicated entries
+
+  [ viq ]
+  * Attempt at making GPG password managers to work
+
+  [ Marek Marczykowski-Górecki ]
+  * Allow --no-encrypt-to and --compress-algo
+  * Minor fix for handling --output
+  * tests: test for --output option
+  * tests: typo
+  * tests: adjust for newer Thunderbird/Enigmail
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 02 May 2016 03:53:14 +0200
+
 qubes-gpg-split (2.0.19-1) wheezy; urgency=medium
 
   [ Boris Prüßmann ]
