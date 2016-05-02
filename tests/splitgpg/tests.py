@@ -245,7 +245,7 @@ class TC_10_Thunderbird(SplitGPGBase):
         assert p == 0, 'Failed to enable accessibility toolkit'
         if self.frontend.run(
                 'ls {}'.format(self.scriptpath), wait=True):
-            self.skipTest('qubes-gpg-split-test package not installed')
+            self.skipTest('qubes-gpg-split-tests package not installed')
 
         # run as root to not deal with /var/mail permission issues
         self.frontend.run(
