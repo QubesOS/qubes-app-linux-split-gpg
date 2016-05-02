@@ -261,8 +261,12 @@ def receive_message(tb, signed=False, encrypted=False):
         'activate')
     tb.findChild(GenericPredicate(name='{}.*'.format(subject),
         roleName='table row')).doActionNamed('activate')
-    msg = tb.findChild(GenericPredicate(roleName='document frame'))
-    msg = msg.findChild(GenericPredicate(roleName='paragraph'))
+    msg = tb.findChild(GenericPredicate(roleName='document frame',
+        name=subject))
+    try:
+        msg = msg.findChild(GenericPredicate(roleName='section')).children[0]
+    except tree.SearchError:
+        msg = msg.findChild(GenericPredicate(roleName='paragraph'))
     msg_body = msg.text
     print 'Message body: {}'.format(msg_body)
     assert msg_body.strip() == 'This is test message'
