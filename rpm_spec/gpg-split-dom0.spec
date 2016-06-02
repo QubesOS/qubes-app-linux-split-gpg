@@ -35,6 +35,7 @@ License:	GPL
 URL:		http://www.qubes-os.org
 
 Requires:	gpg
+BuildRequires: python-setuptools
 
 %define _builddir %(pwd)
 
