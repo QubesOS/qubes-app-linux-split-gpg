@@ -1,3 +1,10 @@
+qubes-gpg-split (2.0.21-1) wheezy; urgency=medium
+
+  * travis: initial version
+  * rpm: add missing python-setuptools BR
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Tue, 21 Jun 2016 04:29:37 +0200
+
 qubes-gpg-split (2.0.20-1) wheezy; urgency=medium
 
   [ Marek Marczykowski-Górecki ]
