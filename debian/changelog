@@ -1,3 +1,14 @@
+qubes-gpg-split (2.0.22-1) wheezy; urgency=medium
+
+  * Redirect qubes-gpg-client-wrapper --import into qubes-gpg-import-key
+  * Fix handling --verify option validation
+  * Allow --export option
+  * Allow --enable-progress-filter option
+  * Allow --hidden-recipient option
+  * tests: inline signature and mails with attachments
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Tue, 12 Jul 2016 00:42:10 +0200
+
 qubes-gpg-split (2.0.21-1) wheezy; urgency=medium
 
   * travis: initial version
