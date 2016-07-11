@@ -199,6 +199,39 @@ Expire-Date: 0
         (key_list, _) = p.communicate()
         self.assertIn('user2@localhost', key_list)
 
+    def test_041_import_via_wrapper(self):
+        p = self.frontend.run('gpg --gen-key --batch', passio_popen=True)
+        p.stdin.write('''
+Key-Type: RSA
+Key-Length: 1024
+Key-Usage: sign encrypt
+Name-Real: Qubes test2
+Name-Email: user2@localhost
+Expire-Date: 0
+%commit
+        ''')
+        p.stdin.close()
+        # discard stdout
+        p.stdout.read()
+        p.wait()
+        assert p.returncode == 0, 'key generation failed'
+
+        p = self.frontend.run('qubes-gpg-client-wrapper --list-keys',
+            passio_popen=True)
+        (key_list, _) = p.communicate()
+        self.assertNotIn('user2@localhost', key_list)
+        p = self.frontend.run('gpg -a --export user2@localhost | '
+            'QUBES_GPG_DOMAIN={} qubes-gpg-client-wrapper --import'.format(
+                self.backend.name),
+            passio_popen=True, passio_stderr=True)
+        (stdout, stderr) = p.communicate()
+        self.assertEqual(p.returncode, 0, "Failed to import key: " + stderr)
+        p = self.frontend.run('qubes-gpg-client-wrapper --list-keys',
+            passio_popen=True)
+        (key_list, _) = p.communicate()
+        self.assertIn('user2@localhost', key_list)
+
+
     def test_050_sign_verify_files(self):
         """Test for --output option"""
         msg = "Test message"

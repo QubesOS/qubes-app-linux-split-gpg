@@ -8,6 +8,11 @@ target=()   # where do we try to write to
 while [[ $1 ]]; do
     if ! ((eoo)); then
         case "$1" in
+            --import)
+                # ignore all the options and only collect file name(s) - if any
+                shift
+                exec qubes-gpg-import-key "$@"
+                ;;
             # Keyserver options makes no sense for offline GPG VM, so it is
             # rejected by qubes-gpg-client and qubes-gpg-server. But since
             # it is forced by Torbirdy extension, simply ignore the option.
