@@ -84,7 +84,8 @@ void handle_opt_verify(char *untrusted_sig_path, int *list, int *list_count, int
 		/* FD sanitization end */
 	} else {
 		if (!is_client) {
-			fprintf(stderr, "--verify with filename allowed on the client side\n");
+			fprintf(stderr, "--verify with filename allowed only on the client side\n");
+			exit(1);
 		}
 		/* arguments on client side are trusted */
 		sig_path = untrusted_sig_path;
