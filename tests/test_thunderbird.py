@@ -220,8 +220,23 @@ def configure_enigmail_account(tb):
         pass
     settings.button('OK').doActionNamed('press')
 
+def attach(tb, compose_window, path):
+    compose_window.button('Attach').button('Attach').doActionNamed('press')
+    compose_window.button('Attach').menuItem('File.*').doActionNamed('click')
+    select_file = tb.dialog('Attach File.*')
+    places = select_file.findChild(GenericPredicate(roleName='table',
+        name='Places'))
+    places.findChild(GenericPredicate(name='Desktop')).click()
+    location_toggle = select_file.findChild(GenericPredicate(roleName='toggle button',
+        name='Type a file name'))
+    if not location_toggle.checked:
+        location_toggle.doActionNamed('click')
+    location_label = select_file.child(name='Location:', roleName='label')
+    location = location_label.parent.children[location_label.indexInParent + 1]
+    location.text = path
+    select_file.button('Open').doActionNamed('click')
 
-def send_email(tb, sign=False, encrypt=False, inline=False):
+def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
     tb.findChild(GenericPredicate(roleName='page tab list')).children[
         0].doActionNamed('switch')
     write = tb.button('Write')
@@ -235,6 +250,8 @@ def send_email(tb, sign=False, encrypt=False, inline=False):
     compose.findChild(TBEntry('Subject:')).text = subject
     compose.findChild(GenericPredicate(
         roleName='document frame')).text = 'This is test message'
+    # lets thunderbird settle down on default values (after filling recipients)
+    time.sleep(1)
     compose.button('Enigmail Encryption Info').doActionNamed('press')
     sign_encrypt = tb.dialog('Enigmail Encryption & Signing Settings')
     encrypt_checkbox = sign_encrypt.childNamed('Encrypt Message')
@@ -248,10 +265,14 @@ def send_email(tb, sign=False, encrypt=False, inline=False):
     else:
         sign_encrypt.childNamed('Use PGP/MIME').doActionNamed('select')
     sign_encrypt.button('OK').doActionNamed('press')
+    if attachment:
+        attach(tb, compose, attachment)
     compose.button('Send').doActionNamed('press')
+    if inline and attachment:
+        tb.dialog('Enigmail Prompt').button('OK').doActionNamed('press')
 
 
-def receive_message(tb, signed=False, encrypted=False):
+def receive_message(tb, signed=False, encrypted=False, attachment=None):
     tb.findChild(GenericPredicate(name='user@localhost',
         roleName='table row')).doActionNamed('activate')
     tb.button('Get Messages').doActionNamed('press')
@@ -259,7 +280,7 @@ def receive_message(tb, signed=False, encrypted=False):
     tb.findChild(
         GenericPredicate(name='Inbox.*', roleName='table row')).doActionNamed(
         'activate')
-    tb.findChild(GenericPredicate(name='{}.*'.format(subject),
+    tb.findChild(GenericPredicate(name='.*{}.*'.format(subject),
         roleName='table row')).doActionNamed('activate')
     msg = tb.findChild(GenericPredicate(roleName='document frame',
         name=subject))
@@ -289,6 +310,57 @@ def receive_message(tb, signed=False, encrypted=False):
     finally:
         config.searchCutoffCount = 10
 
+    if attachment:
+        # it can be either "1 attachment:" or "2 attachments"
+        attachment_label = tb.child(name='.* attachment[:s]', roleName='label')
+        offset = 0
+        if attachment_label.name == '1 attachment:':
+            offset += 1
+        attachment_size = attachment_label.parent.children[
+            attachment_label.indexInParent + 1 + offset]
+        assert attachment_size.text[0] != '0'
+        attachment_label.parent.children[
+            attachment_label.indexInParent + 2 + offset].\
+            button('Save.*').children[1].doActionNamed('press')
+        save_as = tb.dialog('Save .*Attachment.*')
+        places = save_as.findChild(GenericPredicate(roleName='table',
+            name='Places'))
+        places.findChild(GenericPredicate(name='Desktop')).click()
+        if 'attachments' in attachment_label.text:
+            save_as.button('Open').doActionNamed('click')
+        else:
+            save_as.button('Save').doActionNamed('click')
+        time.sleep(1)
+        with open(attachment, 'r') as f:
+            orig_attachment = f.read()
+        saved_basepath = os.path.expanduser('~/Desktop/{}'.format(
+                os.path.basename(attachment)))
+        if os.path.exists(saved_basepath):
+            with open(saved_basepath) as f:
+                received_attachment = f.read()
+            assert received_attachment == orig_attachment
+            print "Attachment content ok"
+        elif os.path.exists(saved_basepath + '.pgp'):
+            p = subprocess.Popen(['qubes-gpg-client-wrapper'],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                stdin=open(saved_basepath + '.pgp', 'r'))
+            (stdout, stderr) = p.communicate()
+            if signed:
+                assert 'Good signature' in stderr
+                print "Attachment signature ok"
+            assert stdout == orig_attachment
+            print "Attachment content ok - encrypted"
+        else:
+            raise Exception('Attachment {} not found'.format(saved_basepath))
+        if os.path.exists(saved_basepath + '.sig'):
+            p = subprocess.Popen(['qubes-gpg-client-wrapper', '--verify',
+                saved_basepath + '.sig', saved_basepath],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            (stdout, stderr) = p.communicate()
+            if signed:
+                assert 'Good signature' in stderr
+                print "Attachment detached signature ok"
+
     # tb.button('Delete').doActionNamed('press')
 
 
@@ -309,6 +381,10 @@ def main():
         default=False)
     parser_send_receive.add_argument('--signed', action='store_true',
         default=False)
+    parser_send_receive.add_argument('--inline', action='store_true',
+        default=False)
+    parser_send_receive.add_argument('--with-attachment',
+        action='store_true', default=False)
     args = parser.parse_args()
     if args.command == 'setup':
         run(args.tbname)
@@ -321,9 +397,17 @@ def main():
         configure_enigmail_account(tb)
     if args.command == 'send_receive':
         tb = get_app()
-        send_email(tb, sign=args.signed, encrypt=args.encrypted)
+        if args.with_attachment:
+            attachment = '/home/user/attachment{}.txt'.format(os.getpid())
+            with open(attachment, 'w') as f:
+                f.write('This is test attachment content')
+        else:
+            attachment = None
+        send_email(tb, sign=args.signed, encrypt=args.encrypted, inline=args.inline,
+            attachment=attachment)
         time.sleep(5)
-        receive_message(tb, signed=args.signed, encrypted=args.encrypted)
+        receive_message(tb, signed=args.signed, encrypted=args.encrypted,
+            attachment=attachment)
         quit_tb(tb)
 
 if __name__ == '__main__':

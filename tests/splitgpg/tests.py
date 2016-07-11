@@ -303,6 +303,26 @@ class TC_10_Thunderbird(SplitGPGBase):
         self.assertEquals(p.returncode, 0,
             'Thunderbird send/receive failed: {}'.format(stdout))
 
+    def test_010_send_receive_inline_signed_only(self):
+        p = self.frontend.run(
+            'PYTHONIOENCODING=utf-8 python {} --tbname={} send_receive '
+            '--encrypted --signed --inline 2>&1'.format(
+                self.scriptpath, self.tb_name),
+            passio_popen=True)
+        (stdout, _) = p.communicate()
+        self.assertEquals(p.returncode, 0,
+            'Thunderbird send/receive failed: {}'.format(stdout))
+
+    def test_020_send_receive_inline_with_attachment(self):
+        p = self.frontend.run(
+            'PYTHONIOENCODING=utf-8 python {} --tbname={} send_receive '
+            '--encrypted --signed --inline --with-attachment 2>&1'.format(
+                self.scriptpath, self.tb_name),
+            passio_popen=True)
+        (stdout, _) = p.communicate()
+        self.assertEquals(p.returncode, 0,
+            'Thunderbird send/receive failed: {}'.format(stdout))
+
 
 def list_tests():
     return (
