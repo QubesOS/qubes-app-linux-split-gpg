@@ -154,8 +154,8 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
 				untrusted_argv[optind - 1]);
 			exit(1);
 		}
-		if (opt == 'k' || opt == 'K') {
-			// --list-keys can have multiple key IDs as arguments
+		if (opt == 'k' || opt == 'K' || opt == opt_export) {
+			// --list-keys and --export can have multiple key IDs as arguments
 			mode_list_keys = 1;
 		} else if (opt == opt_status_fd) {
 			add_arg_to_fd_list(output_fds, output_fds_count);
