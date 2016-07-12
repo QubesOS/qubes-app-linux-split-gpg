@@ -33,7 +33,9 @@ while [[ $1 ]]; do
                 target="$2"
                 shift 2
                 ;;
-            --status-fd)
+            --status-fd|\
+            --logger-fd|\
+            --attribute-fd)
                 if [ "x$2" = "x1" ]; then
                     # don't use stdout for status fd, since it might be later
                     # redirected to a file with --output
