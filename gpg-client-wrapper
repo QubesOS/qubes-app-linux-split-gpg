@@ -4,6 +4,7 @@ options=()  # the buffer array for the parameters
 eoo=0       # end of options reached
 output=0    # do we try to write to file
 target=()   # where do we try to write to
+fd_for_stdout=63 # some (hopefuly) unused FD, later redirected to stdout
 
 while [[ $1 ]]; do
     if ! ((eoo)); then
@@ -32,6 +33,17 @@ while [[ $1 ]]; do
                 target="$2"
                 shift 2
                 ;;
+            --status-fd)
+                if [ "x$2" = "x1" ]; then
+                    # don't use stdout for status fd, since it might be later
+                    # redirected to a file with --output
+                    options+=( "$1" "$fd_for_stdout" )
+                    shift 2
+                else
+                    options+=( "$1" )
+                    shift
+                fi
+                ;;    
             --)
                 eoo=1
                 options+=("$1")
@@ -49,8 +61,9 @@ while [[ $1 ]]; do
 done
 
 . /etc/profile.d/qubes-gpg.sh
+# 63 is $fd_for_stdout but bush seems to reject variables here
 if ! ((output)); then
-    exec qubes-gpg-client "${options[@]}"
+    exec qubes-gpg-client "${options[@]}" 63>&1
 else
-    exec qubes-gpg-client "${options[@]}" > "$target"
+    exec qubes-gpg-client "${options[@]}" 63>&1 >"$target"
 fi
