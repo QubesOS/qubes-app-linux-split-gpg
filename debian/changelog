@@ -1,3 +1,11 @@
+qubes-gpg-split (2.0.23-1) wheezy; urgency=medium
+
+  * Don't mix stdout and --output content
+  * Implement the --status-fd workflow for other data-outputing options
+  * tests: add test for --status-fd 1 and --output conflict
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sun, 17 Jul 2016 05:22:53 +0200
+
 qubes-gpg-split (2.0.22-1) wheezy; urgency=medium
 
   * Redirect qubes-gpg-client-wrapper --import into qubes-gpg-import-key
