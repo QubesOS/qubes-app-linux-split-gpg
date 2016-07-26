@@ -7,6 +7,7 @@ else ifeq ($(PACKAGE_SET),vm)
   endif
 
   RPM_SPEC_FILES := rpm_spec/gpg-split.spec
+  ARCH_BUILD_DIRS := archlinux
 endif
 
 source-debian-quilt-copy-in: VERSION = $(shell $(DEBIAN_PARSER) changelog --package-version $(ORIG_SRC)/$(DEBIAN_BUILD_DIRS)/changelog)
