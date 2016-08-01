@@ -386,6 +386,10 @@ def main():
     parser_send_receive.add_argument('--with-attachment',
         action='store_true', default=False)
     args = parser.parse_args()
+
+    # log only to stdout since logging to file have broken unicode support
+    config.logDebugToFile = False
+
     if args.command == 'setup':
         run(args.tbname)
         tb = get_app()
