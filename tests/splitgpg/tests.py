@@ -279,6 +279,8 @@ class TC_10_Thunderbird(SplitGPGBase):
     scriptpath = '/usr/lib/qubes-gpg-split/test_thunderbird.py'
 
     def setUp(self):
+        if self.template.startswith('whonix-gw'):
+            self.skipTest('whonix-gw template not supported by this test')
         super(TC_10_Thunderbird, self).setUp()
         if self.frontend.run('which thunderbird', wait=True) == 0:
             self.tb_name = 'thunderbird'
