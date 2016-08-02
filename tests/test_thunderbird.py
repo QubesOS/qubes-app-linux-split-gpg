@@ -282,6 +282,8 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
         'activate')
     tb.findChild(GenericPredicate(name='.*{}.*'.format(subject),
         roleName='table row')).doActionNamed('activate')
+    # wait a little to TB decrypt/check the message
+    time.sleep(2)
     msg = tb.findChild(GenericPredicate(roleName='document frame',
         name=subject))
     try:
