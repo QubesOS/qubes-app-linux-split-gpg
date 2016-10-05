@@ -36,7 +36,7 @@ int ask_the_user(const char *domain) {
 
 	snprintf(ask_cmd, sizeof(ask_cmd), "zenity --question --text \"Do you allow"
 			" VM '%s' to access your GPG keys (now and for the following %d"
-				" seconds)?\"", domain, autoaccept_time);
+				" seconds)?\" 2>/dev/null", domain, autoaccept_time);
 	switch (system(ask_cmd)) {
 		case -1:
 			perror("system");
