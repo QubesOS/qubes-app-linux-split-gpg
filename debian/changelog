@@ -1,3 +1,19 @@
+qubes-gpg-split (2.0.24-1) wheezy; urgency=medium
+
+  [ Marek Marczykowski-Górecki ]
+  * tests: exclude Whonix Gateway
+  * tests: disable logging to file to avoid utf-8 handling problems
+  * tests: give TB some time to handle message
+  * tests: workaround time desynchronization issues on Whonix
+
+  [ Jacob Jenner Rasmussen ]
+  * archlinux support
+
+  [ Marek Marczykowski-Górecki ]
+  * Don't trash stderr with zenity messages
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Fri, 18 Nov 2016 02:00:39 +0100
+
 qubes-gpg-split (2.0.23-1) wheezy; urgency=medium
 
   * Don't mix stdout and --output content
