@@ -34,6 +34,8 @@ Vendor:		Invisible Things Lab
 License:	GPL
 URL:		http://www.qubes-os.org
 
+BuildRequires: pandoc
+
 Requires:	gnupg2
 Requires:   zenity
 
@@ -79,6 +81,9 @@ rm -rf $RPM_BUILD_ROOT
 /etc/profile.d/qubes-gpg.sh
 %dir %attr(0777,root,root) /var/run/qubes-gpg-split
 /etc/tmpfiles.d/qubes-gpg-split.conf
+%{_mandir}/man1/qubes-gpg-client.1*
+%{_mandir}/man1/qubes-gpg-client-wrapper.1*
+%{_mandir}/man1/qubes-gpg-import-key.1*
 
 %files tests
 /usr/lib/qubes-gpg-split/test_thunderbird.py*

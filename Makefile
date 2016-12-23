@@ -24,14 +24,14 @@ VERSION := $(shell cat version)
 
 help:
 	@echo "Qubes addons main Makefile:" ;\
-	    echo "make rpms                 <--- make rpms and sign them";\
-	    echo; \
-	    echo "make clean                <--- clean all the binary files";\
-	    echo "make update-repo-current  <-- copy newly generated rpms to qubes yum repo";\
-	    echo "make update-repo-current-testing <-- same, but for -current-testing repo";\
-	    echo "make update-repo-unstable <-- same, but to -testing repo";\
-	    echo "make update-repo-installer -- copy dom0 rpms to installer repo"
-	    @exit 0;
+		echo "make rpms                 <--- make rpms and sign them";\
+		echo; \
+		echo "make clean                <--- clean all the binary files";\
+		echo "make update-repo-current  <-- copy newly generated rpms to qubes yum repo";\
+		echo "make update-repo-current-testing <-- same, but for -current-testing repo";\
+		echo "make update-repo-unstable <-- same, but to -testing repo";\
+		echo "make update-repo-installer -- copy dom0 rpms to installer repo"
+		@exit 0;
 
 rpms: rpms-vm
 
@@ -75,6 +75,7 @@ update-repo-installer:
 
 build:
 	$(MAKE) -C src
+	$(MAKE) -C doc manpages
 
 install-vm:
 	install -d $(DESTDIR)/usr/lib/qubes-gpg-split
@@ -88,6 +89,8 @@ install-vm:
 	install -d $(DESTDIR)/var/run/qubes-gpg-split
 	install -D qubes-gpg-split.tmpfiles $(DESTDIR)/etc/tmpfiles.d/qubes-gpg-split.conf
 	make -C tests install-vm
+	make -C doc install
 
 clean:
 	$(MAKE) -C src clean
+	$(MAKE) -C doc clean
