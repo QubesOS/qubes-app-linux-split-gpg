@@ -7,7 +7,7 @@ arch=("x86_64")
 url="http://qubes-os.org/"
 license=('GPL')
 depends=('gnupg' 'zenity')
-makedepends=(pkg-config make gcc)
+makedepends=(pkg-config make gcc pandoc)
 
 changelog=debian/changelog
 source=()
