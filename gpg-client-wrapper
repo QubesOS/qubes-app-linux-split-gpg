@@ -64,7 +64,7 @@ done
 
 . /etc/profile.d/qubes-gpg.sh
 # 63 is $fd_for_stdout but bush seems to reject variables here
-if ! ((output)); then
+if  ! (($output)) || [ "$target" = "-" ] ; then
     exec qubes-gpg-client "${options[@]}" 63>&1
 else
     exec qubes-gpg-client "${options[@]}" 63>&1 >"$target"
