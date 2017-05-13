@@ -1,3 +1,17 @@
+qubes-gpg-split (2.0.25-1) unstable; urgency=medium
+
+  [ Nicklaus McClendon ]
+  * Removed .travis.yml debootstrap fix
+  * Added basic README.md
+  * Added manpages
+  * Added pandoc to Arch package dependencies
+  * Print to standard out if output is '-'
+
+  [ Marek Marczykowski-Górecki ]
+  * typo fix
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sat, 13 May 2017 15:02:19 +0200
+
 qubes-gpg-split (2.0.24-1) wheezy; urgency=medium
 
   [ Marek Marczykowski-Górecki ]
