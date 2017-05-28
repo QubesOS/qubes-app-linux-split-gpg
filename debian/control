@@ -9,7 +9,11 @@ Homepage: http://www.qubes-os.org
 Package: qubes-gpg-split
 Section: admin
 Architecture: amd64
-Depends: gnupg2, zenity, ${misc:Depends}
+Depends:
+ gnupg2,
+ zenity,
+ ${shlibs:Depends},
+ ${misc:Depends}
 Description: The Qubes service for secure gpg separation
 
 Package: qubes-gpg-split-tests
