@@ -1,3 +1,19 @@
+qubes-gpg-split (2.0.26-1) unstable; urgency=medium
+
+  [ Marek Marczykowski-Górecki ]
+  * debian: fix Depends:
+
+  [ anoadragon453 ]
+  * Add expire time to GPG access notifications
+
+  [ Marek Marczykowski-Górecki ]
+  * Convert tabs to spaces
+  * Add hidden recipients related options
+  * Whitelist --keyid-format
+  * Add --throw-keyids/--no-throw-keyids options
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Wed, 26 Jul 2017 13:23:53 +0200
+
 qubes-gpg-split (2.0.25-1) unstable; urgency=medium
 
   [ Nicklaus McClendon ]
