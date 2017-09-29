@@ -20,7 +20,10 @@ build() {
 
 package() {
   cd ..
-  make install-vm DESTDIR=$pkgdir LIBDIR=/usr/lib USRLIBDIR=/usr/lib SYSLIBDIR=/usr/lib
+  make install-vm DESTDIR="$pkgdir" LIBDIR=/usr/lib USRLIBDIR=/usr/lib SYSLIBDIR=/usr/lib
+
+  # Archlinux packaging guidelines: /var/run is a symlink to a tmpfs. Don't create it
+  rm -r "$pkgdir/var/run"
 }
 
 # vim:set ts=2 sw=2 et:
