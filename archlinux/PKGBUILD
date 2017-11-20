@@ -1,7 +1,7 @@
 #!/bin/bash
 # Contributor: Jacob Jenner Rasmussen <jacob@jener.dk>
 # shellcheck disable=SC2034
-pkgname=qubes-split
+pkgname=qubes-gpg-split
 pkgver=$(cat version)
 pkgrel=1
 pkgdesc="The Qubes service for secure gpg seperation"
