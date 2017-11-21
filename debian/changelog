@@ -1,3 +1,17 @@
+qubes-gpg-split (2.0.27-1) unstable; urgency=medium
+
+  [ Nedyalko Andreev ]
+  * Fix archlinux package - remove /var/run
+  * Fix minor indentation and shellcheck issues
+
+  [ Olivier MEDOC ]
+  * archlinux: rename package to follow other distributions naming
+
+  [ Marek Marczykowski-Górecki ]
+  * Add list-options to the whitelist
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Tue, 21 Nov 2017 04:44:17 +0100
+
 qubes-gpg-split (2.0.26-1) unstable; urgency=medium
 
   [ Marek Marczykowski-Górecki ]
