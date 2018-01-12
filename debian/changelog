@@ -1,3 +1,10 @@
+qubes-gpg-split (2.0.27-exp8) UNRELEASED; urgency=medium
+
+  * Non-maintainer upload.
+  * use local gpg when access to keyring is not needed
+
+ -- hark <hark@puscii.nl>  Sat, 30 Jan 2018 14:44:23 +0100
+
 qubes-gpg-split (2.0.27-1) unstable; urgency=medium
 
   [ Nedyalko Andreev ]
