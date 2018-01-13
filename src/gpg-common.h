@@ -19,6 +19,7 @@ enum {
     opt_attribute_fd,
     opt_batch,
     opt_cert_digest_algo,
+    opt_cert_notation,
     opt_charset,
     opt_cipher_algo,
     opt_clearsign,
@@ -78,6 +79,7 @@ enum {
     opt_s2k_count,
     opt_s2k_digest_algo,
     opt_s2k_mode,
+    opt_sig_notation,
     opt_skip_hidden_recipients,
     opt_status_fd,
     opt_store,
@@ -108,6 +110,7 @@ static const int gpg_allowed_options[] = {
     'k',
     'K',
     'n',
+    'N',
     'o',
     'q',
     'r',
@@ -118,6 +121,7 @@ static const int gpg_allowed_options[] = {
     'v',
     opt_always_trust,
     opt_batch,
+    opt_cert_notation,
     opt_charset,
     opt_clearsign,
     opt_command_fd,
@@ -173,6 +177,7 @@ static const int gpg_allowed_options[] = {
     opt_s2k_count,
     opt_s2k_digest_algo,
     opt_s2k_mode,
+    opt_sig_notation,
     opt_skip_hidden_recipients,
     opt_status_fd,
     opt_store,
@@ -188,13 +193,14 @@ static const int gpg_allowed_options[] = {
     0
 };
 
-static const char gpg_short_options[] = "bacdekKnqr:R:stu:";
+static const char gpg_short_options[] = "bacdekKnN:qr:R:stu:";
 
 static const struct option gpg_long_options[] = {
     {"always-trust", 0, 0, opt_always_trust},
     {"armor", 0, 0, 'a'},
     {"batch", 0, 0, opt_batch},
     {"cert-digest-algo", 1, 0, opt_cert_digest_algo},
+    {"cert-notation", 1, 0, opt_cert_notation},
     {"charset", 1, 0, opt_charset},
     {"cipher-algo", 1, 0, opt_cipher_algo},
     {"clearsign", 0, 0, opt_clearsign},
@@ -268,7 +274,9 @@ static const struct option gpg_long_options[] = {
     {"s2k-count", 0, 0, opt_s2k_count},
     {"s2k-digest-algo", 0, 0, opt_s2k_digest_algo},
     {"s2k-mode", 0, 0, opt_s2k_mode},
+    {"sig-notation", 1, 0, opt_sig_notation},
     {"sign", 0, 0, 's'},
+    {"set-notation", 1, 0, 'N'},
     {"skip-hidden-recipients", 0, 0, opt_skip_hidden_recipients},
     {"status-fd", 1, 0, opt_status_fd},
     {"store", 0, 0, opt_store},
