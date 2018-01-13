@@ -89,6 +89,7 @@ enum {
     opt_try_secret_key,
     opt_use_agent,
     opt_verify,
+    opt_verify_options,
     opt_version,
     opt_with_fingerprint,
     opt_with_keygrip
@@ -187,6 +188,7 @@ static const int gpg_allowed_options[] = {
     opt_try_secret_key,
     opt_use_agent,
     opt_verify,
+    opt_verify_options,
     opt_version,
     opt_with_fingerprint,
     opt_with_keygrip,
@@ -288,6 +290,7 @@ static const struct option gpg_long_options[] = {
     {"try-all-secrets", 0, 0, opt_try_all_secrets},
     {"use-agent", 0, 0, opt_use_agent},
     {"verify", 0, 0, opt_verify},
+    {"verify-options", 1, 0, opt_verify_options},
     {"verbose", 0, 0, 'v'},
     {"version", 0, 0, opt_version},
     {"with-colons", 0, 0, 'k'},
