@@ -1,5 +1,5 @@
 #CFLAGS=-Wall -Werror -g -DDEBUG
-CFLAGS=-Wall -Wextra -Werror -O
+CFLAGS=-Wall -Wextra -Werror -O -g
 LDLIBS=-lpthread
 
 all: gpg-client gpg-server pipe-cat
