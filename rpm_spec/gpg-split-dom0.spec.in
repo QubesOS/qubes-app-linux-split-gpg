@@ -22,10 +22,9 @@
 #
 #
 
-%{!?version: %define version %(cat version)}
 
 Name:		qubes-gpg-split-dom0
-Version:	%{version}
+Version:	@VERSION@
 Release:	1%{dist}
 Summary:    Qubes policy for gpg split
 
@@ -39,14 +38,13 @@ BuildRequires: python-setuptools
 BuildRequires: python3-setuptools
 BuildRequires: python3-devel
 
-%define _builddir %(pwd)
+
+Source0: %{name}-%{version}.tar.gz
 
 %description
 
 %prep
-# we operate on the current directory, so no need to unpack anything
-
-%build
+%setup -q
 
 %install
 rm -rf $RPM_BUILD_ROOT

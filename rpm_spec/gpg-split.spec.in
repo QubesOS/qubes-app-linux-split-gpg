@@ -22,10 +22,9 @@
 #
 #
 
-%{!?version: %define version %(cat version)}
 
 Name:		qubes-gpg-split
-Version:	%{version}
+Version:	@VERSION@
 Release:	1%{dist}
 Summary:	The Qubes service for secure gpg separation
 
@@ -39,7 +38,8 @@ BuildRequires: pandoc
 Requires:	gnupg2
 Requires:   zenity
 
-%define _builddir %(pwd)
+
+Source0: %{name}-%{version}.tar.gz
 
 %description
 The Qubes service for delegating gpg actions to other VM. You can keep keys in
@@ -55,7 +55,7 @@ Requires:   dogtail
 Helper scripts for Split GPG tests.
 
 %prep
-# we operate on the current directory, so no need to unpack anything
+%setup -q
 
 %build
 make clean
