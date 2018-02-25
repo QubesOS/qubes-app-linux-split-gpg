@@ -44,6 +44,7 @@ Key-Usage: sign encrypt
 Name-Real: Qubes test
 Name-Email: user@localhost
 Expire-Date: 0
+%no-protection
 %commit
         '''.encode())
         assert p.returncode == 0, 'key generation failed'
