@@ -36,6 +36,7 @@ URL:		http://www.qubes-os.org
 
 Requires:	gpg
 BuildRequires: python-setuptools
+BuildRequires: python3-setuptools
 
 %define _builddir %(pwd)
 
@@ -61,3 +62,6 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{python_sitelib}/splitgpg-*.egg-info
 %{python_sitelib}/splitgpg-*.egg-info/*
 %{python_sitelib}/splitgpg
+%dir %{python3_sitelib}/splitgpg-*.egg-info
+%{python3_sitelib}/splitgpg-*.egg-info/*
+%{python3_sitelib}/splitgpg

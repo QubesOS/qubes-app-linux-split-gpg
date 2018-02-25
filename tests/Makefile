@@ -25,6 +25,7 @@ all:
 
 install-dom0:
 	python setup.py install -O1 --root $(DESTDIR)
+	python3 setup.py install -O1 --root $(DESTDIR)
 
 install-vm:
 	install -d $(DESTDIR)/usr/lib/qubes-gpg-split
