@@ -37,6 +37,7 @@ URL:		http://www.qubes-os.org
 Requires:	gpg
 BuildRequires: python-setuptools
 BuildRequires: python3-setuptools
+BuildRequires: python3-devel
 
 %define _builddir %(pwd)
 
