@@ -5,6 +5,7 @@ eoo=0       # end of options reached
 output=0    # do we try to write to file
 target=()   # where do we try to write to
 fd_for_stdout=63 # some (hopefuly) unused FD, later redirected to stdout
+special_filenames=0 # --enable-special-filenames was given
 
 while [[ $1 ]]; do
     if ! ((eoo)); then
@@ -21,6 +22,10 @@ while [[ $1 ]]; do
                 shift 2
                 ;;
             --yes)
+                shift
+                ;;
+            --enable-special-filenames)
+                special_filenames=1
                 shift
                 ;;
             -o)
@@ -57,7 +62,11 @@ while [[ $1 ]]; do
                 ;;
         esac
     else
-        options+=("$1")
+        if ((special_filenames)) && [[ "$1" = "-&"* ]]; then
+            options+=("/proc/self/fd/${1#-&}")
+        else
+            options+=("$1")
+        fi
         shift
     fi
 done
