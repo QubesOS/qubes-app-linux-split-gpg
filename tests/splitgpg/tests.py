@@ -29,9 +29,7 @@ class SplitGPGBase(qubes.tests.extra.ExtraTestCase):
     def setUp(self):
         super(SplitGPGBase, self).setUp()
         self.enable_network()
-        vms = self.create_vms(["backend", "frontend"])
-        self.backend = vms[0]
-        self.frontend = vms[1]
+        self.backend, self.frontend = self.create_vms(["backend", "frontend"])
 
         self.backend.start()
         if self.backend.run('ls /etc/qubes-rpc/qubes.Gpg', wait=True) != 0:
@@ -47,7 +45,10 @@ Expire-Date: 0
 %no-protection
 %commit
         '''.encode())
-        assert p.returncode == 0, 'key generation failed'
+        if p.returncode == 127:
+            self.skipTest('gpg not installed')
+        elif p.returncode != 0:
+            self.fail('key generation failed')
 
         # fake confirmation
         self.backend.run(
@@ -156,6 +157,7 @@ Key-Usage: sign encrypt
 Name-Real: Qubes test2
 Name-Email: user2@localhost
 Expire-Date: 0
+%no-protection
 %commit
         '''.encode())
         assert p.returncode == 0, 'key generation failed'
@@ -184,6 +186,7 @@ Key-Usage: sign encrypt
 Name-Real: Qubes test2
 Name-Email: user2@localhost
 Expire-Date: 0
+%no-protection
 %commit
         '''.encode())
         assert p.returncode == 0, 'key generation failed'
