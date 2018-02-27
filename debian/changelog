@@ -1,3 +1,18 @@
+qubes-gpg-split (2.0.28-1) unstable; urgency=medium
+
+  * tests: install also for python3 - for Qubes 4.0
+  * tests: avoid interactive password prompt on gpg 2.1
+  * rpm: fix build dependencies for python3
+  * tests: some more places for gpg 2.1 password prompt, improve
+    reporting,
+  * Add support for --enable-special-filenames
+  * Add more options to the whitelist
+  * Fix handling -q option
+  * Whitelist --{cert,sig,set}-notation options
+  * Add --verify-options to the whitelist
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Tue, 27 Feb 2018 15:24:03 +0100
+
 qubes-gpg-split (2.0.27-1) unstable; urgency=medium
 
   [ Nedyalko Andreev ]
