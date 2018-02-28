@@ -6,7 +6,7 @@ output=0    # do we try to write to file
 target=()   # where do we try to write to
 fd_for_stdout=63 # some (hopefuly) unused FD, later redirected to stdout
 localgpg=0 #use local gpg (for ex --gen-rand etc.)
-origargs="$@"
+origargs=( "$@" )
 
 while [[ $1 ]]; do
     if ! ((eoo)); then
@@ -113,7 +113,7 @@ done
 
 if [ $localgpg -eq 1 ]
 then
-    exec /usr/bin/gpg $origargs
+    exec /usr/bin/gpg "${origargs[@]}"
     exit $?
 fi
 
