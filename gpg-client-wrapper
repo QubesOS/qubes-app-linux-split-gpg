@@ -6,10 +6,52 @@ output=0    # do we try to write to file
 target=()   # where do we try to write to
 fd_for_stdout=63 # some (hopefuly) unused FD, later redirected to stdout
 special_filenames=0 # --enable-special-filenames was given
+localgpg=0 #use local gpg (for ex --gen-rand etc.)
+origargs=( "$@" )
 
 while [[ $1 ]]; do
     if ! ((eoo)); then
         case "$1" in
+            #when those arguments are present will not use the keyring, and so they can be executed with local gpg
+            # can be used in combination with sign
+            #-c)
+            #    localgpg=1
+            #    break
+            #;;
+            --gen-rand)
+                localgpg=1
+                break
+                ;;
+            --gen-prime)
+                localgpg=1
+                break
+                ;;
+            --enarmor)
+                localgpg=1
+                break
+                ;;
+            --dearmor)
+                localgpg=1
+                break
+                ;;
+            --no-default-keyring)
+                # this is not possible with split gpg right?
+                localgpg=1
+                break
+                ;;
+            --print-md)
+                localgpg=1
+                break
+                ;;
+            -h)
+                localgpg=1
+                break
+                ;;
+            --help)
+                localgpg=1
+                break
+                ;;
+
             --import)
                 # ignore all the options and only collect file name(s) - if any
                 shift
@@ -26,6 +68,9 @@ while [[ $1 ]]; do
                 ;;
             --enable-special-filenames)
                 special_filenames=1
+                shift
+                ;;
+            -q)
                 shift
                 ;;
             -o)
@@ -71,8 +116,15 @@ while [[ $1 ]]; do
     fi
 done
 
+if [ $localgpg -eq 1 ]
+then
+    exec /usr/bin/gpg "${origargs[@]}"
+    exit $?
+fi
+
 . /etc/profile.d/qubes-gpg.sh
 # 63 is $fd_for_stdout but bash seems to reject variables here
+
 if  ! (($output)) || [ "$target" = "-" ] ; then
     exec qubes-gpg-client "${options[@]}" 63>&1
 else
