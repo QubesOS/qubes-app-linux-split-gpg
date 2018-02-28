@@ -16,11 +16,7 @@ while [[ $1 ]]; do
             #-c)
             #    localgpg=1
             #    break
-            #;;
-            --passprase-fd)
-                localgpg=1
-                break
-            ;;
+            #;; 
             --gen-rand)
                 localgpg=1
                 break
