@@ -1,3 +1,15 @@
+qubes-gpg-split (2.0.29-1) unstable; urgency=medium
+
+  [ hark ]
+  * Use local gpg when access to keyring is not needed.
+  * use array
+  * remove passprase-fd
+
+  [ Marek Marczykowski-Górecki ]
+  * Add --no-auto-check-trustdb option to the whitelist
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Wed, 28 Mar 2018 03:54:29 +0200
+
 qubes-gpg-split (2.0.28-1) unstable; urgency=medium
 
   * tests: install also for python3 - for Qubes 4.0
