@@ -63,6 +63,9 @@ while [[ $1 ]]; do
             --keyserver-options)
                 shift 2
                 ;;
+            --list-options)
+                shift 2
+                ;;
             --yes)
                 shift
                 ;;
