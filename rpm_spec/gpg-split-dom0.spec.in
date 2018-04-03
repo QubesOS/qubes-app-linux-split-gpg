@@ -64,3 +64,6 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{python3_sitelib}/splitgpg-*.egg-info
 %{python3_sitelib}/splitgpg-*.egg-info/*
 %{python3_sitelib}/splitgpg
+
+%changelog
+@CHANGELOG@

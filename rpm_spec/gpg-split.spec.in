@@ -88,3 +88,6 @@ rm -rf $RPM_BUILD_ROOT
 %files tests
 /usr/lib/qubes-gpg-split/test_thunderbird.py*
 /usr/lib/qubes-gpg-split/test_smtpd.py*
+
+%changelog
+@CHANGELOG@
