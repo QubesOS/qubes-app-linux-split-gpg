@@ -61,7 +61,7 @@ void setup_sigchld(void)
     sigaction(SIGCHLD, &sa, NULL);
 }
 
-int process_in(struct thread_args *args) {
+void *process_in(struct thread_args *args) {
     int fd_input = args->multi_fd;
     int *write_fds = args->fds;
     int write_fds_len = args->fds_count;
@@ -151,7 +151,7 @@ int process_in(struct thread_args *args) {
     }
 }
 
-int process_out(struct thread_args *args) {
+void *process_out(struct thread_args *args) {
     int fd_output = args->multi_fd;
     int *read_fds = args->fds;
     int read_fds_len = args->fds_count;
