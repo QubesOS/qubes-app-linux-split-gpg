@@ -34,7 +34,8 @@ class SplitGPGBase(qubes.tests.extra.ExtraTestCase):
         self.backend.start()
         if self.backend.run('ls /etc/qubes-rpc/qubes.Gpg', wait=True) != 0:
             self.skipTest('gpg-split not installed')
-        p = self.backend.run('gpg --gen-key --batch', passio_popen=True)
+        p = self.backend.run('gpg --gen-key --batch', passio_popen=True,
+            passio_stderr=True)
         p.communicate('''
 Key-Type: RSA
 Key-Length: 1024
@@ -262,11 +263,26 @@ class TC_10_Thunderbird(SplitGPGBase):
             self.tb_name = 'icedove'
         else:
             self.skipTest('Thunderbird not installed')
+        # use dogtail 0.9.10 directly from git, until 0.9.10 gets packaged in
+        # relevant distros; 0.9.9 have problems with handling unicode
+        p = self.frontend.run(
+                'git clone -n https://gitlab.com/dogtail/dogtail && '
+                'cd dogtail && '
+                'git checkout 4d7923dcda92c2c44309d2a56b0bb616a1855155',
+                passio_popen=True, passio_stderr=True)
+        stdout, stderr = p.communicate()
+        if p.returncode:
+            self.skipTest(
+                'dogtail installation failed: {}{}'.format(stdout, stderr))
+
         # if self.frontend.run(
         #         'python -c \'import dogtail,sys;'
         #         'sys.exit(dogtail.__version__ < "0.9.0")\'', wait=True) \
         #         != 0:
         #     self.skipTest('dogtail >= 0.9.0 testing framework not installed')
+
+        # enigmail checks for ~/.gnupg dir...
+        self.frontend.run('mkdir -p .gnupg', wait=True)
 
         p = self.frontend.run('gsettings set org.gnome.desktop.interface '
                               'toolkit-accessibility true', wait=True)
@@ -279,11 +295,12 @@ class TC_10_Thunderbird(SplitGPGBase):
         self.frontend.run(
             'touch /var/mail/user; chown user /var/mail/user', user='root',
             wait=True)
-        self.frontend.run('python /usr/lib/qubes-gpg-split/test_smtpd.py',
-            user='root')
+        self.smtp_server = self.frontend.run(
+            'python /usr/lib/qubes-gpg-split/test_smtpd.py',
+            user='root', passio_popen=True)
 
         p = self.frontend.run(
-            'PYTHONIOENCODING=utf-8 python {} --tbname={} setup 2>&1'.format(
+            'PYTHONPATH=$HOME/dogtail python {} --tbname={} setup 2>&1'.format(
                 self.scriptpath, self.tb_name),
             passio_popen=True)
         (stdout, _) = p.communicate()
@@ -296,9 +313,14 @@ class TC_10_Thunderbird(SplitGPGBase):
         if 'whonix' in self.template:
             self.frontend.run("date -s +10min", user="root", wait=True)
 
+    def tearDown(self):
+        self.smtp_server.terminate()
+        del self.smtp_server
+        super(TC_10_Thunderbird, self).tearDown()
+
     def test_000_send_receive_default(self):
         p = self.frontend.run(
-            'PYTHONIOENCODING=utf-8 python {} --tbname={} send_receive '
+            'PYTHONPATH=$HOME/dogtail python {} --tbname={} send_receive '
             '--encrypted --signed 2>&1'.format(
                 self.scriptpath, self.tb_name),
             passio_popen=True)
@@ -308,7 +330,7 @@ class TC_10_Thunderbird(SplitGPGBase):
 
     def test_010_send_receive_inline_signed_only(self):
         p = self.frontend.run(
-            'PYTHONIOENCODING=utf-8 python {} --tbname={} send_receive '
+            'PYTHONPATH=$HOME/dogtail python {} --tbname={} send_receive '
             '--encrypted --signed --inline 2>&1'.format(
                 self.scriptpath, self.tb_name),
             passio_popen=True)
@@ -318,7 +340,7 @@ class TC_10_Thunderbird(SplitGPGBase):
 
     def test_020_send_receive_inline_with_attachment(self):
         p = self.frontend.run(
-            'PYTHONIOENCODING=utf-8 python {} --tbname={} send_receive '
+            'PYTHONPATH=$HOME/dogtail python {} --tbname={} send_receive '
             '--encrypted --signed --inline --with-attachment 2>&1'.format(
                 self.scriptpath, self.tb_name),
             passio_popen=True)

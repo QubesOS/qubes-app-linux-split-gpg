@@ -137,9 +137,12 @@ def install_enigmail(tb):
     addons.findChild(
         GenericPredicate(name='Extensions', roleName='list item')).\
         doActionNamed('')
+    time.sleep(1)
     config.searchCutoffCount = 1
     try:
-        addons.childNamed('Enigmail.*')
+        addons_list = addons.findChildren(
+                GenericPredicate(name='', roleName='list box'))[1]
+        addons_list.childNamed('Enigmail.*')
     except tree.SearchError:
         pass
     else:
@@ -155,9 +158,19 @@ def install_enigmail(tb):
     search.children[1].doActionNamed('press')
 
     enigmail = addons.findChild(
-        GenericPredicate(name='Enigmail .*', roleName='list item'))
+        GenericPredicate(name='Enigmail .*More.*', roleName='list item'))
     enigmail.button('Install').doActionNamed('press')
-    addons.button('Restart now').doActionNamed('press')
+    config.searchCutoffCount = 5
+    try:
+        addons.button('Restart now').doActionNamed('press')
+    except tree.SearchError:
+        # no restart needed for this version
+        addons_tab = tb.findChild(
+            GenericPredicate(name='Add-ons Manager', roleName='page tab'))
+        addons_tab.button('').doActionNamed('press')
+        return
+    finally:
+        config.searchCutoffCount = 10
 
     tree.doDelay(5)
     tb = get_app()
@@ -218,23 +231,35 @@ def configure_enigmail_account(tb):
         settings.childNamed('Enable OpenPGP.*').doActionNamed('check')
     except tree.ActionNotSupported:
         pass
+    try:
+        # p≡p Junior
+        agent_confirm = tb.dialog('Enigmail Confirm')
+        agent_confirm.childNamed('Disable .*').doActionNamed('press')
+    except tree.SearchError:
+        pass
     settings.button('OK').doActionNamed('press')
 
 def attach(tb, compose_window, path):
     compose_window.button('Attach').button('Attach').doActionNamed('press')
     compose_window.button('Attach').menuItem('File.*').doActionNamed('click')
-    select_file = tb.dialog('Attach File.*')
-    places = select_file.findChild(GenericPredicate(roleName='table',
-        name='Places'))
-    places.findChild(GenericPredicate(name='Desktop')).click()
-    location_toggle = select_file.findChild(GenericPredicate(roleName='toggle button',
-        name='Type a file name'))
-    if not location_toggle.checked:
-        location_toggle.doActionNamed('click')
-    location_label = select_file.child(name='Location:', roleName='label')
-    location = location_label.parent.children[location_label.indexInParent + 1]
-    location.text = path
-    select_file.button('Open').doActionNamed('click')
+    # for some reason on some thunderbird versions do not expose 'Attach File'
+    # dialog through accessibility API, use xdotool instead
+    subprocess.check_call(
+            ['xdotool', 'search', '--name', 'Attach File', 'key', 'ctrl+l', 
+             'type', '--window', '%1', path, '\r'])
+    time.sleep(1)
+    #select_file = tb.dialog('Attach File.*')
+    #places = select_file.findChild(GenericPredicate(roleName='table',
+    #    name='Places'))
+    #places.findChild(GenericPredicate(name='Desktop')).click()
+    #location_toggle = select_file.findChild(GenericPredicate(roleName='toggle button',
+    #    name='Type a file name'))
+    #if not location_toggle.checked:
+    #    location_toggle.doActionNamed('click')
+    #location_label = select_file.child(name='Location:', roleName='label')
+    #location = location_label.parent.children[location_label.indexInParent + 1]
+    #location.text = path
+    #select_file.button('Open').doActionNamed('click')
 
 def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
     tb.findChild(GenericPredicate(roleName='page tab list')).children[
@@ -252,24 +277,48 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
         roleName='document frame')).text = 'This is test message'
     # lets thunderbird settle down on default values (after filling recipients)
     time.sleep(1)
-    compose.button('Enigmail Encryption Info').doActionNamed('press')
-    sign_encrypt = tb.dialog('Enigmail Encryption & Signing Settings')
-    encrypt_checkbox = sign_encrypt.childNamed('Encrypt Message')
-    if encrypt_checkbox.checked != encrypt:
-        encrypt_checkbox.doActionNamed(encrypt_checkbox.actions.keys()[0])
-    sign_checkbox = sign_encrypt.childNamed('Sign Message')
-    if sign_checkbox.checked != sign:
-        sign_checkbox.doActionNamed(sign_checkbox.actions.keys()[0])
-    if inline:
-        sign_encrypt.childNamed('Use Inline PGP').doActionNamed('select')
+    try:
+        sign_button = compose.button('Sign Message')
+        encrypt_button = compose.button('Encrypt Message')
+    except tree.SearchError:
+        # old thunderbird/enigmail
+        compose.button('Enigmail Encryption Info').doActionNamed('press')
+        sign_encrypt = tb.dialog('Enigmail Encryption & Signing Settings')
+        encrypt_checkbox = sign_encrypt.childNamed('Encrypt Message')
+        if encrypt_checkbox.checked != encrypt:
+            encrypt_checkbox.doActionNamed(encrypt_checkbox.actions.keys()[0])
+        sign_checkbox = sign_encrypt.childNamed('Sign Message')
+        if sign_checkbox.checked != sign:
+            sign_checkbox.doActionNamed(sign_checkbox.actions.keys()[0])
+        if inline:
+            sign_encrypt.childNamed('Use Inline PGP').doActionNamed('select')
+        else:
+            sign_encrypt.childNamed('Use PGP/MIME').doActionNamed('select')
+        sign_encrypt.button('OK').doActionNamed('press')
     else:
-        sign_encrypt.childNamed('Use PGP/MIME').doActionNamed('select')
-    sign_encrypt.button('OK').doActionNamed('press')
+        if ('ON' in sign_button.description) != sign:
+            sign_button.doActionNamed('press')
+        if ('ON' in encrypt_button.description) != encrypt:
+            encrypt_button.doActionNamed('press')
+        if inline:
+            enigmail_menu = compose.menu('Enigmail')
+            enigmail_menu.doActionNamed('click')
+            enigmail_menu.menuItem('Protocol: Inline PGP').doActionNamed('click')
+
     if attachment:
         attach(tb, compose, attachment)
     compose.button('Send').doActionNamed('press')
     if inline and attachment:
         tb.dialog('Enigmail Prompt').button('OK').doActionNamed('press')
+    config.searchCutoffCount = 5
+    try:
+        if encrypt:
+            tb.dialog('Enable Protection of Subject?').\
+                button('Protect subject').doActionNamed('press')
+    except tree.SearchError:
+        pass
+    finally:
+        config.searchCutoffCount = 10
 
 
 def receive_message(tb, signed=False, encrypted=False, attachment=None):
@@ -280,12 +329,23 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
     tb.findChild(
         GenericPredicate(name='Inbox.*', roleName='table row')).doActionNamed(
         'activate')
+    config.searchCutoffCount = 3
+    try:
+        tb.findChild(GenericPredicate(name='Encrypted Message .*',
+            roleName='table row')).doActionNamed('activate')
+    except tree.SearchError:
+        pass
+    finally:
+        config.searchCutoffCount = 10
     tb.findChild(GenericPredicate(name='.*{}.*'.format(subject),
         roleName='table row')).doActionNamed('activate')
     # wait a little to TB decrypt/check the message
     time.sleep(2)
+    # dogtail always add '$' at the end of regexp; and also "Escape all
+    # parentheses, since grouping will never be needed here", so it can't be used
+    # here either
     msg = tb.findChild(GenericPredicate(roleName='document frame',
-        name=subject))
+        name=subject + '$|Encrypted Message'))
     try:
         msg = msg.findChild(GenericPredicate(roleName='section')).children[0]
     except tree.SearchError:
@@ -324,14 +384,20 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
         attachment_label.parent.children[
             attachment_label.indexInParent + 2 + offset].\
             button('Save.*').children[1].doActionNamed('press')
-        save_as = tb.dialog('Save .*Attachment.*')
-        places = save_as.findChild(GenericPredicate(roleName='table',
-            name='Places'))
-        places.findChild(GenericPredicate(name='Desktop')).click()
-        if 'attachments' in attachment_label.text:
-            save_as.button('Open').doActionNamed('click')
-        else:
-            save_as.button('Save').doActionNamed('click')
+        # for some reason on some thunderbird versions do not expose 'Attach File'
+        # dialog through accessibility API, use xdotool instead
+        subprocess.check_call(
+                ['xdotool', 'search', '--name', 'Save Attachment',
+                 'key', '--delay', '30ms', 'ctrl+l', 'Home',
+                 'type', '~/Desktop/\r'])
+        #save_as = tb.dialog('Save .*Attachment.*')
+        #places = save_as.findChild(GenericPredicate(roleName='table',
+        #    name='Places'))
+        #places.findChild(GenericPredicate(name='Desktop')).click()
+        #if 'attachments' in attachment_label.text:
+        #    save_as.button('Open').doActionNamed('click')
+        #else:
+        #    save_as.button('Save').doActionNamed('click')
         time.sleep(1)
         with open(attachment, 'r') as f:
             orig_attachment = f.read()
