@@ -244,6 +244,30 @@ Expire-Date: 0
         self.assertEquals(decoded_msg.decode(), msg)
         self.assertIn('\ngpg: Good signature from', verification_result.decode())
 
+    def test_070_log_file_to_logger_fd(self):
+        """Regression test for #3989"""
+        msg = "Test message"
+        cmd = 'qubes-gpg-client-wrapper -a --sign --log-file /tmp/gpg.log ' \
+              '--verbose --output /tmp/signed.asc'
+        p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
+        (stdout, stderr) = p.communicate(msg.encode())
+        self.assertEquals(p.returncode, 0, '{} failed: {}'.format(cmd,
+            stderr.decode()))
+        self.assertTrue(all(x.startswith('[GNUPG:]') for x in
+            stdout.decode().splitlines()), "Non-status output on stdout")
+        p = self.frontend.run('cat /tmp/gpg.log',
+            passio_popen=True, passio_stderr=True)
+        (stdout, stderr) = p.communicate()
+        self.assertIn('signature from', stdout.decode())
+
+        # verify first through gpg-split
+        cmd = 'qubes-gpg-client-wrapper /tmp/signed.asc'
+        p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
+        decoded_msg, verification_result = p.communicate()
+        self.assertEquals(p.returncode, 0, '{} failed'.format(cmd))
+        self.assertEquals(decoded_msg.decode(), msg)
+        self.assertIn('\ngpg: Good signature from', verification_result.decode())
+
     # TODO:
     #  - encrypt/decrypt
     #  - large file (bigger than pipe/qrexec buffers)

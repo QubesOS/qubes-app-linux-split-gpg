@@ -4,6 +4,7 @@ options=()  # the buffer array for the parameters
 eoo=0       # end of options reached
 output=0    # do we try to write to file
 target=()   # where do we try to write to
+fd_for_logfile=62 # some (hopefuly) unused FD, later redirected to logfile
 fd_for_stdout=63 # some (hopefuly) unused FD, later redirected to stdout
 special_filenames=0 # --enable-special-filenames was given
 localgpg=0 #use local gpg (for ex --gen-rand etc.)
@@ -96,6 +97,14 @@ while [[ $1 ]]; do
                     shift
                 fi
                 ;;    
+            --log-file)
+                # rejected by split-gpg to not allow a write to arbitrary file
+                # on the backend side; emulate using --logger-fd
+                # 62 is $fd_for_logfile but bash seems to reject variables here
+                exec 62>"$2"
+                options+=( "--logger-fd" "$fd_for_logfile" )
+                shift 2
+                ;;
             --)
                 eoo=1
                 options+=("$1")
