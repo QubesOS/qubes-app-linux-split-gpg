@@ -1,3 +1,10 @@
+qubes-gpg-split (2.0.31-1) unstable; urgency=medium
+
+  * Allow --logger-fd option
+  * Emulate --log-file with --logger-fd
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Tue, 19 Jun 2018 00:46:47 +0200
+
 qubes-gpg-split (2.0.30-1) unstable; urgency=medium
 
   [ Marek Marczykowski-Górecki ]
