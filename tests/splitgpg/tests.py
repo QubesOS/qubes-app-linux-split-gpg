@@ -34,7 +34,7 @@ class SplitGPGBase(qubes.tests.extra.ExtraTestCase):
         self.backend.start()
         if self.backend.run('ls /etc/qubes-rpc/qubes.Gpg', wait=True) != 0:
             self.skipTest('gpg-split not installed')
-        p = self.backend.run('mkdir -p -m 0700 .gnupg; gpg --gen-key --batch',
+        p = self.backend.run('mkdir -p -m 0700 .gnupg; gpg2 --gen-key --batch',
             passio_popen=True,
             passio_stderr=True)
         p.communicate('''
@@ -48,7 +48,7 @@ Expire-Date: 0
 %commit
         '''.encode())
         if p.returncode == 127:
-            self.skipTest('gpg not installed')
+            self.skipTest('gpg2 not installed')
         elif p.returncode != 0:
             self.fail('key generation failed')
 
@@ -107,17 +107,17 @@ class TC_00_Direct(SplitGPGBase):
         self.assertIn('\ngpg: Good signature from', verification_result.decode())
 
         # verify in frontend directly
-        cmd = 'gpg -a --export user@localhost'
+        cmd = 'gpg2 -a --export user@localhost'
         p = self.backend.run(cmd, passio_popen=True, passio_stderr=True)
         (pubkey, stderr) = p.communicate()
         self.assertEquals(p.returncode, 0,
             '{} failed: {}'.format(cmd, stderr.decode()))
-        cmd = 'gpg --import'
+        cmd = 'gpg2 --import'
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
         (stdout, stderr) = p.communicate(pubkey)
         self.assertEquals(p.returncode, 0,
             '{} failed: {}{}'.format(cmd, stdout.decode(), stderr.decode()))
-        cmd = "gpg"
+        cmd = "gpg2"
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
         decoded_msg, verification_result = p.communicate(signature)
         self.assertEquals(p.returncode, 0,
@@ -151,7 +151,7 @@ class TC_00_Direct(SplitGPGBase):
         self.assertIn('\ngpg: BAD signature from', verification_result.decode())
 
     def test_040_import(self):
-        p = self.frontend.run('gpg --gen-key --batch', passio_popen=True)
+        p = self.frontend.run('gpg2 --gen-key --batch', passio_popen=True)
         p.communicate('''
 Key-Type: RSA
 Key-Length: 1024
@@ -168,7 +168,7 @@ Expire-Date: 0
             passio_popen=True)
         (key_list, _) = p.communicate()
         self.assertNotIn('user2@localhost', key_list.decode())
-        p = self.frontend.run('gpg -a --export user2@localhost | '
+        p = self.frontend.run('gpg2 -a --export user2@localhost | '
             'QUBES_GPG_DOMAIN={} qubes-gpg-import-key'.format(self.backend.name),
             passio_popen=True, passio_stderr=True)
         (stdout, stderr) = p.communicate()
@@ -180,7 +180,7 @@ Expire-Date: 0
         self.assertIn('user2@localhost', key_list.decode())
 
     def test_041_import_via_wrapper(self):
-        p = self.frontend.run('gpg --gen-key --batch', passio_popen=True)
+        p = self.frontend.run('gpg2 --gen-key --batch', passio_popen=True)
         p.communicate('''
 Key-Type: RSA
 Key-Length: 1024
@@ -197,7 +197,7 @@ Expire-Date: 0
             passio_popen=True)
         (key_list, _) = p.communicate()
         self.assertNotIn('user2@localhost', key_list.decode())
-        p = self.frontend.run('gpg -a --export user2@localhost | '
+        p = self.frontend.run('gpg2 -a --export user2@localhost | '
             'QUBES_GPG_DOMAIN={} qubes-gpg-client-wrapper --import'.format(
                 self.backend.name),
             passio_popen=True, passio_stderr=True)
