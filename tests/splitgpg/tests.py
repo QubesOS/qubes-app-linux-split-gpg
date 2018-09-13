@@ -34,7 +34,8 @@ class SplitGPGBase(qubes.tests.extra.ExtraTestCase):
         self.backend.start()
         if self.backend.run('ls /etc/qubes-rpc/qubes.Gpg', wait=True) != 0:
             self.skipTest('gpg-split not installed')
-        p = self.backend.run('gpg --gen-key --batch', passio_popen=True,
+        p = self.backend.run('mkdir -p -m 0700 .gnupg; gpg --gen-key --batch',
+            passio_popen=True,
             passio_stderr=True)
         p.communicate('''
 Key-Type: RSA
