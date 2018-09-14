@@ -289,11 +289,12 @@ def attach(tb, compose_window, path):
     # for some reason on some thunderbird versions do not expose 'Attach File'
     # dialog through accessibility API, use xdotool instead
     subprocess.check_call(
-            ['xdotool', 'search', '--name', 'Attach File', 'key', 'ctrl+l',
+            ['xdotool', 'search', '--sync', '--name', 'Attach File.*',
+             'key', '--window', '0', 'ctrl+l',
              'type', '--window', '%1', path])
     time.sleep(1)
     subprocess.check_call(
-            ['xdotool', 'search', '--name', 'Attach File', 'key', 'Return'])
+            ['xdotool', 'search', '--name', 'Attach File.*', 'key', 'Return'])
     time.sleep(1)
     #select_file = tb.dialog('Attach File.*')
     #places = select_file.findChild(GenericPredicate(roleName='table',
@@ -320,8 +321,14 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
         GenericPredicate(name='To:', roleName='autocomplete'))
     to.findChild(GenericPredicate(roleName='entry')).text = 'user@localhost'
     compose.findChild(TBEntry('Subject:')).text = subject
-    compose.findChild(GenericPredicate(
-        roleName='document frame')).text = 'This is test message'
+    try:
+        compose_document = compose.findChild(GenericPredicate(
+            roleName='document web'))
+        compose_document.parent.doActionNamed('click')
+        compose_document.typeText('This is test message')
+    except tree.SearchError:
+        compose.findChild(GenericPredicate(
+            roleName='document frame')).text = 'This is test message'
     # lets thunderbird settle down on default values (after filling recipients)
     time.sleep(1)
     try:
@@ -391,8 +398,12 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
     # dogtail always add '$' at the end of regexp; and also "Escape all
     # parentheses, since grouping will never be needed here", so it can't be used
     # here either
-    msg = tb.findChild(GenericPredicate(roleName='document frame',
-        name=subject + '$|Encrypted Message'))
+    try:
+        msg = tb.findChild(GenericPredicate(roleName='document web',
+            name=subject + '$|Encrypted Message'))
+    except tree.SearchError:
+        msg = tb.findChild(GenericPredicate(roleName='document frame',
+            name=subject + '$|Encrypted Message'))
     try:
         msg = msg.findChild(GenericPredicate(roleName='section')).children[0]
     except tree.SearchError:
@@ -435,7 +446,7 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
         # dialog through accessibility API, use xdotool instead
         subprocess.check_call(
                 ['xdotool', 'search', '--name', 'Save Attachment',
-                 'key', '--delay', '30ms', 'ctrl+l', 'Home',
+                 'key', '--window', '0', '--delay', '30ms', 'ctrl+l', 'Home',
                  'type', '~/Desktop/\r'])
         #save_as = tb.dialog('Save .*Attachment.*')
         #places = save_as.findChild(GenericPredicate(roleName='table',
