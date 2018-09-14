@@ -271,6 +271,16 @@ def configure_enigmail_global(tb):
     finally:
         config.searchCutoffCount = 10
 
+def disable_html(tb):
+    open_account_setup(tb)
+    settings = tb.dialog('Account Settings')
+    # assume only one account...
+    settings.childNamed('Composition & Addressing').doActionNamed('activate')
+    try:
+        settings.childNamed('Compose messages in HTML format').doActionNamed('uncheck')
+    except tree.ActionNotSupported:
+        pass
+    settings.button('OK').doActionNamed('press')
 
 def configure_enigmail_account(tb):
     open_account_setup(tb)
@@ -532,6 +542,7 @@ def main():
         skip_autoconf(tb)
         add_local_account(tb)
         configure_enigmail_account(tb)
+        disable_html(tb)
     if args.command == 'send_receive':
         tb = get_app()
         if args.with_attachment:
