@@ -40,7 +40,8 @@ def run(cmd):
     env = os.environ.copy()
     env['GTK_MODULES'] = 'gail:atk-bridge'
     null = open(os.devnull, 'r+')
-    subprocess.Popen([cmd], stdout=null, stdin=null, stderr=null, env=env)
+    return subprocess.Popen(
+            [cmd], stdout=null, stdin=null, stderr=null, env=env)
 
 
 def get_app():
@@ -181,6 +182,21 @@ def install_enigmail(tb):
 
 
 def configure_enigmail_global(tb):
+    # disable p≡p Junior before creating an account, see
+    # https://sourceforge.net/p/enigmail/bugs/904/
+    menu = tb.menu('Edit')
+    menu.doActionNamed('click')
+    menu.menuItem('Preferences').doActionNamed('click')
+    preferences = tb.findChild(
+        GenericPredicate(name='Thunderbird Preferences', roleName='frame'))
+    preferences.findChild(
+        GenericPredicate(name='Privacy', roleName='list item')).\
+        doActionNamed('')
+    preferences.findChild(
+        GenericPredicate(name='Force using S/MIME and Enigmail', roleName='radio button')).\
+        doActionNamed('select')
+    preferences.button('Close').doActionNamed('press')
+
     tools = tb.menu('Tools')
     tools.doActionNamed('click')
     tools.menuItem('Add-ons').doActionNamed('click')
@@ -230,12 +246,6 @@ def configure_enigmail_account(tb):
     try:
         settings.childNamed('Enable OpenPGP.*').doActionNamed('check')
     except tree.ActionNotSupported:
-        pass
-    try:
-        # p≡p Junior
-        agent_confirm = tb.dialog('Enigmail Confirm')
-        agent_confirm.childNamed('Disable .*').doActionNamed('press')
-    except tree.SearchError:
         pass
     settings.button('OK').doActionNamed('press')
 
@@ -464,13 +474,18 @@ def main():
     config.logDebugToFile = False
 
     if args.command == 'setup':
-        run(args.tbname)
+        proc = run(args.tbname)
+        tb = get_app()
+        skip_autoconf(tb)
+        install_enigmail(tb)
+        configure_enigmail_global(tb)
+        quit_tb(tb)
+        subprocess.call(['pkill', 'pep-json-server'])
+        proc.wait()
+        proc = run(args.tbname)
         tb = get_app()
         skip_autoconf(tb)
         add_local_account(tb)
-        install_enigmail(tb)
-        tb = get_app()
-        configure_enigmail_global(tb)
         configure_enigmail_account(tb)
     if args.command == 'send_receive':
         tb = get_app()
