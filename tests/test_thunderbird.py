@@ -127,6 +127,65 @@ def add_local_account(tb):
     add_server.button('OK').doActionNamed('press')
     settings.button('OK').doActionNamed('press')
 
+def install_enigmail_web_search(tb, search):
+    '''Handle new addons manager search result which is just embedded
+    addons.thunderbird.net website'''
+
+    # search term
+    search.children[0].text = 'enigmail'
+    # search button
+    search.children[1].doActionNamed('press')
+    results = tb.child(
+                name='enigmail :: Search :: Add-ons for Thunderbird',
+                roleName='document web')
+
+    # navigation on the website is fragile and ugly, but what we can do, the
+    # old addons manager is gone
+    # find "Enigmail" link, then navigate through the table to a column to its
+    # right with "Add to Thunderbird link"
+    enigmail_link = results.child(
+                name='Enigmail',
+                roleName='link')
+    # Enigmail (link) -> Enigmail FEATURED (heading) -> '' (section) -> '' (section)
+    # TODO: how to find next sibling? right now it relies on first result being the right one
+    install_link = enigmail_link.parent.parent.parent.\
+            children[1].child(name='Add to Thunderbird', roleName='link')
+    install_link.doActionNamed('jump')
+    # now confirmation dialog, it needs to have focus for 3 sec until "Install"
+    # button will be active
+    install_dialog = tb.dialog('Software Installation')
+    install_dialog.button('Install Now').doActionNamed('press')
+
+def install_enigmail_builtin(tb, search):
+    '''Handle old, built-in search results browser'''
+    # search term
+    search.children[0].text = 'enigmail'
+    # search button
+    search.children[1].doActionNamed('press')
+
+    addons = tb.findChild(
+        GenericPredicate(name='Add-ons Manager', roleName='embedded'))
+    enigmail = addons.findChild(
+        GenericPredicate(name='Enigmail .*More.*', roleName='list item'))
+    enigmail.button('Install').doActionNamed('press')
+    config.searchCutoffCount = 5
+    try:
+        addons.button('Restart now').doActionNamed('press')
+    except tree.SearchError:
+        # no restart needed for this version
+        addons_tab = tb.findChild(
+            GenericPredicate(name='Add-ons Manager', roleName='page tab'))
+        addons_tab.button('').doActionNamed('press')
+        return
+    finally:
+        config.searchCutoffCount = 10
+
+    tree.doDelay(5)
+    tb = get_app()
+    skip_system_integration(tb)
+
+    tb.dialog('Enigmail Setup Wizard').button('Cancel').doActionNamed('press')
+    tb.dialog('Enigmail Alert').button('Close').doActionNamed('press')
 
 def install_enigmail(tb):
     tools = tb.menu('Tools')
@@ -152,33 +211,11 @@ def install_enigmail(tb):
     finally:
         config.searchCutoffCount = 10
     search = addons.findChild(
-        GenericPredicate(name='Search all add-ons', roleName='section'))
-    # search term
-    search.children[0].text = 'enigmail'
-    # saerch button
-    search.children[1].doActionNamed('press')
-
-    enigmail = addons.findChild(
-        GenericPredicate(name='Enigmail .*More.*', roleName='list item'))
-    enigmail.button('Install').doActionNamed('press')
-    config.searchCutoffCount = 5
-    try:
-        addons.button('Restart now').doActionNamed('press')
-    except tree.SearchError:
-        # no restart needed for this version
-        addons_tab = tb.findChild(
-            GenericPredicate(name='Add-ons Manager', roleName='page tab'))
-        addons_tab.button('').doActionNamed('press')
-        return
-    finally:
-        config.searchCutoffCount = 10
-
-    tree.doDelay(5)
-    tb = get_app()
-    skip_system_integration(tb)
-
-    tb.dialog('Enigmail Setup Wizard').button('Cancel').doActionNamed('press')
-    tb.dialog('Enigmail Alert').button('Close').doActionNamed('press')
+        GenericPredicate(name='Search all add-ons|Search on addons.thunderbird.net', roleName='section'))
+    if 'addons.thunderbird.net' in search.name:
+        install_enigmail_web_search(tb, search)
+    else:
+        install_enigmail_builtin(tb, search)
 
 
 def configure_enigmail_global(tb):
