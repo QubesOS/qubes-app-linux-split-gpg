@@ -189,26 +189,22 @@ def configure_enigmail_global(tb):
     menu.menuItem('Preferences').doActionNamed('click')
     preferences = tb.findChild(
         GenericPredicate(name='Thunderbird Preferences', roleName='frame'))
-    preferences.findChild(
-        GenericPredicate(name='Privacy', roleName='list item')).\
-        doActionNamed('')
+    try:
+        preferences.findChild(
+            GenericPredicate(name='Privacy', roleName='list item')).\
+            doActionNamed('')
+    except tree.SearchError:
+        preferences.findChild(
+            GenericPredicate(name='Privacy', roleName='radio button')). \
+            doActionNamed('select')
     preferences.findChild(
         GenericPredicate(name='Force using S/MIME and Enigmail', roleName='radio button')).\
         doActionNamed('select')
     preferences.button('Close').doActionNamed('press')
 
-    tools = tb.menu('Tools')
-    tools.doActionNamed('click')
-    tools.menuItem('Add-ons').doActionNamed('click')
-    addons = tb.findChild(
-        GenericPredicate(name='Add-ons Manager', roleName='embedded'))
-    addons.findChild(
-        GenericPredicate(name='Extensions', roleName='list item')).\
-        doActionNamed('')
-
-    enigmail = addons.findChild(
-        GenericPredicate(name='Enigmail .*', roleName='list item'))
-    enigmail.button('Preferences').doActionNamed('press')
+    menu = tb.menu('Enigmail')
+    menu.doActionNamed('click')
+    menu.menuItem('Preferences').doActionNamed('click')
 
     enigmail_prefs = tb.dialog('Enigmail Preferences')
     # wait for dialog to really initialize, otherwise it may load defaults
