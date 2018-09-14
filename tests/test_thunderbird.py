@@ -52,7 +52,7 @@ def get_app():
 
 
 def skip_autoconf(tb):
-    # Thunderbird flavor
+    # Thunderbird 52 flavor
     try:
         welcome = tb.childNamed('Welcome to .*')
         welcome.button(
@@ -61,9 +61,10 @@ def skip_autoconf(tb):
     except tree.SearchError:
         pass
     config.searchCutoffCount = 5
-    # Icedove flavor
+    # Icedove/Thunderbird 60+ flavor
     try:
-        welcome = tb.childNamed('Mail Account Setup')
+        welcome = tb.childNamed('Mail Account Setup'
+            '|Set Up an Existing Email Account')
         welcome.button('Cancel').doActionNamed('press')
     except tree.SearchError:
         pass
