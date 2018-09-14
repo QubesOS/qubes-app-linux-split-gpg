@@ -417,7 +417,9 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
                 stdin=open(saved_basepath + '.pgp', 'r'))
             (stdout, stderr) = p.communicate()
             if signed:
-                assert 'Good signature' in stderr
+                if 'Good signature' not in stderr:
+                    print(stderr)
+                    raise AssertionError('no good signature found')
                 print "Attachment signature ok"
             assert stdout == orig_attachment
             print "Attachment content ok - encrypted"
