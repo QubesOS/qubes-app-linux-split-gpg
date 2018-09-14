@@ -245,8 +245,11 @@ def attach(tb, compose_window, path):
     # for some reason on some thunderbird versions do not expose 'Attach File'
     # dialog through accessibility API, use xdotool instead
     subprocess.check_call(
-            ['xdotool', 'search', '--name', 'Attach File', 'key', 'ctrl+l', 
-             'type', '--window', '%1', path, '\r'])
+            ['xdotool', 'search', '--name', 'Attach File', 'key', 'ctrl+l',
+             'type', '--window', '%1', path])
+    time.sleep(1)
+    subprocess.check_call(
+            ['xdotool', 'search', '--name', 'Attach File', 'key', 'Return'])
     time.sleep(1)
     #select_file = tb.dialog('Attach File.*')
     #places = select_file.findChild(GenericPredicate(roleName='table',
