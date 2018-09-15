@@ -164,18 +164,15 @@ def install_enigmail_builtin(tb, search):
     # search button
     search.children[1].doActionNamed('press')
 
-    addons = tb.findChild(
-        GenericPredicate(name='Add-ons Manager', roleName='embedded'))
-    enigmail = addons.findChild(
-        GenericPredicate(name='Enigmail .*More.*', roleName='list item'))
+    addons = tb.child(name='Add-ons Manager', roleName='embedded')
+    enigmail = addons.child(name='Enigmail .*More.*', roleName='list item')
     enigmail.button('Install').doActionNamed('press')
     config.searchCutoffCount = 5
     try:
         addons.button('Restart now').doActionNamed('press')
     except tree.SearchError:
         # no restart needed for this version
-        addons_tab = tb.findChild(
-            GenericPredicate(name='Add-ons Manager', roleName='page tab'))
+        addons_tab = tb.child(name='Add-ons Manager', roleName='page tab')
         addons_tab.button('').doActionNamed('press')
         return
     finally:
@@ -192,17 +189,14 @@ def install_enigmail(tb):
     tools = tb.menu('Tools')
     tools.doActionNamed('click')
     tools.menuItem('Add-ons').doActionNamed('click')
-    addons = tb.findChild(
-        GenericPredicate(name='Add-ons Manager', roleName='embedded'))
+    addons = tb.child(name='Add-ons Manager', roleName='embedded')
     # check if already installed
-    addons.findChild(
-        GenericPredicate(name='Extensions', roleName='list item')).\
+    addons.child(name='Extensions', roleName='list item').\
         doActionNamed('')
     time.sleep(1)
     config.searchCutoffCount = 1
     try:
-        addons_list = addons.findChildren(
-                GenericPredicate(name='', roleName='list box'))[1]
+        addons_list = addons.child(name='', roleName='list box')[1]
         addons_list.childNamed('Enigmail.*')
     except tree.SearchError:
         pass
@@ -211,8 +205,9 @@ def install_enigmail(tb):
         return
     finally:
         config.searchCutoffCount = 10
-    search = addons.findChild(
-        GenericPredicate(name='Search all add-ons|Search on addons.thunderbird.net', roleName='section'))
+    search = addons.child(
+        name='Search all add-ons|Search on addons.thunderbird.net',
+        roleName='section')
     if 'addons.thunderbird.net' in search.name:
         install_enigmail_web_search(tb, search)
     else:
@@ -225,18 +220,16 @@ def configure_enigmail_global(tb):
     menu = tb.menu('Edit')
     menu.doActionNamed('click')
     menu.menuItem('Preferences').doActionNamed('click')
-    preferences = tb.findChild(
-        GenericPredicate(name='Thunderbird Preferences', roleName='frame'))
+    preferences = tb.child(name='Thunderbird Preferences', roleName='frame')
     try:
-        preferences.findChild(
-            GenericPredicate(name='Privacy', roleName='list item')).\
+        preferences.child(name='Privacy', roleName='list item').\
             doActionNamed('')
     except tree.SearchError:
-        preferences.findChild(
-            GenericPredicate(name='Privacy', roleName='radio button')). \
+        preferences.child(name='Privacy', roleName='radio button'). \
             doActionNamed('select')
-    preferences.findChild(
-        GenericPredicate(name='Force using S/MIME and Enigmail', roleName='radio button')).\
+    preferences.child(
+        name='Force using S/MIME and Enigmail',
+        roleName='radio button').\
         doActionNamed('select')
     preferences.button('Close').doActionNamed('press')
 
@@ -249,11 +242,12 @@ def configure_enigmail_global(tb):
     # over just set values
     time.sleep(1)
     try:
-        enigmail_prefs.findChild(GenericPredicate(name='Override with',
-            roleName='check box')).doActionNamed('check')
-        enigmail_prefs.findChild(GenericPredicate(name='Override with',
-            roleName='section')).children[
-            0].text = '/usr/bin/qubes-gpg-client-wrapper'
+        enigmail_prefs.child(name='Override with',
+            roleName='check box').doActionNamed('check')
+        enigmail_prefs.child(
+            name='Override with',
+            roleName='section').children[0].text = \
+            '/usr/bin/qubes-gpg-client-wrapper'
     except tree.ActionNotSupported:
         pass
 
@@ -307,11 +301,11 @@ def attach(tb, compose_window, path):
             ['xdotool', 'search', '--name', 'Attach File.*', 'key', 'Return'])
     time.sleep(1)
     #select_file = tb.dialog('Attach File.*')
-    #places = select_file.findChild(GenericPredicate(roleName='table',
-    #    name='Places'))
-    #places.findChild(GenericPredicate(name='Desktop')).click()
-    #location_toggle = select_file.findChild(GenericPredicate(roleName='toggle button',
-    #    name='Type a file name'))
+    #places = select_file.child(roleName='table',
+    #    name='Places')
+    #places.child(name='Desktop').click()
+    #location_toggle = select_file.child(roleName='toggle button',
+    #    name='Type a file name')
     #if not location_toggle.checked:
     #    location_toggle.doActionNamed('click')
     #location_label = select_file.child(name='Location:', roleName='label')
@@ -320,25 +314,24 @@ def attach(tb, compose_window, path):
     #select_file.button('Open').doActionNamed('click')
 
 def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
-    tb.findChild(GenericPredicate(roleName='page tab list')).children[
+    tb.child(roleName='page tab list').children[
         0].doActionNamed('switch')
     write = tb.button('Write')
     write.doActionNamed('press')
     # write.menuItem('Message').doActionNamed('click')
     tb.button('Write').menuItem('Message').doActionNamed('click')
-    compose = tb.findChild(GenericPredicate(name='Write: .*', roleName='frame'))
-    to = compose.findChild(
-        GenericPredicate(name='To:', roleName='autocomplete'))
-    to.findChild(GenericPredicate(roleName='entry')).text = 'user@localhost'
+    compose = tb.child(name='Write: .*', roleName='frame')
+    to = compose.child(name='To:', roleName='autocomplete')
+    to.child(roleName='entry').text = 'user@localhost'
     compose.findChild(TBEntry('Subject:')).text = subject
     try:
-        compose_document = compose.findChild(GenericPredicate(
-            roleName='document web'))
+        compose_document = compose.child(
+            roleName='document web')
         compose_document.parent.doActionNamed('click')
         compose_document.typeText('This is test message')
     except tree.SearchError:
-        compose.findChild(GenericPredicate(
-            roleName='document frame')).text = 'This is test message'
+        compose.child(
+            roleName='document frame').text = 'This is test message'
     # lets thunderbird settle down on default values (after filling recipients)
     time.sleep(1)
     try:
@@ -386,38 +379,37 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
 
 
 def receive_message(tb, signed=False, encrypted=False, attachment=None):
-    tb.findChild(GenericPredicate(name='user@localhost',
-        roleName='table row')).doActionNamed('activate')
+    tb.child(name='user@localhost',
+        roleName='table row').doActionNamed('activate')
     tb.button('Get Messages').doActionNamed('press')
     tb.menuItem('Get All New Messages').doActionNamed('click')
-    tb.findChild(
-        GenericPredicate(name='Inbox.*', roleName='table row')).doActionNamed(
+    tb.child(name='Inbox.*', roleName='table row').doActionNamed(
         'activate')
     config.searchCutoffCount = 3
     try:
-        tb.findChild(GenericPredicate(name='Encrypted Message .*',
-            roleName='table row')).doActionNamed('activate')
+        tb.child(name='Encrypted Message .*',
+            roleName='table row').doActionNamed('activate')
     except tree.SearchError:
         pass
     finally:
         config.searchCutoffCount = 10
-    tb.findChild(GenericPredicate(name='.*{}.*'.format(subject),
-        roleName='table row')).doActionNamed('activate')
+    tb.child(name='.*{}.*'.format(subject),
+        roleName='table row').doActionNamed('activate')
     # wait a little to TB decrypt/check the message
     time.sleep(2)
     # dogtail always add '$' at the end of regexp; and also "Escape all
     # parentheses, since grouping will never be needed here", so it can't be used
     # here either
     try:
-        msg = tb.findChild(GenericPredicate(roleName='document web',
-            name=subject + '$|Encrypted Message'))
+        msg = tb.child(roleName='document web',
+            name=subject + '$|Encrypted Message')
     except tree.SearchError:
-        msg = tb.findChild(GenericPredicate(roleName='document frame',
-            name=subject + '$|Encrypted Message'))
+        msg = tb.child(roleName='document frame',
+            name=subject + '$|Encrypted Message')
     try:
-        msg = msg.findChild(GenericPredicate(roleName='section')).children[0]
+        msg = msg.child(roleName='section').children[0]
     except tree.SearchError:
-        msg = msg.findChild(GenericPredicate(roleName='paragraph'))
+        msg = msg.child(roleName='paragraph')
     msg_body = msg.text
     print 'Message body: {}'.format(msg_body)
     assert msg_body.strip() == 'This is test message'
@@ -459,9 +451,9 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
                  'key', '--window', '0', '--delay', '30ms', 'ctrl+l', 'Home',
                  'type', '~/Desktop/\r'])
         #save_as = tb.dialog('Save .*Attachment.*')
-        #places = save_as.findChild(GenericPredicate(roleName='table',
-        #    name='Places'))
-        #places.findChild(GenericPredicate(name='Desktop')).click()
+        #places = save_as.child(roleName='table',
+        #    name='Places')
+        #places.child(name='Desktop').click()
         #if 'attachments' in attachment_label.text:
         #    save_as.button('Open').doActionNamed('click')
         #else:
