@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 #
 # The Qubes OS Project, http://www.qubes-os.org
@@ -27,7 +27,7 @@ import asyncore
 import mailbox
 
 class LocalSMTPServer(SMTPServer):
-    def process_message(self, peer, mailfrom, rcpttos, data):
+    def process_message(self, peer, mailfrom, rcpttos, data, **kwargs):
         msg = mailbox.Message(data)
         mbox = mailbox.mbox('/var/mail/user')
         mbox.lock()

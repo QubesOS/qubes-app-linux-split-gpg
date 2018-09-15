@@ -49,7 +49,7 @@ signing/decryption.
 %package tests
 Summary:    Tests for Split GPG
 Requires:   %{name}
-Requires:   dogtail
+Requires:   python3-dogtail
 
 %description tests
 Helper scripts for Split GPG tests.

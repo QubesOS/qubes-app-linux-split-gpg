@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # vim: fileencoding=utf-8
 
 #
@@ -411,7 +411,7 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
     except tree.SearchError:
         msg = msg.child(roleName='paragraph')
     msg_body = msg.text
-    print 'Message body: {}'.format(msg_body)
+    print('Message body: {}'.format(msg_body))
     assert msg_body.strip() == 'This is test message'
     #    if msg.children:
     #        msg_body = msg.children[0].text
@@ -421,7 +421,7 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
     try:
         details = tb.button('Details')
         enigmail_status = details.parent.children[details.indexInParent - 1]
-        print 'Enigmail status: {}'.format(enigmail_status.text)
+        print('Enigmail status: {}'.format(enigmail_status.text))
         if signed:
             assert 'Good signature from' in enigmail_status.text
         if encrypted:
@@ -444,7 +444,7 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
         attachment_label.parent.children[
             attachment_label.indexInParent + 2 + offset].\
             button('Save.*').children[1].doActionNamed('press')
-        # for some reason on some thunderbird versions do not expose 'Attach File'
+        # for some reasons some Thunderbird versions do not expose 'Attach File'
         # dialog through accessibility API, use xdotool instead
         subprocess.check_call(
                 ['xdotool', 'search', '--name', 'Save Attachment',
@@ -467,19 +467,19 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
             with open(saved_basepath) as f:
                 received_attachment = f.read()
             assert received_attachment == orig_attachment
-            print "Attachment content ok"
+            print("Attachment content ok")
         elif os.path.exists(saved_basepath + '.pgp'):
             p = subprocess.Popen(['qubes-gpg-client-wrapper'],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                 stdin=open(saved_basepath + '.pgp', 'r'))
             (stdout, stderr) = p.communicate()
             if signed:
-                if 'Good signature' not in stderr:
-                    print(stderr)
+                if b'Good signature' not in stderr:
+                    print(stderr.decode())
                     raise AssertionError('no good signature found')
-                print "Attachment signature ok"
-            assert stdout == orig_attachment
-            print "Attachment content ok - encrypted"
+                print("Attachment signature ok")
+            assert stdout.decode() == orig_attachment
+            print("Attachment content ok - encrypted")
         else:
             raise Exception('Attachment {} not found'.format(saved_basepath))
         if os.path.exists(saved_basepath + '.sig'):
@@ -488,8 +488,10 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             (stdout, stderr) = p.communicate()
             if signed:
-                assert 'Good signature' in stderr
-                print "Attachment detached signature ok"
+                if b'Good signature' not in stderr:
+                    print(stderr.decode())
+                    raise AssertionError('no good signature found')
+                print("Attachment detached signature ok")
 
     # tb.button('Delete').doActionNamed('press')
 
