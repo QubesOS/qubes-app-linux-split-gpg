@@ -1,3 +1,21 @@
+qubes-gpg-split (2.0.32-1) unstable; urgency=medium
+
+  * tests: fix race condition on .gnupg creation
+  * tests: convert to gpg2
+  * tests/thunderbid: improve handling file selection dialog
+  * tests/thunderbird: improve error reporting
+  * tests/thunderbird: disable pEp before setting anything else
+  * tests/thunderbird: make Enigmail settings work with TB 60
+  * tests/thunderbird: handle addons manager in TB 60+
+  * tests/thunderbird: autoconfiguration prompt in TB 60
+  * tests/thunderbird: tweaks for Thunderbird 60
+  * tests/thunderbird: disable html message composing
+  * tests/thunderbird: use Node.child instead of GenericPredicate
+  * tests/thunderbird: switch to python3
+  * travis: update config
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sun, 16 Sep 2018 04:42:33 +0200
+
 qubes-gpg-split (2.0.31-1) unstable; urgency=medium
 
   * Allow --logger-fd option
