@@ -336,7 +336,7 @@ class TC_10_Thunderbird(SplitGPGBase):
             passio_popen=True)
         (stdout, _) = p.communicate()
         assert p.returncode == 0, 'Thunderbird setup failed: {}'.format(
-            stdout.decode())
+            stdout.decode('ascii', 'ignore'))
 
     def tearDown(self):
         self.smtp_server.terminate()
@@ -351,7 +351,8 @@ class TC_10_Thunderbird(SplitGPGBase):
             passio_popen=True)
         (stdout, _) = p.communicate()
         self.assertEquals(p.returncode, 0,
-            'Thunderbird send/receive failed: {}'.format(stdout.decode()))
+            'Thunderbird send/receive failed: {}'.format(
+                stdout.decode('ascii', 'ignore')))
 
     def test_010_send_receive_inline_signed_only(self):
         p = self.frontend.run(
@@ -361,7 +362,8 @@ class TC_10_Thunderbird(SplitGPGBase):
             passio_popen=True)
         (stdout, _) = p.communicate()
         self.assertEquals(p.returncode, 0,
-            'Thunderbird send/receive failed: {}'.format(stdout.decode()))
+            'Thunderbird send/receive failed: {}'.format(
+                stdout.decode('ascii', 'ignore')))
 
     def test_020_send_receive_inline_with_attachment(self):
         p = self.frontend.run(
@@ -371,7 +373,8 @@ class TC_10_Thunderbird(SplitGPGBase):
             passio_popen=True)
         (stdout, _) = p.communicate()
         self.assertEquals(p.returncode, 0,
-            'Thunderbird send/receive failed: {}'.format(stdout.decode()))
+            'Thunderbird send/receive failed: {}'.format(
+                stdout.decode('ascii', 'ignore')))
 
 
 def list_tests():
