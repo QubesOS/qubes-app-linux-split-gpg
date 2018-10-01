@@ -66,6 +66,12 @@ Expire-Date: 0
         self.qrexec_policy('qubes.GpgImportKey', self.frontend.name,
             self.backend.name)
 
+        # Whonix desynchronize time on purpose, so make sure frontend time is
+        #  not earlier than backend - otherwise new key may look as
+        # generated in the future and be considered not yet valid
+        if 'whonix' in self.template:
+            self.frontend.run("date -s +10min", user="root", wait=True)
+
 
 class TC_00_Direct(SplitGPGBase):
     def test_000_version(self):
@@ -331,12 +337,6 @@ class TC_10_Thunderbird(SplitGPGBase):
         (stdout, _) = p.communicate()
         assert p.returncode == 0, 'Thunderbird setup failed: {}'.format(
             stdout.decode())
-
-        # Whonix desynchronize time on purpose, so make sure frontend time is
-        #  not earlier than backend - otherwise new key may look as
-        # generated in the future and be considered not yet valid
-        if 'whonix' in self.template:
-            self.frontend.run("date -s +10min", user="root", wait=True)
 
     def tearDown(self):
         self.smtp_server.terminate()
