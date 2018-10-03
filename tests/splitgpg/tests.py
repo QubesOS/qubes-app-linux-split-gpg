@@ -157,7 +157,8 @@ class TC_00_Direct(SplitGPGBase):
         self.assertIn('\ngpg: BAD signature from', verification_result.decode())
 
     def test_040_import(self):
-        p = self.frontend.run('gpg2 --gen-key --batch', passio_popen=True)
+        p = self.frontend.run('mkdir -p -m 0700 .gnupg; gpg2 --gen-key --batch',
+                passio_popen=True)
         p.communicate('''
 Key-Type: RSA
 Key-Length: 1024
@@ -186,7 +187,8 @@ Expire-Date: 0
         self.assertIn('user2@localhost', key_list.decode())
 
     def test_041_import_via_wrapper(self):
-        p = self.frontend.run('gpg2 --gen-key --batch', passio_popen=True)
+        p = self.frontend.run('mkdir -p -m 0700 .gnupg; gpg2 --gen-key --batch',
+                passio_popen=True)
         p.communicate('''
 Key-Type: RSA
 Key-Length: 1024
