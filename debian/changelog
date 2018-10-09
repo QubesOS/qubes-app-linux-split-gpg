@@ -1,3 +1,12 @@
+qubes-gpg-split (2.0.33-1) unstable; urgency=medium
+
+  * tests: handle desynced clock in Whonix also in basic tests
+  * tests: avoid non-ASCII characters in test results
+  * rpm: add BR: gcc
+  * tests: fix race condition on .gnupg creation in key import tests
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Tue, 09 Oct 2018 23:57:45 +0200
+
 qubes-gpg-split (2.0.32-1) unstable; urgency=medium
 
   * tests: fix race condition on .gnupg creation
