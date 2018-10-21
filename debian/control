@@ -23,5 +23,6 @@ Architecture: amd64
 Depends:
  qubes-gpg-split,
  python3-pyatspi,
+ xdotool,
  ${misc:Depends}
 Description: Helper files for Split GPG tests

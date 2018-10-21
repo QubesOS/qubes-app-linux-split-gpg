@@ -51,6 +51,7 @@ signing/decryption.
 Summary:    Tests for Split GPG
 Requires:   %{name}
 Requires:   python3-dogtail
+Requires:   xdotool
 
 %description tests
 Helper scripts for Split GPG tests.
