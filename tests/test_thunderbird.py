@@ -45,7 +45,7 @@ def run(cmd):
 
 
 def get_app():
-    config.searchCutoffCount = 20
+    config.searchCutoffCount = 30
     tb = tree.root.application('Thunderbird|Icedove')
     config.searchCutoffCount = 10
     return tb
@@ -220,13 +220,15 @@ def configure_enigmail_global(tb):
     menu = tb.menu('Edit')
     menu.doActionNamed('click')
     menu.menuItem('Preferences').doActionNamed('click')
+    config.searchCutoffCount = 20
     preferences = tb.child(name='Thunderbird Preferences', roleName='frame')
     try:
-        preferences.child(name='Privacy', roleName='list item').\
-            doActionNamed('')
-    except tree.SearchError:
         preferences.child(name='Privacy', roleName='radio button'). \
             doActionNamed('select')
+    except tree.SearchError:
+        preferences.child(name='Privacy', roleName='list item').\
+            doActionNamed('')
+    config.searchCutoffCount = 10
     preferences.child(
         name='Force using S/MIME and Enigmail',
         roleName='radio button').\

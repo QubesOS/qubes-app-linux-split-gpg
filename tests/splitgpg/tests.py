@@ -305,6 +305,8 @@ class TC_10_Thunderbird(SplitGPGBase):
         if self.template.startswith('whonix-gw'):
             self.skipTest('whonix-gw template not supported by this test')
         super(TC_10_Thunderbird, self).setUp()
+        self.frontend.run_service('qubes.WaitForSession', wait=True,
+            input='user')
         if self.frontend.run('which thunderbird', wait=True) == 0:
             self.tb_name = 'thunderbird'
         elif self.frontend.run('which icedove', wait=True) == 0:
