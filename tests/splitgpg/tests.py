@@ -34,6 +34,12 @@ class SplitGPGBase(qubes.tests.extra.ExtraTestCase):
         self.backend.start()
         if self.backend.run('ls /etc/qubes-rpc/qubes.Gpg', wait=True) != 0:
             self.skipTest('gpg-split not installed')
+        # Whonix desynchronize time on purpose, so make sure the key is
+        # generated in the past even when the frontend have clock few minutes
+        #  into the future - otherwise new key may look as
+        # generated in the future and be considered not yet valid
+        if 'whonix' in self.template:
+            self.backend.run("date -s -10min", user="root", wait=True)
         p = self.backend.run('mkdir -p -m 0700 .gnupg; gpg2 --gen-key --batch',
             passio_popen=True,
             passio_stderr=True)
@@ -51,6 +57,8 @@ Expire-Date: 0
             self.skipTest('gpg2 not installed')
         elif p.returncode != 0:
             self.fail('key generation failed')
+        if 'whonix' in self.template:
+            self.backend.run("date -s +10min", user="root", wait=True)
 
         # fake confirmation
         self.backend.run(
@@ -66,11 +74,6 @@ Expire-Date: 0
         self.qrexec_policy('qubes.GpgImportKey', self.frontend.name,
             self.backend.name)
 
-        # Whonix desynchronize time on purpose, so make sure frontend time is
-        #  not earlier than backend - otherwise new key may look as
-        # generated in the future and be considered not yet valid
-        if 'whonix' in self.template:
-            self.frontend.run("date -s +10min", user="root", wait=True)
 
 
 class TC_00_Direct(SplitGPGBase):
@@ -157,6 +160,9 @@ class TC_00_Direct(SplitGPGBase):
         self.assertIn('\ngpg: BAD signature from', verification_result.decode())
 
     def test_040_import(self):
+        # see comment in setUp()
+        if 'whonix' in self.template:
+            self.frontend.run("date -s -10min", user="root", wait=True)
         p = self.frontend.run('mkdir -p -m 0700 .gnupg; gpg2 --gen-key --batch',
                 passio_popen=True)
         p.communicate('''
@@ -170,6 +176,9 @@ Expire-Date: 0
 %commit
         '''.encode())
         assert p.returncode == 0, 'key generation failed'
+        # see comment in setUp()
+        if 'whonix' in self.template:
+            self.frontend.run("date -s +10min", user="root", wait=True)
 
         p = self.frontend.run('qubes-gpg-client-wrapper --list-keys',
             passio_popen=True)
@@ -187,6 +196,9 @@ Expire-Date: 0
         self.assertIn('user2@localhost', key_list.decode())
 
     def test_041_import_via_wrapper(self):
+        # see comment in setUp()
+        if 'whonix' in self.template:
+            self.frontend.run("date -s -10min", user="root", wait=True)
         p = self.frontend.run('mkdir -p -m 0700 .gnupg; gpg2 --gen-key --batch',
                 passio_popen=True)
         p.communicate('''
@@ -200,6 +212,9 @@ Expire-Date: 0
 %commit
         '''.encode())
         assert p.returncode == 0, 'key generation failed'
+        # see comment in setUp()
+        if 'whonix' in self.template:
+            self.frontend.run("date -s +10min", user="root", wait=True)
 
         p = self.frontend.run('qubes-gpg-client-wrapper --list-keys',
             passio_popen=True)
