@@ -64,6 +64,11 @@ while [[ $1 ]]; do
             --keyserver-options)
                 shift 2
                 ;;
+            # --photo-viewer shouldn't be passed to the backend as it allow
+            # arbitrary command execution
+            --photo-viewer)
+                shift 2
+                ;;
             --yes)
                 shift
                 ;;
