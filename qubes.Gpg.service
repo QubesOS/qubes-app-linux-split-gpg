@@ -7,6 +7,7 @@ stat_file="/var/run/qubes-gpg-split/stat.$QREXEC_REMOTE_DOMAIN"
 stat_time=$(stat -c %Y "$stat_file" 2>/dev/null || echo 0)
 now=$(date +%s)
 if [ $(($stat_time + $QUBES_GPG_AUTOACCEPT)) -lt "$now" ]; then
+    echo $USER | /etc/qubes-rpc/qubes.WaitForSession >/dev/null 2>/dev/null
     msg_text="Do you allow VM '$QREXEC_REMOTE_DOMAIN' to access your GPG keys "
     msg_text="$msg_text (now and for the following $QUBES_GPG_AUTOACCEPT seconds)?"
     zenity --question --text "$msg_text" 2>/dev/null </dev/null >/dev/null || exit 1
