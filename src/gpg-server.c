@@ -10,57 +10,6 @@
 #include "gpg-common.h"
 #include "multiplex.h"
 
-#define RUNDIR "/var/run/qubes-gpg-split"
-#define DEFAULT_AUTOACCEPT_TIME 300
-
-int ask_the_user(const char *domain) {
-    struct stat stat_buf;
-    char stat_file_path[100];
-    int stat_file_fd;
-    char ask_cmd[512];
-    time_t now;
-    int autoaccept_time;
-    const char *env;
-    struct timespec times[2];
-
-    autoaccept_time = DEFAULT_AUTOACCEPT_TIME;
-    env = getenv("QUBES_GPG_AUTOACCEPT");
-    if (env)
-        autoaccept_time = atoi(env);
-
-    snprintf(stat_file_path, sizeof(stat_file_path), "%s/stat.%s", RUNDIR, domain);
-    now = time(NULL);
-    // if user accepts at most "autoaccept_time" seconds ago
-    if (stat(stat_file_path, &stat_buf) == 0 && stat_buf.st_mtime > now-autoaccept_time )
-        return 1;
-
-    snprintf(ask_cmd, sizeof(ask_cmd), "zenity --question --text \"Do you allow"
-            " VM '%s' to access your GPG keys (now and for the following %d"
-            " seconds)?\" 2>/dev/null", domain, autoaccept_time);
-    switch (system(ask_cmd)) {
-        case -1:
-            perror("system");
-            exit(1);
-        case 0:
-            // "YES"
-            stat_file_fd = open(stat_file_path, O_WRONLY | O_CREAT, 0600);
-            if (stat_file_fd < 0) {
-                perror("Cannot touch stat-file");
-                // continue on this error
-            } else {
-                times[0].tv_nsec = UTIME_OMIT;
-                times[1].tv_nsec = UTIME_NOW;
-                futimens(stat_file_fd, times);
-                close(stat_file_fd);
-            }
-            return 1;
-        default:
-            // "NO" or any other case
-            return 0;
-    }
-}
-
-
 int main(int argc, char *argv[])
 {
     // make space for terminating NUL character
@@ -78,11 +27,6 @@ int main(int argc, char *argv[])
         fprintf(stderr, "ERROR: Too few arguments\n");
         fprintf(stderr, "Usage: %s <gpg-path> <remote-domain>\n",
                 argv[0]);
-        exit(1);
-    }
-
-    if (!ask_the_user(argv[2])) {
-        fprintf(stderr, "User denied gpg access\n");
         exit(1);
     }
 

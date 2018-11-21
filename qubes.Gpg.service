@@ -1,2 +1,16 @@
-notify-send "Keyring access from domain: $QREXEC_REMOTE_DOMAIN" --expire-time=1000
+#!/bin/sh
+
+if [ -z "$QUBES_GPG_AUTOACCEPT" ]; then
+    QUBES_GPG_AUTOACCEPT=300
+fi
+stat_file="/var/run/qubes-gpg-split/stat.$QREXEC_REMOTE_DOMAIN"
+stat_time=$(stat -c %Y "$stat_file" 2>/dev/null || echo 0)
+now=$(date +%s)
+if [ $(($stat_time + $QUBES_GPG_AUTOACCEPT)) -lt "$now" ]; then
+    msg_text="Do you allow VM '$QREXEC_REMOTE_DOMAIN' to access your GPG keys "
+    msg_text="$msg_text (now and for the following $QUBES_GPG_AUTOACCEPT seconds)?"
+    zenity --question --text "$msg_text" 2>/dev/null </dev/null >/dev/null || exit 1
+    touch "$stat_file"
+fi
+notify-send "Keyring access from domain: $QREXEC_REMOTE_DOMAIN" --expire-time=1000 </dev/null >/dev/null 2>/dev/null
 /usr/lib/qubes-gpg-split/gpg-server /usr/bin/gpg2 $QREXEC_REMOTE_DOMAIN
