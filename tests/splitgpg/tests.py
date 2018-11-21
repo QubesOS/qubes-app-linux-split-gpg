@@ -21,6 +21,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
 # USA.
 #
+import unittest
 
 import qubes.tests.extra
 
@@ -396,8 +397,104 @@ class TC_10_Thunderbird(SplitGPGBase):
                 stdout.decode('ascii', 'ignore')))
 
 
+class TC_20_Evolution(SplitGPGBase):
+
+    scriptpath = '/usr/lib/qubes-gpg-split/test_evolution.py'
+
+    def setUp(self):
+        if self.template.startswith('whonix-gw'):
+            self.skipTest('whonix-gw template not supported by this test')
+        super(TC_20_Evolution, self).setUp()
+        self.frontend.run_service('qubes.WaitForSession', wait=True,
+            input='user')
+        if self.frontend.run('which evolution', wait=True) != 0:
+            self.skipTest('Evolution not installed')
+        # use dogtail 0.9.10 directly from git, until 0.9.10 gets packaged in
+        # relevant distros; 0.9.9 have problems with handling unicode
+        p = self.frontend.run(
+                'git clone -n https://gitlab.com/dogtail/dogtail && '
+                'cd dogtail && '
+                'git checkout 4d7923dcda92c2c44309d2a56b0bb616a1855155',
+                passio_popen=True, passio_stderr=True)
+        stdout, stderr = p.communicate()
+        if p.returncode:
+            self.skipTest(
+                'dogtail installation failed: {}{}'.format(stdout, stderr))
+
+        # if self.frontend.run(
+        #         'python -c \'import dogtail,sys;'
+        #         'sys.exit(dogtail.__version__ < "0.9.0")\'', wait=True) \
+        #         != 0:
+        #     self.skipTest('dogtail >= 0.9.0 testing framework not installed')
+
+        # enigmail checks for ~/.gnupg dir...
+        self.frontend.run('mkdir -p .gnupg', wait=True)
+
+        p = self.frontend.run('gsettings set org.gnome.desktop.interface '
+                              'toolkit-accessibility true', wait=True)
+        assert p == 0, 'Failed to enable accessibility toolkit'
+        if self.frontend.run(
+                'ls {}'.format(self.scriptpath), wait=True):
+            self.skipTest('qubes-gpg-split-tests package not installed')
+
+        # run as root to not deal with /var/mail permission issues
+        self.frontend.run(
+            'touch /var/mail/user; chown user /var/mail/user', user='root',
+            wait=True)
+        self.smtp_server = self.frontend.run(
+            'python3 /usr/lib/qubes-gpg-split/test_smtpd.py',
+            user='root', passio_popen=True)
+
+        p = self.frontend.run(
+            'PYTHONPATH=$HOME/dogtail python3 {} setup 2>&1'.format(
+                self.scriptpath),
+            passio_popen=True)
+        (stdout, _) = p.communicate()
+        assert p.returncode == 0, 'Evolution setup failed: {}'.format(
+            stdout.decode('ascii', 'ignore'))
+
+    def tearDown(self):
+        self.smtp_server.terminate()
+        del self.smtp_server
+        super(TC_20_Evolution, self).tearDown()
+
+    def test_000_send_receive_signed_encrypted(self):
+        p = self.frontend.run(
+            'PYTHONPATH=$HOME/dogtail python3 {} send_receive '
+            '--encrypted --signed 2>&1'.format(
+                self.scriptpath),
+            passio_popen=True)
+        (stdout, _) = p.communicate()
+        self.assertEquals(p.returncode, 0,
+            'Evolution send/receive failed: {}'.format(
+                stdout.decode('ascii', 'ignore')))
+
+    def test_010_send_receive_signed_only(self):
+        p = self.frontend.run(
+            'PYTHONPATH=$HOME/dogtail python3 {} send_receive '
+            '--encrypted --signed 2>&1'.format(
+                self.scriptpath),
+            passio_popen=True)
+        (stdout, _) = p.communicate()
+        self.assertEquals(p.returncode, 0,
+            'Evolution send/receive failed: {}'.format(
+                stdout.decode('ascii', 'ignore')))
+
+    @unittest.skip('handling attachments not done')
+    def test_020_send_receive_with_attachment(self):
+        p = self.frontend.run(
+            'PYTHONPATH=$HOME/dogtail python3 {} send_receive '
+            '--encrypted --signed --with-attachment 2>&1'.format(
+                self.scriptpath),
+            passio_popen=True)
+        (stdout, _) = p.communicate()
+        self.assertEquals(p.returncode, 0,
+            'Evolution send/receive failed: {}'.format(
+                stdout.decode('ascii', 'ignore')))
+
 def list_tests():
     return (
         TC_00_Direct,
-        TC_10_Thunderbird
+        TC_10_Thunderbird,
+        TC_20_Evolution
     )
