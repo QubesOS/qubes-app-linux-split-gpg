@@ -297,6 +297,7 @@ def attach(tb, compose_window, path):
     subprocess.check_call(
             ['xdotool', 'search', '--sync', '--name', 'Attach File.*',
              'key', '--window', '0', 'ctrl+l',
+             'sleep', '1',
              'type', '--window', '%1', path])
     time.sleep(1)
     subprocess.check_call(
