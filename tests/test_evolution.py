@@ -45,38 +45,40 @@ def get_app():
     config.searchCutoffCount = 10
     return app
 
-def skip_autoconf(app):
-    try:
-        welcome = app.childNamed('Welcome')
-        welcome.childNamed('Do not show this wizard again').doActionNamed(
-            'click')
-        welcome.child(roleName='filler', recursive=False).\
-            button('Cancel').doActionNamed('click')
-    except tree.SearchError:
-        pass
-
 def open_preferences(app):
     edit = app.menu('Edit')
     edit.menuItem('Preferences').doActionNamed('click')
 
-def get_sibling_offset(node, offset):
-    return node.parent.children[node.indexInParent+offset]
-
-def add_local_account(app):
+def open_accounts(app):
     open_preferences(app)
     settings = app.window('Evolution Preferences')
     accounts_tab = settings.child(roleName='page tab list').children[1]
     config.searchCutoffCount = 3
     try:
-        accounts_tab.child('Open Online Account')
+        accounts_tab.child('Open Online Accounts')
     except tree.SearchError:
         accounts_tab = settings.child(roleName='page tab list').children[0]
     finally:
         config.searchCutoffCount = 10
-    accounts_tab.button('Add').doActionNamed('click')
-    wizard = app.window('Welcome')
+    return settings, accounts_tab
+
+def get_sibling_offset(node, offset):
+    return node.parent.children[node.indexInParent+offset]
+
+def add_local_account(app):
+    accounts_tab = None
+    settings = None
+    try:
+        wizard = app.childNamed('Welcome')
+    except tree.SearchError:
+        settings, accounts_tab = open_accounts(app)
+        accounts_tab.button('Add').doActionNamed('click')
+        wizard = app.window('Welcome')
     # Welcome tab
     wizard.button('Next').doActionNamed('click')
+    # Restore from backup, if launched from startup wizard
+    if wizard.name == 'Restore from Backup':
+        wizard.button('Next').doActionNamed('click')
     # Identity tab
     wizard.childLabelled('Full Name:').text = 'Test'
     wizard.childLabelled('Email Address:').text = 'user@localhost'
@@ -98,7 +100,8 @@ def add_local_account(app):
     # Receiving Options tab
     wizard.button('Next').doActionNamed('click')
     # Sending Email tab
-    sending = wizard.child('Sending Email', roleName='scroll pane')
+    sending = wizard.child('Sending Email',
+        roleName=wizard.children[0].roleName)
     sending.childLabelled('Server:').text = 'localhost'
     sending.childLabelled('Port:').child(roleName='text').text = '8025'
     encryption = sending.childLabelled('Encryption method:')
@@ -110,13 +113,20 @@ def add_local_account(app):
     # Done tab
     wizard.button('Apply').doActionNamed('click')
 
+    if not accounts_tab:
+        settings, accounts_tab = open_accounts(app)
     # this selects the entry
     accounts_tab.child('user@localhost').doActionNamed('edit')
     # this open account settings
     accounts_tab.child('user@localhost').doActionNamed('activate')
 
     account = app.dialog('Account Editor')
-    account.childLabelled('OpenPGP Key ID:').text = 'user@localhost'
+    key_id = account.childLabelled('OpenPGP Key ID:')
+    try:
+        key_id = key_id.child(roleName='text')
+    except tree.SearchError:
+        pass
+    key_id.text = 'user@localhost'
     account.button('OK').doActionNamed('click')
 
     settings.button('Close').doActionNamed('click')
@@ -135,7 +145,7 @@ def attach(app, compose_window, path):
 def send_email(app, sign=False, encrypt=False, inline=False, attachment=None):
     app.button('New').doActionNamed('click')
     new_message = app.child('Compose Message', roleName='frame')
-    new_message.textentry('To:').text = 'user@localhost'
+    new_message.textentry('To:').text = 'user@localhost,'
     new_message.childLabelled('Subject:').text = subject
     compose_document = new_message.child(
         roleName='document web')
@@ -228,7 +238,6 @@ def main():
             'prompt-check-if-default-mailer', 'false'])
         proc = run(args.exe)
         app = get_app()
-        skip_autoconf(app)
         add_local_account(app)
     if args.command == 'send_receive':
         app = get_app()
