@@ -1,3 +1,19 @@
+qubes-gpg-split (2.0.34-1) unstable; urgency=medium
+
+  * debian: don't create orig.tar.gz manually
+  * tests: add xdotool dependency
+  * tests: improve workaround for Whonix's time randomization
+  * tests: improve timeout handling in thunderbird tests
+  * Ignore --photo-viewer
+  * tests: Evolution integration
+  * tests: Evolution on Debian
+  * debian: install test_evolution.py
+  * tests/thunderbird: give a file choosing dialog a little time
+  * Move confirmation prompt to qubes.Gpg shell script
+  * Wait for GUI session before asking the user for confirmation
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 06 Dec 2018 14:39:23 +0100
+
 qubes-gpg-split (2.0.33-1) unstable; urgency=medium
 
   * tests: handle desynced clock in Whonix also in basic tests
