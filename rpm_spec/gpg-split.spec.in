@@ -78,7 +78,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/qubes-gpg-client
 /usr/bin/qubes-gpg-client-wrapper
 /usr/bin/qubes-gpg-import-key
-%attr(0644,root,root) /etc/qubes-rpc/qubes.Gpg
+/etc/qubes-rpc/qubes.Gpg
 %attr(0644,root,root) /etc/qubes-rpc/qubes.GpgImportKey
 /etc/profile.d/qubes-gpg.sh
 %dir %attr(0777,root,root) /var/run/qubes-gpg-split
