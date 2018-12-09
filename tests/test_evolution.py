@@ -172,7 +172,7 @@ def receive_message(app, signed=False, encrypted=False, attachment=None):
     message = app.child('Evolution Mail Display', roleName='document web')
     msg_body = message.child('.message.*', roleName='document web')\
         .children[0].text
-    print('Message body: {}'.format(msg_body))
+    print('Message body: "{}"'.format(msg_body))
     assert msg_body.strip() == 'This is test message'
 
     # From, To, Subject, Date, Security
