@@ -24,7 +24,7 @@
 import argparse
 
 from dogtail import tree
-from dogtail.predicate import GenericPredicate
+from dogtail.predicate import GenericPredicate, Predicate
 from dogtail.config import config
 import subprocess
 import os
@@ -34,6 +34,23 @@ subject = 'Test message {}'.format(os.getpid())
 
 config.actionDelay = 0.5
 config.searchCutoffCount = 10
+
+
+class orPredicate(Predicate):
+    def __init__(self, *predicates):
+        self.predicates = predicates
+        self.satisfiedByNode = self._genCompareFunc()
+
+    def _genCompareFunc(self):
+        funcs = [p.satisfiedByNode for p in self.predicates]
+
+        def satisfiedByNode(node):
+            return any(f(node) for f in funcs)
+
+        return satisfiedByNode
+
+    def describeSearchResult(self):
+        return ' or '.join(p.describeSearchResult() for p in self.predicates)
 
 
 def run(cmd):
@@ -221,7 +238,10 @@ def configure_enigmail_global(tb):
     menu.doActionNamed('click')
     menu.menuItem('Preferences').doActionNamed('click')
     config.searchCutoffCount = 20
-    preferences = tb.child(name='Thunderbird Preferences', roleName='frame')
+    preferences = tb.findChild(orPredicate(
+        GenericPredicate(name='Thunderbird Preferences', roleName='frame'),
+        GenericPredicate(name='Thunderbird Preferences', roleName='dialog'),
+    ))
     try:
         preferences.child(name='Privacy', roleName='radio button'). \
             doActionNamed('select')
