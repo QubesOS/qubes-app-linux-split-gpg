@@ -326,6 +326,12 @@ class TC_10_Thunderbird(SplitGPGBase):
             self.skipTest(
                 'dogtail installation failed: {}{}'.format(stdout, stderr))
 
+        # fake confirmation again, in case dogtail installation took more
+        # time (on slow network)
+        self.backend.run(
+            'touch /var/run/qubes-gpg-split/stat.{}'.format(
+                self.frontend.name), wait=True)
+
         # if self.frontend.run(
         #         'python -c \'import dogtail,sys;'
         #         'sys.exit(dogtail.__version__ < "0.9.0")\'', wait=True) \

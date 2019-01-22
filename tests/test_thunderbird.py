@@ -171,8 +171,10 @@ def install_enigmail_web_search(tb, search):
     install_link.doActionNamed('jump')
     # now confirmation dialog, it needs to have focus for 3 sec until "Install"
     # button will be active
+    config.searchCutoffCount = 20
     install_dialog = tb.dialog('Software Installation')
     install_dialog.button('Install Now').doActionNamed('press')
+    config.searchCutoffCount = 10
 
 def install_enigmail_builtin(tb, search):
     '''Handle old, built-in search results browser'''
@@ -303,6 +305,8 @@ def configure_enigmail_account(tb):
     settings = tb.dialog('Account Settings')
     # assume only one account...
     settings.childNamed('OpenPGP Security').doActionNamed('activate')
+    # enigmail will do a couple of calls to gpg, give it some time
+    time.sleep(2)
     try:
         settings.childNamed('Enable OpenPGP.*').doActionNamed('check')
     except tree.ActionNotSupported:
@@ -341,8 +345,12 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
         0].doActionNamed('switch')
     write = tb.button('Write')
     write.doActionNamed('press')
-    # write.menuItem('Message').doActionNamed('click')
-    tb.button('Write').menuItem('Message').doActionNamed('click')
+    try:
+        # write.menuItem('Message').doActionNamed('click')
+        tb.button('Write').menuItem('Message').doActionNamed('click')
+    except tree.SearchError:
+        # no write what submenu
+        pass
     compose = tb.child(name='Write: .*', roleName='frame')
     to = compose.child(name='To:', roleName='autocomplete')
     to.child(roleName='entry').text = 'user@localhost'
