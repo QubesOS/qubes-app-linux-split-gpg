@@ -62,7 +62,7 @@ def run(cmd):
 
 
 def get_app():
-    config.searchCutoffCount = 30
+    config.searchCutoffCount = 50
     tb = tree.root.application('Thunderbird|Icedove')
     config.searchCutoffCount = 10
     return tb
