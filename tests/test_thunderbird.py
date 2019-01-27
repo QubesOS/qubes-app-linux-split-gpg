@@ -172,7 +172,10 @@ def install_enigmail_web_search(tb, search):
     # now confirmation dialog, it needs to have focus for 3 sec until "Install"
     # button will be active
     config.searchCutoffCount = 20
-    install_dialog = tb.dialog('Software Installation')
+    install_dialog = tb.findChild(orPredicate(
+        GenericPredicate(name='Software Installation', roleName='frame'),
+        GenericPredicate(name='Software Installation', roleName='dialog'),
+    ))
     install_dialog.button('Install Now').doActionNamed('press')
     config.searchCutoffCount = 10
 
@@ -306,7 +309,7 @@ def configure_enigmail_account(tb):
     # assume only one account...
     settings.childNamed('OpenPGP Security').doActionNamed('activate')
     # enigmail will do a couple of calls to gpg, give it some time
-    time.sleep(2)
+    time.sleep(4)
     try:
         settings.childNamed('Enable OpenPGP.*').doActionNamed('check')
     except tree.ActionNotSupported:
