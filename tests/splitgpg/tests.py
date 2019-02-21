@@ -371,7 +371,8 @@ class TC_10_Thunderbird(SplitGPGBase):
 
     def test_000_send_receive_default(self):
         p = self.frontend.run(
-            'PYTHONPATH=$HOME/dogtail python3 {} --tbname={} send_receive '
+            'PYTHONPATH=$HOME/dogtail LC_ALL=C.UTF-8 '
+            'python3 {} --tbname={} send_receive '
             '--encrypted --signed 2>&1'.format(
                 self.scriptpath, self.tb_name),
             passio_popen=True)
@@ -382,7 +383,9 @@ class TC_10_Thunderbird(SplitGPGBase):
 
     def test_010_send_receive_inline_signed_only(self):
         p = self.frontend.run(
-            'PYTHONPATH=$HOME/dogtail python3 {} --tbname={} send_receive '
+            'PYTHONPATH=$HOME/dogtail LC_ALL=C.UTF-8 '
+            'python3 {} --tbname={} '
+            'send_receive '
             '--encrypted --signed --inline 2>&1'.format(
                 self.scriptpath, self.tb_name),
             passio_popen=True)
@@ -393,7 +396,8 @@ class TC_10_Thunderbird(SplitGPGBase):
 
     def test_020_send_receive_inline_with_attachment(self):
         p = self.frontend.run(
-            'PYTHONPATH=$HOME/dogtail python3 {} --tbname={} send_receive '
+            'PYTHONPATH=$HOME/dogtail LC_ALL=C.UTF-8 '
+            'python3 {} --tbname={} send_receive '
             '--encrypted --signed --inline --with-attachment 2>&1'.format(
                 self.scriptpath, self.tb_name),
             passio_popen=True)
