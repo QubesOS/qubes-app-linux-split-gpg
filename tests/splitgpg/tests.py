@@ -357,7 +357,8 @@ class TC_10_Thunderbird(SplitGPGBase):
             user='root', passio_popen=True)
 
         p = self.frontend.run(
-            'PYTHONPATH=$HOME/dogtail python3 {} --tbname={} setup 2>&1'.format(
+            'PYTHONPATH=$HOME/dogtail LC_ALL=C.UTF-8 '
+            'python3 {} --tbname={} setup 2>&1'.format(
                 self.scriptpath, self.tb_name),
             passio_popen=True)
         (stdout, _) = p.communicate()
