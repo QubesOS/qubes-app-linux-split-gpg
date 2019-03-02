@@ -50,7 +50,7 @@ Source0: qubes-gpg-split-%{version}.tar.gz
 rm -rf $RPM_BUILD_ROOT
 install -D qubes.Gpg.policy $RPM_BUILD_ROOT/etc/qubes-rpc/policy/qubes.Gpg
 install -D qubes.GpgImportKey.policy $RPM_BUILD_ROOT/etc/qubes-rpc/policy/qubes.GpgImportKey
-make -C tests install-dom0 DESTDIR=$RPM_BUILD_ROOT
+make -C tests install-dom0 DESTDIR=$RPM_BUILD_ROOT PYTHON2=%{__python} PYTHON3=%{__python3}
 
 %clean
 rm -rf $RPM_BUILD_ROOT

@@ -20,12 +20,15 @@
 # USA.
 #
 
+PYTHON2 ?= python
+PYTHON3 ?= python3
+
 all:
 	@true
 
 install-dom0:
-	python setup.py install -O1 --root $(DESTDIR)
-	python3 setup.py install -O1 --root $(DESTDIR)
+	$(PYTHON2) setup.py install -O1 --root $(DESTDIR)
+	$(PYTHON3) setup.py install -O1 --root $(DESTDIR)
 
 install-vm:
 	install -d $(DESTDIR)/usr/lib/qubes-gpg-split
