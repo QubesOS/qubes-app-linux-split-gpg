@@ -39,12 +39,12 @@ BuildRequires: python3-setuptools
 BuildRequires: python3-devel
 
 
-Source0: %{name}-%{version}.tar.gz
+Source0: qubes-gpg-split-%{version}.tar.gz
 
 %description
 
 %prep
-%setup -q
+%setup -q -n qubes-gpg-split-%{version}
 
 %install
 rm -rf $RPM_BUILD_ROOT
