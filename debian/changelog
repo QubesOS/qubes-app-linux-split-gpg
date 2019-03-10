@@ -1,3 +1,20 @@
+qubes-gpg-split (2.0.35-1) unstable; urgency=medium
+
+  * tests: improve error reporting
+  * tests: update for Thunderbird 60
+  * tests: increase timeout for Thunderbird start
+  * tests: adjust for Whonix, increase timeouts
+  * tests: adjust for TB version in Whonix 14
+  * debian: drop autotools in debian/rules
+  * tests: force C.UTF-8 locale
+  * tests: force C.UTF-8 locale during thunderbird setup too
+  * rpm: fix Source0 tag
+  * rpm: specify python binaries to build with
+  * rpm: fix python macros one more time
+  * travis: update to R4.1
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sun, 10 Mar 2019 01:48:25 +0100
+
 qubes-gpg-split (2.0.34-1) unstable; urgency=medium
 
   * debian: don't create orig.tar.gz manually
