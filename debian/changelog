@@ -1,3 +1,10 @@
+qubes-gpg-split (2.0.36-1) unstable; urgency=medium
+
+  [ Alex Jordan ]
+  * Whitelist --export-ssh-key option
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 21 Mar 2019 03:59:44 +0100
+
 qubes-gpg-split (2.0.35-1) unstable; urgency=medium
 
   * tests: improve error reporting
