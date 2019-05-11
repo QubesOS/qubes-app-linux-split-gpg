@@ -1,3 +1,9 @@
+qubes-gpg-split (2.0.37-1) wheezy; urgency=medium
+
+  * Do not block actual gpg operation on notification
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sat, 11 May 2019 18:56:10 +0200
+
 qubes-gpg-split (2.0.36-1) unstable; urgency=medium
 
   [ Alex Jordan ]
