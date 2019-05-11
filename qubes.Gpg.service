@@ -13,5 +13,5 @@ if [ $(($stat_time + $QUBES_GPG_AUTOACCEPT)) -lt "$now" ]; then
     zenity --question --text "$msg_text" 2>/dev/null </dev/null >/dev/null || exit 1
     touch "$stat_file"
 fi
-notify-send "Keyring access from domain: $QREXEC_REMOTE_DOMAIN" --expire-time=1000 </dev/null >/dev/null 2>/dev/null
+notify-send "Keyring access from domain: $QREXEC_REMOTE_DOMAIN" --expire-time=1000 </dev/null >/dev/null 2>/dev/null &
 /usr/lib/qubes-gpg-split/gpg-server /usr/bin/gpg2 $QREXEC_REMOTE_DOMAIN
