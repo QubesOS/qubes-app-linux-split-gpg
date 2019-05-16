@@ -1,3 +1,10 @@
+qubes-gpg-split (2.0.38-1) unstable; urgency=medium
+
+  [ redshiftzero ]
+  * GpgImportKey: pass --no-tty through
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 16 May 2019 19:09:03 +0200
+
 qubes-gpg-split (2.0.37-1) wheezy; urgency=medium
 
   * Do not block actual gpg operation on notification
