@@ -94,8 +94,6 @@ found about their functionality in the gpg2 manpage.
 
 --fixed-list-mode
 
---fixed-list-mode
-
 --force-mdc
 
 --force-v3-sigs
