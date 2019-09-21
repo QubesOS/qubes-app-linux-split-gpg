@@ -169,14 +169,22 @@ def install_enigmail_web_search(tb, search):
     install_link = enigmail_link.parent.parent.parent.\
             children[1].child(name='Add to Thunderbird', roleName='link')
     install_link.doActionNamed('jump')
-    # now confirmation dialog, it needs to have focus for 3 sec until "Install"
-    # button will be active
     config.searchCutoffCount = 20
     install_dialog = tb.findChild(orPredicate(
         GenericPredicate(name='Software Installation', roleName='frame'),
         GenericPredicate(name='Software Installation', roleName='dialog'),
+        GenericPredicate(name='Add Enigmail?', roleName='label'),
     ))
-    install_dialog.button('Install Now').doActionNamed('press')
+    # now confirmation dialog, it needs to have focus for 3 sec until "Install"
+    # button will be active
+    time.sleep(3)
+    if install_dialog.roleName == 'label':
+        install_dialog.parent.button('Add').doActionNamed('press')
+        installed = tb.child(name='Enigmail has been added.*', roleName='label')
+        time.sleep(1)
+        installed.parent.button('OK').doActionNamed('press')
+    else:
+        install_dialog.button('Install Now').doActionNamed('press')
     config.searchCutoffCount = 10
 
 def install_enigmail_builtin(tb, search):
@@ -218,7 +226,7 @@ def install_enigmail(tb):
     time.sleep(1)
     config.searchCutoffCount = 1
     try:
-        addons_list = addons.child(name='', roleName='list box')[1]
+        addons_list = addons.findChildren(GenericPredicate(name='', roleName='list box'), recursive=False)[1]
         addons_list.childNamed('Enigmail.*')
     except tree.SearchError:
         pass
@@ -228,9 +236,9 @@ def install_enigmail(tb):
     finally:
         config.searchCutoffCount = 10
     search = addons.child(
-        name='Search all add-ons|Search on addons.thunderbird.net',
+        name='Search all add-ons|Search on addons.thunderbird.net|Find more extensions',
         roleName='section')
-    if 'addons.thunderbird.net' in search.name:
+    if 'addons.thunderbird.net' in search.name or 'Find more' in search.name:
         install_enigmail_web_search(tb, search)
     else:
         install_enigmail_builtin(tb, search)
@@ -244,7 +252,7 @@ def configure_enigmail_global(tb):
     menu.menuItem('Preferences').doActionNamed('click')
     config.searchCutoffCount = 20
     preferences = tb.findChild(orPredicate(
-        GenericPredicate(name='Thunderbird Preferences', roleName='frame'),
+        GenericPredicate(name='Thunderbird Preferences.*', roleName='frame'),
         GenericPredicate(name='Thunderbird Preferences', roleName='dialog'),
     ))
     try:
@@ -258,9 +266,15 @@ def configure_enigmail_global(tb):
         name='Force using S/MIME and Enigmail',
         roleName='radio button').\
         doActionNamed('select')
-    preferences.button('Close').doActionNamed('press')
+    config.searchCutoffCount = 5
+    try:
+        tb.child(name='Thunderbird Preferences', roleName='page tab').\
+                button('').doActionNamed('press')
+    except tree.SearchError:
+        preferences.button('Close').doActionNamed('press')
+    config.searchCutoffCount = 10
 
-    menu = tb.menu('Enigmail')
+    menu = tb.menu('Enigmail.*')
     menu.doActionNamed('click')
     menu.menuItem('Preferences').doActionNamed('click')
 
@@ -419,9 +433,9 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
     tb.menuItem('Get All New Messages').doActionNamed('click')
     tb.child(name='Inbox.*', roleName='table row').doActionNamed(
         'activate')
-    config.searchCutoffCount = 3
+    config.searchCutoffCount = 5
     try:
-        tb.child(name='Encrypted Message .*',
+        tb.child(name='Encrypted Message .*|\.\.\. .*',
             roleName='table row').doActionNamed('activate')
     except tree.SearchError:
         pass
@@ -436,12 +450,14 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
     # here either
     try:
         msg = tb.child(roleName='document web',
-            name=subject + '$|Encrypted Message')
+            name=subject + '$|Encrypted Message|\.\.\.')
     except tree.SearchError:
         msg = tb.child(roleName='document frame',
-            name=subject + '$|Encrypted Message')
+            name=subject + '$|Encrypted Message|\.\.\.')
     try:
-        msg = msg.child(roleName='section').children[0]
+        msg = msg.child(roleName='section')
+        if len(msg.text) < 5 and msg.children:
+            msg = msg.children[0]
     except tree.SearchError:
         msg = msg.child(roleName='paragraph')
     msg_body = msg.text
@@ -475,9 +491,16 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
         attachment_size = attachment_label.parent.children[
             attachment_label.indexInParent + 1 + offset]
         assert attachment_size.text[0] != '0'
-        attachment_label.parent.children[
-            attachment_label.indexInParent + 2 + offset].\
-            button('Save.*').children[1].doActionNamed('press')
+        attachment_save = attachment_label.parent.children[
+            attachment_label.indexInParent + 2 + offset].button('Save.*')
+        try:
+            # try child button first
+            attachment_save.children[1].doActionNamed('press')
+        except IndexError:
+            # otherwise press main button to open the menu
+            attachment_save.doActionNamed('press')
+            # and choose "Save As..."
+            attachment_save.menuItem('Save As.*').doActionNamed('click')
         # for some reasons some Thunderbird versions do not expose 'Attach File'
         # dialog through accessibility API, use xdotool instead
         subprocess.check_call(
@@ -531,8 +554,8 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
 
 
 def quit_tb(tb):
-    tb.button('AppMenu').doActionNamed('press')
-    tb.menu('AppMenu').menuItem('Quit').doActionNamed('click')
+    tb.menu('File').doActionNamed('click')
+    tb.menu('File').menuItem('Quit').doActionNamed('click')
 
 
 def main():
