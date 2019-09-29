@@ -1,3 +1,15 @@
+qubes-gpg-split (2.0.39-1) unstable; urgency=medium
+
+  [ LawAbidingCactus ]
+  * remove duplicated option in manpage
+
+  [ Marek Marczykowski-Górecki ]
+  * tests: adjust for Thunderbird 68
+  * travis: switch to xenial, update distributions, drop R3.2
+  * tests: accept "Qubes Attachments" addon
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 30 Sep 2019 00:08:00 +0200
+
 qubes-gpg-split (2.0.38-1) unstable; urgency=medium
 
   [ redshiftzero ]
