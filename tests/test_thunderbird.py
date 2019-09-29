@@ -92,6 +92,14 @@ def skip_autoconf(tb):
         tb.dialog('Enigmail Alert').button('Close').doActionNamed('press')
     except tree.SearchError:
         pass
+    # Accept Qubes Attachment
+    try:
+        qubes_att = tb.child(name='Qubes Attachments added', roleName='label')
+        # give it some time to settle
+        time.sleep(3)
+        qubes_att.parent.button('Enable').doActionNamed('press')
+git     except tree.SearchError:
+        pass
     config.searchCutoffCount = 10
 
 
