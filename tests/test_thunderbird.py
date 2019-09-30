@@ -98,7 +98,7 @@ def skip_autoconf(tb):
         # give it some time to settle
         time.sleep(3)
         qubes_att.parent.button('Enable').doActionNamed('press')
-        except tree.SearchError:
+    except tree.SearchError:
         pass
     config.searchCutoffCount = 10
 
