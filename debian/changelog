@@ -1,3 +1,14 @@
+qubes-gpg-split (2.0.40-1) unstable; urgency=medium
+
+  [ w1k1n9cc ]
+  * Git is great but not in that case ;-)
+  * wrong identation
+
+  [ Marek Marczykowski-Górecki ]
+  * tests: give more time for the actual test
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sat, 05 Oct 2019 21:52:10 +0200
+
 qubes-gpg-split (2.0.39-1) unstable; urgency=medium
 
   [ LawAbidingCactus ]
