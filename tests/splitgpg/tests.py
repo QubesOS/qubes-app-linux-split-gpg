@@ -365,6 +365,11 @@ class TC_10_Thunderbird(SplitGPGBase):
         assert p.returncode == 0, 'Thunderbird setup failed: {}'.format(
             stdout.decode('ascii', 'ignore'))
 
+        # fake confirmation again, to give more time for the actual test
+        self.backend.run(
+            'touch /var/run/qubes-gpg-split/stat.{}'.format(
+                self.frontend.name), wait=True)
+
     def tearDown(self):
         self.smtp_server.terminate()
         del self.smtp_server
