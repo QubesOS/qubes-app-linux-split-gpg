@@ -64,6 +64,13 @@ while [[ $1 ]]; do
             --keyserver-options)
                 shift 2
                 ;;
+            # Using dirmngr in an offline GPG VM makes no sense, however
+            # qubes-gpg-client does not recognize the command line option
+            # --disable-dirmngr so to avoid an error message we ignore
+            # this option.
+            --disable-dirmngr)
+                shift
+                ;;
             # --photo-viewer shouldn't be passed to the backend as it allow
             # arbitrary command execution
             --photo-viewer)
