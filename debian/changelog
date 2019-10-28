@@ -1,3 +1,13 @@
+qubes-gpg-split (2.0.41-1) unstable; urgency=medium
+
+  [ Johanna Abrahamsson ]
+  * add ignore for --disable-dirmngr option
+
+  [ Frédéric Pierret (fepitre) ]
+  * travis: switch to bionic
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 28 Oct 2019 04:24:17 +0100
+
 qubes-gpg-split (2.0.40-1) unstable; urgency=medium
 
   [ w1k1n9cc ]
