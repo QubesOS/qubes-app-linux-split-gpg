@@ -379,17 +379,20 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
     compose = tb.child(name='Write: .*', roleName='frame')
     to = compose.child(name='To:', roleName='autocomplete')
     to.child(roleName='entry').text = 'user@localhost'
+    # lets thunderbird settle down on default values (after filling recipients)
+    time.sleep(1)
     compose.findChild(TBEntry('Subject:')).text = subject
     try:
         compose_document = compose.child(
             roleName='document web')
-        compose_document.parent.doActionNamed('click')
+        try:
+            compose_document.parent.doActionNamed('click')
+        except tree.ActionNotSupported:
+            pass
         compose_document.typeText('This is test message')
     except tree.SearchError:
         compose.child(
             roleName='document frame').text = 'This is test message'
-    # lets thunderbird settle down on default values (after filling recipients)
-    time.sleep(1)
     try:
         sign_button = compose.button('Sign Message')
         encrypt_button = compose.button('Encrypt Message')
