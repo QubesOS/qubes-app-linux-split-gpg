@@ -1,3 +1,9 @@
+qubes-gpg-split (2.0.42-1) unstable; urgency=medium
+
+  * tests: improve handling compose window in TB 68
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sat, 07 Dec 2019 05:14:48 +0100
+
 qubes-gpg-split (2.0.41-1) unstable; urgency=medium
 
   [ Johanna Abrahamsson ]
