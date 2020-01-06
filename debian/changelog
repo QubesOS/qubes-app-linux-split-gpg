@@ -1,3 +1,11 @@
+qubes-gpg-split (2.0.43-1) unstable; urgency=medium
+
+  * Don't include python2 tests on new dom0 (based on >f28)
+  * travis: switch to fc31 dom0
+  * Fix qrexec policy permission
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 06 Jan 2020 02:59:41 +0100
+
 qubes-gpg-split (2.0.42-1) unstable; urgency=medium
 
   * tests: improve handling compose window in TB 68
