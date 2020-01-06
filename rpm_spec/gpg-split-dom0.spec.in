@@ -22,6 +22,17 @@
 #
 #
 
+# enable python3 by default
+%bcond_without python3
+
+# python2 is not available on RHEL > 7 and not needed on Fedora > 28
+%if 0%{?rhel} > 7 || 0%{?fedora} > 28
+# disable python2 by default
+%bcond_with python2
+%else
+%bcond_without python2
+%endif
+
 
 Name:		qubes-gpg-split-dom0
 Version:	@VERSION@
@@ -34,12 +45,15 @@ License:	GPL
 URL:		http://www.qubes-os.org
 
 Requires:	gpg
+%if %{with python2}
 BuildRequires: python-setuptools
 BuildRequires: python2-rpm-macros
+%endif
+%if %{with python3}
 BuildRequires: python3-rpm-macros
 BuildRequires: python3-setuptools
 BuildRequires: python3-devel
-
+%endif
 
 Source0: qubes-gpg-split-%{version}.tar.gz
 
@@ -52,7 +66,8 @@ Source0: qubes-gpg-split-%{version}.tar.gz
 rm -rf $RPM_BUILD_ROOT
 install -D qubes.Gpg.policy $RPM_BUILD_ROOT/etc/qubes-rpc/policy/qubes.Gpg
 install -D qubes.GpgImportKey.policy $RPM_BUILD_ROOT/etc/qubes-rpc/policy/qubes.GpgImportKey
-make -C tests install-dom0 DESTDIR=$RPM_BUILD_ROOT PYTHON2=%{__python2} PYTHON3=%{__python3}
+%{?with_python2:make -C tests install-dom0-py2 DESTDIR=$RPM_BUILD_ROOT PYTHON2=%{__python2}}
+%{?with_python3:make -C tests install-dom0-py3 DESTDIR=$RPM_BUILD_ROOT PYTHON2=%{__python3}}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -60,12 +75,16 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %config(noreplace) %attr(0664,root,qubes) /etc/qubes-rpc/policy/qubes.Gpg
 %config(noreplace) %attr(0664,root,qubes) /etc/qubes-rpc/policy/qubes.GpgImportKey
+%if %{with python2}
 %dir %{python2_sitelib}/splitgpg-*.egg-info
 %{python2_sitelib}/splitgpg-*.egg-info/*
 %{python2_sitelib}/splitgpg
+%endif
+%if %{with python3}
 %dir %{python3_sitelib}/splitgpg-*.egg-info
 %{python3_sitelib}/splitgpg-*.egg-info/*
 %{python3_sitelib}/splitgpg
+%endif
 
 %changelog
 @CHANGELOG@

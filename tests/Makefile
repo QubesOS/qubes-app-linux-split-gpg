@@ -26,8 +26,12 @@ PYTHON3 ?= python3
 all:
 	@true
 
-install-dom0:
+install-dom0: install-dom0-py2 install-dom0-py3
+
+install-dom0-py2:
 	$(PYTHON2) setup.py install -O1 --root $(DESTDIR)
+
+install-dom0-py3:
 	$(PYTHON3) setup.py install -O1 --root $(DESTDIR)
 
 install-vm:
