@@ -54,6 +54,7 @@ enum {
     opt_max_output,
     opt_no_auto_check_trustdb,
     opt_no_comments,
+    opt_no_default_recipient,
     opt_no_emit_version,
     opt_no_encrypt_to,
     opt_no_force_v3_sigs,
@@ -89,6 +90,7 @@ enum {
     opt_store,
     opt_throw_keyids,
     opt_trust_model,
+    opt_trusted_key,
     opt_try_all_secrets,
     opt_try_secret_key,
     opt_use_agent,
@@ -96,7 +98,8 @@ enum {
     opt_verify_options,
     opt_version,
     opt_with_fingerprint,
-    opt_with_keygrip
+    opt_with_keygrip,
+    opt_yes
 };
 
 int parse_options(int argc, char *argv[], int *input_fds,
@@ -159,6 +162,7 @@ static const int gpg_allowed_options[] = {
     opt_no_auto_check_trustdb,
     opt_no_comments,
     opt_no_comments,
+    opt_no_default_recipient,
     opt_no_emit_version,
     opt_no_encrypt_to,
     opt_no_force_v3_sigs,
@@ -193,6 +197,7 @@ static const int gpg_allowed_options[] = {
     opt_store,
     opt_throw_keyids,
     opt_trust_model,
+    opt_trusted_key,
     opt_try_all_secrets,
     opt_try_secret_key,
     opt_use_agent,
@@ -201,6 +206,7 @@ static const int gpg_allowed_options[] = {
     opt_version,
     opt_with_fingerprint,
     opt_with_keygrip,
+    opt_yes,
     0
 };
 
@@ -256,6 +262,7 @@ static const struct option gpg_long_options[] = {
     {"max-output", 1, 0, opt_max_output},
     {"no-auto-check-trustdb", 0, 0, opt_no_auto_check_trustdb},
     {"no-comments", 0, 0, opt_no_comments},
+    {"no-default-recipient", 0, 0, opt_no_default_recipient},
     {"no-encrypt-to", 0, 0, opt_no_encrypt_to},
     {"no-emit-version", 0, 0, opt_no_emit_version},
     {"no-force-v3-sigs", 0, 0, opt_no_force_v3_sigs},
@@ -300,6 +307,7 @@ static const struct option gpg_long_options[] = {
     {"textmode", 0, 0, 't'},
     {"throw-keyids", 0, 0, opt_throw_keyids},
     {"trust-model", 1, 0, opt_trust_model},
+    {"trusted-key", 1, 0, opt_trusted_key},
     {"try-secret-key", 1, 0, opt_try_secret_key},
     {"try-all-secrets", 0, 0, opt_try_all_secrets},
     {"use-agent", 0, 0, opt_use_agent},
@@ -310,6 +318,7 @@ static const struct option gpg_long_options[] = {
     {"with-colons", 0, 0, 'k'},
     {"with-fingerprint", 0, 0, opt_with_fingerprint},
     {"with-keygrip", 0, 0, opt_with_keygrip},
+    {"yes", 0, 0, opt_yes},
     {0, 0, 0, 0}
 };
 
