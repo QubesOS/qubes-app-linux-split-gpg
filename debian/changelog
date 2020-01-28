@@ -1,3 +1,13 @@
+qubes-gpg-split (2.0.44-1) unstable; urgency=medium
+
+  [ Johanna Abrahamsson ]
+  * Accept --personal-{cipher,...}-preferences with option-argument
+
+  [ Abel Luck ]
+  * Whitelist opts to get mozilla/sops compatibility
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Tue, 28 Jan 2020 03:51:00 +0100
+
 qubes-gpg-split (2.0.43-1) unstable; urgency=medium
 
   * Don't include python2 tests on new dom0 (based on >f28)
