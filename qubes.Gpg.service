@@ -1,16 +1,39 @@
 #!/bin/sh
 
+unit() {
+        case "$1" in
+                0s);;
+                1s) echo " 1 second";;
+                *s) echo " ${1%s} seconds";;
+                0m);;
+                1m) echo " 1 minute";;
+                *m) echo " ${1%m} minutes";;
+                0h);;
+                1h) echo " 1 hour";;
+                *h) echo " ${1%h} hours";;
+                0d);;
+                1d) echo " 1 day";;
+                *d) echo " ${1%d} days";;
+        esac
+}
+
 if [ -z "$QUBES_GPG_AUTOACCEPT" ]; then
     QUBES_GPG_AUTOACCEPT=300
 fi
+
+days="$(( $QUBES_GPG_AUTOACCEPT / (3600*24) ))d";
+hours="$(( ( $QUBES_GPG_AUTOACCEPT % (3600*24) ) / 3600 ))h";
+minutes="$(( ( $QUBES_GPG_AUTOACCEPT % 3600 ) / 60 ))m";
+seconds="$(( $QUBES_GPG_AUTOACCEPT % 60 ))s";
+
 stat_file="/var/run/qubes-gpg-split/stat.$QREXEC_REMOTE_DOMAIN"
 stat_time=$(stat -c %Y "$stat_file" 2>/dev/null || echo 0)
 now=$(date +%s)
 if [ $(($stat_time + $QUBES_GPG_AUTOACCEPT)) -lt "$now" ]; then
     echo $USER | /etc/qubes-rpc/qubes.WaitForSession >/dev/null 2>/dev/null
-    msg_text="Do you allow VM '$QREXEC_REMOTE_DOMAIN' to access your GPG keys "
-    msg_text="$msg_text (now and for the following $QUBES_GPG_AUTOACCEPT seconds)?"
-    zenity --question --text "$msg_text" 2>/dev/null </dev/null >/dev/null || exit 1
+    msg_text="Do you allow VM '$QREXEC_REMOTE_DOMAIN' to access your GPG keys"
+    msg_text="$msg_text\n(now and for the following $(unit $days)$(unit $hours)$(unit $minutes)$(unit $seconds))?"
+    zenity --question --no-wrap --text "$msg_text" 2>/dev/null </dev/null >/dev/null || exit 1
     touch "$stat_file"
 fi
 notify-send "Keyring access from domain: $QREXEC_REMOTE_DOMAIN" --expire-time=1000 </dev/null >/dev/null 2>/dev/null &
