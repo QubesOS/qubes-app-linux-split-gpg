@@ -1,1 +1,2 @@
+#!/bin/sh
 /usr/bin/gpg2 --no-tty --import
