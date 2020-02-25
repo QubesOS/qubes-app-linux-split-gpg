@@ -1,3 +1,14 @@
+qubes-gpg-split (2.0.45-1) unstable; urgency=medium
+
+  [ Marta Marczykowska-Górecka ]
+  * Made split GPG permission question box nicer
+
+  [ Marek Marczykowski-Górecki ]
+  * rpm: do not drop executable bit from qubes.GpgImportKey service
+  * Make qubes.GpgImportKey service a proper script
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Tue, 25 Feb 2020 19:55:51 +0100
+
 qubes-gpg-split (2.0.44-1) unstable; urgency=medium
 
   [ Johanna Abrahamsson ]
