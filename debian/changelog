@@ -1,3 +1,9 @@
+qubes-gpg-split (2.0.46-1) unstable; urgency=medium
+
+  * Add --unwrap to allowed options
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Fri, 12 Jun 2020 04:18:48 +0200
+
 qubes-gpg-split (2.0.45-1) unstable; urgency=medium
 
   [ Marta Marczykowska-Górecka ]
