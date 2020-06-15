@@ -76,6 +76,16 @@ while [[ $1 ]]; do
             --photo-viewer)
                 shift 2
                 ;;
+            # ignore tty/display related options - those are meaningless in another VM
+            --display)
+                shift 2
+                ;;
+            --ttyname)
+                shift 2
+                ;;
+            --ttytype)
+                shift 2
+                ;;
             --yes)
                 shift
                 ;;
