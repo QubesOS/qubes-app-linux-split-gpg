@@ -50,7 +50,7 @@ signing/decryption.
 %package tests
 Summary:    Tests for Split GPG
 Requires:   %{name}
-Requires:   python3-dogtail
+Requires:   python%{python3_pkgversion}-dogtail
 Requires:   xdotool
 
 %description tests
