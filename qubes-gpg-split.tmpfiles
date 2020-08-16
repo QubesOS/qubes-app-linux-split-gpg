@@ -1,1 +1,1 @@
-d /var/run/qubes-gpg-split 777 root root
+d /run/qubes-gpg-split 777 root root
