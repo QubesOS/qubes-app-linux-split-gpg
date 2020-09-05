@@ -60,10 +60,7 @@ Expire-Date: 0
         if 'whonix' in self.template:
             self.backend.run("date -s +10min", user="root", wait=True)
 
-        # fake confirmation
-        self.backend.run(
-            'touch /var/run/qubes-gpg-split/stat.{}'.format(
-                self.frontend.name), wait=True)
+        self.fake_confirmation()
 
         self.frontend.start()
         p = self.frontend.run('tee /rw/config/gpg-split-domain',
@@ -74,6 +71,11 @@ Expire-Date: 0
         self.qrexec_policy('qubes.GpgImportKey', self.frontend.name,
             self.backend.name)
 
+    def fake_confirmation(self):
+        # fake confirmation
+        self.backend.run(
+            'touch /var/run/qubes-gpg-split/stat.{}'.format(
+                self.frontend.name), wait=True)
 
 
 class TC_00_Direct(SplitGPGBase):
@@ -327,9 +329,7 @@ class TC_10_Thunderbird(SplitGPGBase):
 
         # fake confirmation again, in case dogtail installation took more
         # time (on slow network)
-        self.backend.run(
-            'touch /var/run/qubes-gpg-split/stat.{}'.format(
-                self.frontend.name), wait=True)
+        self.fake_confirmation()
 
         # if self.frontend.run(
         #         'python -c \'import dogtail,sys;'
@@ -365,9 +365,7 @@ class TC_10_Thunderbird(SplitGPGBase):
             stdout.decode('ascii', 'ignore'))
 
         # fake confirmation again, to give more time for the actual test
-        self.backend.run(
-            'touch /var/run/qubes-gpg-split/stat.{}'.format(
-                self.frontend.name), wait=True)
+        self.fake_confirmation()
 
     def tearDown(self):
         self.smtp_server.terminate()

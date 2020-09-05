@@ -26,6 +26,7 @@ import argparse
 from dogtail import tree
 from dogtail.predicate import GenericPredicate, Predicate
 from dogtail.config import config
+from dogtail.rawinput import click, doubleClick
 import subprocess
 import os
 import time
@@ -61,6 +62,35 @@ def run(cmd):
         [cmd], stdout=null, stdin=null, stderr=null, env=env)
 
 
+def get_version(cmd):
+    try:
+        res = subprocess.check_output([cmd, '--version'])
+        version = res.decode('utf-8').replace('Thunderbird ', '').split('.')[0]
+    except (subprocess.SubprocessError, IndexError):
+        raise Exception('Cannot determine version')
+    return int(version)
+
+
+def get_key_fpr():
+    try:
+        cmd = '/usr/bin/qubes-gpg-client-wrapper -K --with-colons'
+        res = subprocess.check_output(cmd.split(' '))
+        keyid = res.decode('utf-8').split('\n')[1]
+        keyid = keyid.split(':')[9]
+        keyid = keyid[-16:]
+    except (subprocess.SubprocessError, IndexError):
+        raise Exception('Cannot determine keyid')
+    return keyid
+
+
+def export_pub_key():
+    try:
+        cmd = '/usr/bin/qubes-gpg-client-wrapper --armor --export --output /home/user/pub.asc'
+        subprocess.check_output(cmd.split(' '))
+    except subprocess.SubprocessError:
+        raise Exception('Cannot export public key')
+
+
 def get_app():
     config.searchCutoffCount = 50
     tb = tree.root.application('Thunderbird|Icedove')
@@ -81,7 +111,7 @@ def skip_autoconf(tb):
     # Icedove/Thunderbird 60+ flavor
     try:
         welcome = tb.childNamed('Mail Account Setup'
-                                '|Set Up an Existing Email Account')
+                                '|Set Up .* Existing Email .*')
         welcome.button('Cancel').doActionNamed('press')
     except tree.SearchError:
         pass
@@ -124,12 +154,18 @@ class TBEntry(GenericPredicate):
         super(TBEntry, self).__init__(name=name, roleName='entry')
 
 
-def add_local_account(tb):
+def add_local_account(tb, version):
     open_account_setup(tb)
-    settings = tb.dialog('Account Settings')
+    settings = tb.findChild(orPredicate(
+        GenericPredicate(name='Account Settings.*', roleName='frame'),
+        GenericPredicate(name='Account Settings', roleName='dialog'),
+    ))
     settings.button('Account Actions').doActionNamed('press')
     settings.menuItem('Add Other Account.*').doActionNamed('click')
-    wizard = tb.dialog('Account Wizard')
+    wizard = tb.findChild(orPredicate(
+        GenericPredicate(name='Account Wizard.*', roleName='frame'),
+        GenericPredicate(name='Account Wizard', roleName='dialog'),
+    ))
     wizard.childNamed('Unix Mailspool (Movemail)').doActionNamed('select')
     wizard.button('Next').doActionNamed('press')
     wizard.findChild(TBEntry('Your Name:')).text = 'Test'
@@ -144,14 +180,35 @@ def add_local_account(tb):
 
     # set outgoing server
     settings.childNamed('Outgoing Server (SMTP)').doActionNamed('activate')
-    settings.button('Add.*').doActionNamed('press')
-    add_server = tb.dialog('SMTP Server')
+    smtp_settings = settings.findChild(
+        GenericPredicate(name='Outgoing Server (SMTP) Settings',
+                         roleName='document web'))
+    smtp_settings.button('Add.*').doActionNamed('press')
+    add_server = tb.findChild(orPredicate(
+        GenericPredicate(name='SMTP Server.*', roleName='frame'),
+        GenericPredicate(name='SMTP Server', roleName='dialog'),
+    ))
     add_server.findChild(TBEntry('Description:')).text = 'localhost'
     add_server.findChild(TBEntry('Server Name:')).text = 'localhost'
-    add_server.findChild(TBEntry('Port:')).text = '8025'
+    config.searchCutoffCount = 5
+    if version >= 78:
+        port = tb.findChild(
+            GenericPredicate(name='Port:', roleName='spin button'))
+    else:
+        port = add_server.findChild(TBEntry('Port:'))
+    port.text = '8025'
     add_server.menuItem('No authentication').doActionNamed('click')
     add_server.button('OK').doActionNamed('press')
-    settings.button('OK').doActionNamed('press')
+    if version >= 78:
+        file = settings.menu('File')
+        file.doActionNamed('click')
+        file.child('Close').doActionNamed('click')
+    else:
+        try:
+            settings.button('OK').doActionNamed('press')
+        except tree.SearchError:
+            pass
+    config.searchCutoffCount = 10
 
 
 def install_enigmail_web_search(tb, search):
@@ -320,17 +377,79 @@ def configure_enigmail_global(tb):
         config.searchCutoffCount = 10
 
 
-def disable_html(tb):
+def configure_openpgp_global(tb):
+    menu = tb.menu('Edit')
+    menu.doActionNamed('click')
+    menu.menuItem('Preferences').doActionNamed('click')
+
+    preferences = tb.findChild(
+        GenericPredicate(name='Preferences.*', roleName='frame'))
+    config_editor = preferences.findChild(
+        GenericPredicate(name='Config Editor.*', roleName='push button'))
+    config_editor.doActionNamed('press')
+    preferences.findChild(GenericPredicate(
+        name='I accept the risk!',
+        roleName='push button')).doActionNamed('press')
+    about_config = preferences.findChild(
+        GenericPredicate(name='about:config', roleName='embedded'))
+    search = about_config.findChild(
+        GenericPredicate(name='Search:', roleName='unknown'))
+
+    search.children[0].text = 'mail.openpgp.allow_external_gnupg'
+    allow_external_gnupg = preferences.findChild(GenericPredicate(
+        name='mail.openpgp.allow_external_gnupg default boolean false',
+        roleName='table row'))
+    doubleClick(*allow_external_gnupg.position)
+
+    search.children[0].text = 'mail.openpgp.alternative_gpg_path'
+    alternative_gpg_path = preferences.findChild(GenericPredicate(
+        name='mail.openpgp.alternative_gpg_path default string.*',
+        roleName='table row'))
+    doubleClick(*alternative_gpg_path.position)
+
+    gpg_entry_value = tb.findChild(
+        GenericPredicate(name='Enter string value', roleName='frame'))
+    gpg_entry_value.findChild(GenericPredicate(
+        roleName='entry')).text = '/usr/bin/qubes-gpg-client-wrapper'
+    gpg_entry_value.findChild(
+        GenericPredicate(name='OK', roleName='push button')).doActionNamed(
+        'press')
+
+
+def show_menu_bar(tb):
+    app = tb.findChild(
+        GenericPredicate(name='Application', roleName='menu bar'))
+    app.findChild(GenericPredicate(
+        name='View', roleName='menu')).doActionNamed('click')
+    app.findChild(GenericPredicate(
+        name='Toolbars', roleName='menu')).doActionNamed('click')
+    app.findChild(GenericPredicate(
+        name='Menu Bar', roleName='check menu item')).doActionNamed('click')
+
+
+def disable_html(tb, version):
     open_account_setup(tb)
-    settings = tb.dialog('Account Settings')
+    settings = tb.findChild(orPredicate(
+        GenericPredicate(name='Account Settings.*', roleName='frame'),
+        GenericPredicate(name='Account Settings', roleName='dialog'),
+    ))
     # assume only one account...
     settings.childNamed('Composition & Addressing').doActionNamed('activate')
+    config.searchCutoffCount = 5
     try:
         settings.childNamed('Compose messages in HTML format').doActionNamed(
             'uncheck')
     except tree.ActionNotSupported:
         pass
-    settings.button('OK').doActionNamed('press')
+    if version >= 78:
+        file = settings.menu('File')
+        file.doActionNamed('click')
+        file.child('Close').doActionNamed('click')
+    else:
+        try:
+            settings.button('OK').doActionNamed('press')
+        except tree.SearchError:
+            pass
 
 
 def configure_enigmail_account(tb):
@@ -345,6 +464,55 @@ def configure_enigmail_account(tb):
     except tree.ActionNotSupported:
         pass
     settings.button('OK').doActionNamed('press')
+
+
+def configure_openpgp_account(tb):
+    keyid = get_key_fpr()
+    export_pub_key()
+    open_account_setup(tb)
+    settings = tb.findChild(orPredicate(
+        GenericPredicate(name='Account Settings.*', roleName='frame'),
+        GenericPredicate(name='Account Settings', roleName='dialog'),
+    ))
+    # assume only one account...
+    settings.childNamed('End-To-End Encryption').doActionNamed('activate')
+    settings.childNamed('Add Key.*').doActionNamed('press')
+    settings.childNamed('Use your external key.*').doActionNamed('select')
+    settings.childNamed('Continue').doActionNamed('press')
+    settings.findChild(TBEntry('123456789.*')).text = keyid
+    settings.button('Save key ID').doActionNamed('press')
+    settings.findChild(GenericPredicate(name='0x%s.*' % keyid,
+                                        roleName='radio button')).doActionNamed(
+        'select')
+    settings.childNamed('OpenPGP Key Manager.*').doActionNamed('press')
+    key_manager = tb.findChild(
+        GenericPredicate(name='OpenPGP Key Manager', roleName='frame'))
+    key_manager.findChild(
+        GenericPredicate(name='File', roleName='menu')).doActionNamed('click')
+    key_manager.findChild(
+        GenericPredicate(name='Import Public Key(s) From File',
+                         roleName='menu item')).doActionNamed('click')
+    file_chooser = tb.findChild(GenericPredicate(name='Import OpenPGP Key File',
+                                                 roleName='file chooser'))
+    click(*file_chooser.childNamed('Home').position)
+    click(*file_chooser.childNamed('pub.asc').position)
+    file_chooser.childNamed('Open').doActionNamed('click')
+    accept_dialog = tb.findChild(
+        GenericPredicate(name='.*(%s).*' % keyid)).parent
+    accept_dialog.childNamed('OK').doActionNamed('press')
+    tb.childNamed('Success! Keys imported.*').childNamed('OK').doActionNamed(
+        'press')
+    doubleClick(*key_manager.findChild(
+        GenericPredicate(name='Qubes test <user@localhost>.*')).position)
+    key_property = tb.findChild(
+        GenericPredicate(name="Key Properties.*", roleName='frame'))
+    key_property.findChild(
+        GenericPredicate(name="Yes, I've verified in person.*",
+                         roleName='radio button')).doActionNamed('select')
+    key_property.childNamed('OK').doActionNamed('press')
+    key_manager.findChild(
+        GenericPredicate(name='Close', roleName='menu item')).doActionNamed(
+        'click')
 
 
 def attach(tb, compose_window, path):
@@ -375,7 +543,8 @@ def attach(tb, compose_window, path):
     # select_file.button('Open').doActionNamed('click')
 
 
-def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
+def send_email(tb, version=0, sign=False, encrypt=False, inline=False,
+               attachment=None):
     tb.child(roleName='page tab list').children[0].doActionNamed('switch')
     write = tb.button('Write')
     write.doActionNamed('press')
@@ -386,14 +555,18 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
         # no write what submenu
         pass
     compose = tb.child(name='Write: .*', roleName='frame')
-    to = compose.child(name='To:', roleName='autocomplete')
-    to.child(roleName='entry').text = 'user@localhost'
+    to_entry = compose.findChild(
+        orPredicate(GenericPredicate(name='To:', roleName='entry'),
+                    TBEntry(name='To')))
+    to_entry.text = 'user@localhost'
     # lets thunderbird settle down on default values (after filling recipients)
     time.sleep(1)
-    compose.findChild(TBEntry('Subject:')).text = subject
+    subject_entry = compose.findChild(
+        orPredicate(GenericPredicate(name='Subject:', roleName='entry'),
+                    TBEntry(name='Subject')))
+    subject_entry.text = subject
     try:
-        compose_document = compose.child(
-            roleName='document web')
+        compose_document = compose.child(roleName='document web')
         try:
             compose_document.parent.doActionNamed('click')
         except tree.ActionNotSupported:
@@ -402,40 +575,56 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
     except tree.SearchError:
         compose.child(
             roleName='document frame').text = 'This is test message'
-    try:
-        sign_button = compose.button('Sign Message')
-        encrypt_button = compose.button('Encrypt Message')
-    except tree.SearchError:
-        # old thunderbird/enigmail
-        compose.button('Enigmail Encryption Info').doActionNamed('press')
-        sign_encrypt = tb.dialog('Enigmail Encryption & Signing Settings')
-        encrypt_checkbox = sign_encrypt.childNamed('Encrypt Message')
-        if encrypt_checkbox.checked != encrypt:
-            encrypt_checkbox.doActionNamed(encrypt_checkbox.actions.keys()[0])
-        sign_checkbox = sign_encrypt.childNamed('Sign Message')
-        if sign_checkbox.checked != sign:
-            sign_checkbox.doActionNamed(sign_checkbox.actions.keys()[0])
-        if inline:
-            sign_encrypt.childNamed('Use Inline PGP').doActionNamed('select')
-        else:
-            sign_encrypt.childNamed('Use PGP/MIME').doActionNamed('select')
-        sign_encrypt.button('OK').doActionNamed('press')
+    if version >= 78:
+        security = compose.findChild(
+            GenericPredicate(name='Security', roleName='push button'))
+        security.doActionNamed('press')
+        sign_button = security.childNamed('Digitally Sign This Message')
+        encrypt_button = security.childNamed('Require Encryption')
+        if sign_button.checked != sign:
+            sign_button.doActionNamed('click')
+        if encrypt_button.checked != encrypt:
+            encrypt_button.doActionNamed('click')
     else:
-        if ('ON' in sign_button.description) != sign:
-            sign_button.doActionNamed('press')
-        if ('ON' in encrypt_button.description) != encrypt:
-            encrypt_button.doActionNamed('press')
-        if inline:
-            enigmail_menu = compose.menu('Enigmail')
-            enigmail_menu.doActionNamed('click')
-            enigmail_menu.menuItem('Protocol: Inline PGP').doActionNamed(
-                'click')
+        try:
+            sign_button = compose.button('Sign Message')
+            encrypt_button = compose.button('Encrypt Message')
+        except tree.SearchError:
+            # old thunderbird/enigmail
+            compose.button('Enigmail Encryption Info').doActionNamed('press')
+            sign_encrypt = tb.dialog('Enigmail Encryption & Signing Settings')
+            encrypt_checkbox = sign_encrypt.childNamed('Encrypt Message')
+            if encrypt_checkbox.checked != encrypt:
+                encrypt_checkbox.doActionNamed(
+                    encrypt_checkbox.actions.keys()[0])
+            sign_checkbox = sign_encrypt.childNamed('Sign Message')
+            if sign_checkbox.checked != sign:
+                sign_checkbox.doActionNamed(sign_checkbox.actions.keys()[0])
+            if inline:
+                sign_encrypt.childNamed('Use Inline PGP').doActionNamed(
+                    'select')
+            else:
+                sign_encrypt.childNamed('Use PGP/MIME').doActionNamed('select')
+            sign_encrypt.button('OK').doActionNamed('press')
+        else:
+            if ('ON' in sign_button.description) != sign:
+                sign_button.doActionNamed('press')
+            if ('ON' in encrypt_button.description) != encrypt:
+                encrypt_button.doActionNamed('press')
+            if inline:
+                enigmail_menu = compose.menu('Enigmail')
+                enigmail_menu.doActionNamed('click')
+                enigmail_menu.menuItem('Protocol: Inline PGP').doActionNamed(
+                    'click')
 
     if attachment:
         attach(tb, compose, attachment)
     compose.button('Send').doActionNamed('press')
-    if inline and attachment:
-        tb.dialog('Enigmail Prompt').button('OK').doActionNamed('press')
+    try:
+        if inline and attachment:
+            tb.dialog('Enigmail Prompt').button('OK').doActionNamed('press')
+    except tree.SearchError:
+        pass
     config.searchCutoffCount = 5
     try:
         if encrypt:
@@ -447,7 +636,8 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
         config.searchCutoffCount = 10
 
 
-def receive_message(tb, signed=False, encrypted=False, attachment=None):
+def receive_message(tb, version=0, signed=False, encrypted=False,
+                    attachment=None):
     tb.child(name='user@localhost',
              roleName='table row').doActionNamed('activate')
     tb.button('Get Messages').doActionNamed('press')
@@ -456,7 +646,7 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
         'activate')
     config.searchCutoffCount = 5
     try:
-        tb.child(name='Encrypted Message .*|\.\.\. .*',
+        tb.child(name='Encrypted Message .*|.*\.\.\. .*',
                  roleName='table row').doActionNamed('activate')
     except tree.SearchError:
         pass
@@ -490,13 +680,27 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
     #        msg_body = msg.text
     config.searchCutoffCount = 5
     try:
-        details = tb.button('Details')
-        enigmail_status = details.parent.children[details.indexInParent - 1]
-        print('Enigmail status: {}'.format(enigmail_status.text))
-        if signed:
-            assert 'Good signature from' in enigmail_status.text
-        if encrypted:
-            assert 'Decrypted message' in enigmail_status.text
+        if version >= 78:
+            if signed or encrypted:
+                tb.findChild(GenericPredicate(
+                    name='View', roleName='menu')).doActionNamed('click')
+                tb.findChild(GenericPredicate(
+                    name='Message Security Info',
+                    roleName='menu item')).doActionNamed('click')
+                message_security = tb.child('Message Security')
+                if signed:
+                    message_security.child('Good Digital Signature')
+                if encrypted:
+                    message_security.child('Message Is Encrypted')
+                message_security.button('OK').doActionNamed('press')
+        else:
+            details = tb.button('Details')
+            enigmail_status = details.parent.children[details.indexInParent - 1]
+            print('Enigmail status: {}'.format(enigmail_status.text))
+            if signed:
+                assert 'Good signature from' in enigmail_status.text
+            if encrypted:
+                assert 'Decrypted message' in enigmail_status.text
     except tree.SearchError:
         if signed or encrypted:
             raise
@@ -521,13 +725,22 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
             # otherwise press main button to open the menu
             attachment_save.doActionNamed('press')
             # and choose "Save As..."
-            attachment_save.menuItem('Save As.*').doActionNamed('click')
+            attachment_save.menuItem('Save As.*|Save All.*').doActionNamed(
+                'click')
         # for some reasons some Thunderbird versions do not expose 'Attach File'
         # dialog through accessibility API, use xdotool instead
-        subprocess.check_call(
-            ['xdotool', 'search', '--name', 'Save Attachment',
-             'key', '--window', '0', '--delay', '30ms', 'ctrl+l', 'Home',
-             'type', '~/Desktop/\r'])
+        if version >= 78:
+            save_as = tb.findChild(
+                GenericPredicate(name='Save All Attachments',
+                                 roleName='file chooser'))
+            click(*save_as.childNamed('Home').position)
+            click(*save_as.childNamed('Desktop').position)
+            save_as.childNamed('Open').doActionNamed('click')
+        else:
+            subprocess.check_call(
+                ['xdotool', 'search', '--name', 'Save Attachment',
+                 'key', '--window', '0', '--delay', '30ms', 'ctrl+l', 'Home',
+                 'type', '~/Desktop/\r'])
         # save_as = tb.dialog('Save .*Attachment.*')
         # places = save_as.child(roleName='table',
         #    name='Places')
@@ -600,21 +813,32 @@ def main():
     # log only to stdout since logging to file have broken unicode support
     config.logDebugToFile = False
 
+    # get Thunderbird version
+    version = get_version(args.tbname)
+
+    proc = run(args.tbname)
     if args.command == 'setup':
-        proc = run(args.tbname)
         tb = get_app()
+        show_menu_bar(tb)
         skip_autoconf(tb)
-        install_enigmail(tb)
-        configure_enigmail_global(tb)
+        if version < 78:
+            install_enigmail(tb)
+            configure_enigmail_global(tb)
+        else:
+            configure_openpgp_global(tb)
         quit_tb(tb)
         subprocess.call(['pkill', 'pep-json-server'])
         proc.wait()
         proc = run(args.tbname)
         tb = get_app()
         skip_autoconf(tb)
-        add_local_account(tb)
-        configure_enigmail_account(tb)
-        disable_html(tb)
+        add_local_account(tb, version)
+        if version < 78:
+            configure_enigmail_account(tb)
+        else:
+            configure_openpgp_account(tb)
+        disable_html(tb, version)
+        quit_tb(tb)
     if args.command == 'send_receive':
         tb = get_app()
         if args.with_attachment:
@@ -623,12 +847,12 @@ def main():
                 f.write('This is test attachment content')
         else:
             attachment = None
-        send_email(tb, sign=args.signed, encrypt=args.encrypted,
-                   inline=args.inline,
+        send_email(tb, version=version, sign=args.signed,
+                   encrypt=args.encrypted, inline=args.inline,
                    attachment=attachment)
         time.sleep(5)
-        receive_message(tb, signed=args.signed, encrypted=args.encrypted,
-                        attachment=attachment)
+        receive_message(tb, version=version, signed=args.signed,
+                        encrypted=args.encrypted, attachment=attachment)
         quit_tb(tb)
 
 
