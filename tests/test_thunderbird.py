@@ -58,7 +58,7 @@ def run(cmd):
     env['GTK_MODULES'] = 'gail:atk-bridge'
     null = open(os.devnull, 'r+')
     return subprocess.Popen(
-            [cmd], stdout=null, stdin=null, stderr=null, env=env)
+        [cmd], stdout=null, stdin=null, stderr=null, env=env)
 
 
 def get_app():
@@ -73,7 +73,7 @@ def skip_autoconf(tb):
     try:
         welcome = tb.childNamed('Welcome to .*')
         welcome.button(
-            'I think I\'ll configure my account later.').\
+            'I think I\'ll configure my account later.'). \
             doActionNamed('press')
     except tree.SearchError:
         pass
@@ -81,13 +81,13 @@ def skip_autoconf(tb):
     # Icedove/Thunderbird 60+ flavor
     try:
         welcome = tb.childNamed('Mail Account Setup'
-            '|Set Up an Existing Email Account')
+                                '|Set Up an Existing Email Account')
         welcome.button('Cancel').doActionNamed('press')
     except tree.SearchError:
         pass
     # if enigmail is already installed
     try:
-        tb.dialog('Enigmail Setup Wizard').button('Cancel').\
+        tb.dialog('Enigmail Setup Wizard').button('Cancel'). \
             doActionNamed('press')
         tb.dialog('Enigmail Alert').button('Close').doActionNamed('press')
     except tree.SearchError:
@@ -153,29 +153,30 @@ def add_local_account(tb):
     add_server.button('OK').doActionNamed('press')
     settings.button('OK').doActionNamed('press')
 
+
 def install_enigmail_web_search(tb, search):
-    '''Handle new addons manager search result which is just embedded
-    addons.thunderbird.net website'''
+    """Handle new addons manager search result which is just embedded
+    addons.thunderbird.net website"""
 
     # search term
     search.children[0].text = 'enigmail'
     # search button
     search.children[1].doActionNamed('press')
     results = tb.child(
-                name='enigmail :: Search :: Add-ons for Thunderbird',
-                roleName='document web')
+        name='enigmail :: Search :: Add-ons for Thunderbird',
+        roleName='document web')
 
     # navigation on the website is fragile and ugly, but what we can do, the
     # old addons manager is gone
     # find "Enigmail" link, then navigate through the table to a column to its
     # right with "Add to Thunderbird link"
     enigmail_link = results.child(
-                name='Enigmail',
-                roleName='link')
+        name='Enigmail',
+        roleName='link')
     # Enigmail (link) -> Enigmail FEATURED (heading) -> '' (section) -> '' (section)
     # TODO: how to find next sibling? right now it relies on first result being the right one
-    install_link = enigmail_link.parent.parent.parent.\
-            children[1].child(name='Add to Thunderbird', roleName='link')
+    install_link = enigmail_link.parent.parent.parent. \
+        children[1].child(name='Add to Thunderbird', roleName='link')
     install_link.doActionNamed('jump')
     config.searchCutoffCount = 20
     install_dialog = tb.findChild(orPredicate(
@@ -195,8 +196,9 @@ def install_enigmail_web_search(tb, search):
         install_dialog.button('Install Now').doActionNamed('press')
     config.searchCutoffCount = 10
 
+
 def install_enigmail_builtin(tb, search):
-    '''Handle old, built-in search results browser'''
+    """Handle old, built-in search results browser"""
     # search term
     search.children[0].text = 'enigmail'
     # search button
@@ -223,18 +225,21 @@ def install_enigmail_builtin(tb, search):
     tb.dialog('Enigmail Setup Wizard').button('Cancel').doActionNamed('press')
     tb.dialog('Enigmail Alert').button('Close').doActionNamed('press')
 
+
 def install_enigmail(tb):
     tools = tb.menu('Tools')
     tools.doActionNamed('click')
     tools.menuItem('Add-ons').doActionNamed('click')
     addons = tb.child(name='Add-ons Manager', roleName='embedded')
     # check if already installed
-    addons.child(name='Extensions', roleName='list item').\
+    addons.child(name='Extensions', roleName='list item'). \
         doActionNamed('')
     time.sleep(1)
     config.searchCutoffCount = 1
     try:
-        addons_list = addons.findChildren(GenericPredicate(name='', roleName='list box'), recursive=False)[1]
+        addons_list = \
+            addons.findChildren(GenericPredicate(name='', roleName='list box'),
+                                recursive=False)[1]
         addons_list.childNamed('Enigmail.*')
     except tree.SearchError:
         pass
@@ -267,17 +272,17 @@ def configure_enigmail_global(tb):
         preferences.child(name='Privacy', roleName='radio button'). \
             doActionNamed('select')
     except tree.SearchError:
-        preferences.child(name='Privacy', roleName='list item').\
+        preferences.child(name='Privacy', roleName='list item'). \
             doActionNamed('')
     config.searchCutoffCount = 10
     preferences.child(
         name='Force using S/MIME and Enigmail',
-        roleName='radio button').\
+        roleName='radio button'). \
         doActionNamed('select')
     config.searchCutoffCount = 5
     try:
-        tb.child(name='Thunderbird Preferences', roleName='page tab').\
-                button('').doActionNamed('press')
+        tb.child(name='Thunderbird Preferences', roleName='page tab'). \
+            button('').doActionNamed('press')
     except tree.SearchError:
         preferences.button('Close').doActionNamed('press')
     config.searchCutoffCount = 10
@@ -292,7 +297,7 @@ def configure_enigmail_global(tb):
     time.sleep(1)
     try:
         enigmail_prefs.child(name='Override with',
-            roleName='check box').doActionNamed('check')
+                             roleName='check box').doActionNamed('check')
         enigmail_prefs.child(
             name='Override with',
             roleName='section').children[0].text = \
@@ -314,16 +319,19 @@ def configure_enigmail_global(tb):
     finally:
         config.searchCutoffCount = 10
 
+
 def disable_html(tb):
     open_account_setup(tb)
     settings = tb.dialog('Account Settings')
     # assume only one account...
     settings.childNamed('Composition & Addressing').doActionNamed('activate')
     try:
-        settings.childNamed('Compose messages in HTML format').doActionNamed('uncheck')
+        settings.childNamed('Compose messages in HTML format').doActionNamed(
+            'uncheck')
     except tree.ActionNotSupported:
         pass
     settings.button('OK').doActionNamed('press')
+
 
 def configure_enigmail_account(tb):
     open_account_setup(tb)
@@ -338,36 +346,37 @@ def configure_enigmail_account(tb):
         pass
     settings.button('OK').doActionNamed('press')
 
+
 def attach(tb, compose_window, path):
     compose_window.button('Attach').button('Attach').doActionNamed('press')
     compose_window.button('Attach').menuItem('File.*').doActionNamed('click')
     # for some reason on some thunderbird versions do not expose 'Attach File'
     # dialog through accessibility API, use xdotool instead
     subprocess.check_call(
-            ['xdotool', 'search', '--sync', '--name', 'Attach File.*',
-             'key', '--window', '0', 'ctrl+l',
-             'sleep', '1',
-             'type', '--window', '%1', path])
+        ['xdotool', 'search', '--sync', '--name', 'Attach File.*',
+         'key', '--window', '0', 'ctrl+l',
+         'sleep', '1',
+         'type', '--window', '%1', path])
     time.sleep(1)
     subprocess.check_call(
-            ['xdotool', 'search', '--name', 'Attach File.*', 'key', 'Return'])
+        ['xdotool', 'search', '--name', 'Attach File.*', 'key', 'Return'])
     time.sleep(1)
-    #select_file = tb.dialog('Attach File.*')
-    #places = select_file.child(roleName='table',
+    # select_file = tb.dialog('Attach File.*')
+    # places = select_file.child(roleName='table',
     #    name='Places')
-    #places.child(name='Desktop').click()
-    #location_toggle = select_file.child(roleName='toggle button',
+    # places.child(name='Desktop').click()
+    # location_toggle = select_file.child(roleName='toggle button',
     #    name='Type a file name')
-    #if not location_toggle.checked:
+    # if not location_toggle.checked:
     #    location_toggle.doActionNamed('click')
-    #location_label = select_file.child(name='Location:', roleName='label')
-    #location = location_label.parent.children[location_label.indexInParent + 1]
-    #location.text = path
-    #select_file.button('Open').doActionNamed('click')
+    # location_label = select_file.child(name='Location:', roleName='label')
+    # location = location_label.parent.children[location_label.indexInParent + 1]
+    # location.text = path
+    # select_file.button('Open').doActionNamed('click')
+
 
 def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
-    tb.child(roleName='page tab list').children[
-        0].doActionNamed('switch')
+    tb.child(roleName='page tab list').children[0].doActionNamed('switch')
     write = tb.button('Write')
     write.doActionNamed('press')
     try:
@@ -419,7 +428,8 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
         if inline:
             enigmail_menu = compose.menu('Enigmail')
             enigmail_menu.doActionNamed('click')
-            enigmail_menu.menuItem('Protocol: Inline PGP').doActionNamed('click')
+            enigmail_menu.menuItem('Protocol: Inline PGP').doActionNamed(
+                'click')
 
     if attachment:
         attach(tb, compose, attachment)
@@ -429,7 +439,7 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
     config.searchCutoffCount = 5
     try:
         if encrypt:
-            tb.dialog('Enable Protection of Subject?').\
+            tb.dialog('Enable Protection of Subject?'). \
                 button('Protect subject').doActionNamed('press')
     except tree.SearchError:
         pass
@@ -439,7 +449,7 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
 
 def receive_message(tb, signed=False, encrypted=False, attachment=None):
     tb.child(name='user@localhost',
-        roleName='table row').doActionNamed('activate')
+             roleName='table row').doActionNamed('activate')
     tb.button('Get Messages').doActionNamed('press')
     tb.menuItem('Get All New Messages').doActionNamed('click')
     tb.child(name='Inbox.*', roleName='table row').doActionNamed(
@@ -447,13 +457,13 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
     config.searchCutoffCount = 5
     try:
         tb.child(name='Encrypted Message .*|\.\.\. .*',
-            roleName='table row').doActionNamed('activate')
+                 roleName='table row').doActionNamed('activate')
     except tree.SearchError:
         pass
     finally:
         config.searchCutoffCount = 10
     tb.child(name='.*{}.*'.format(subject),
-        roleName='table row').doActionNamed('activate')
+             roleName='table row').doActionNamed('activate')
     # wait a little to TB decrypt/check the message
     time.sleep(2)
     # dogtail always add '$' at the end of regexp; and also "Escape all
@@ -461,10 +471,10 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
     # here either
     try:
         msg = tb.child(roleName='document web',
-            name=subject + '$|Encrypted Message|\.\.\.')
+                       name=subject + '$|Encrypted Message|\.\.\.')
     except tree.SearchError:
         msg = tb.child(roleName='document frame',
-            name=subject + '$|Encrypted Message|\.\.\.')
+                       name=subject + '$|Encrypted Message|\.\.\.')
     try:
         msg = msg.child(roleName='section')
         if len(msg.text) < 5 and msg.children:
@@ -515,22 +525,22 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
         # for some reasons some Thunderbird versions do not expose 'Attach File'
         # dialog through accessibility API, use xdotool instead
         subprocess.check_call(
-                ['xdotool', 'search', '--name', 'Save Attachment',
-                 'key', '--window', '0', '--delay', '30ms', 'ctrl+l', 'Home',
-                 'type', '~/Desktop/\r'])
-        #save_as = tb.dialog('Save .*Attachment.*')
-        #places = save_as.child(roleName='table',
+            ['xdotool', 'search', '--name', 'Save Attachment',
+             'key', '--window', '0', '--delay', '30ms', 'ctrl+l', 'Home',
+             'type', '~/Desktop/\r'])
+        # save_as = tb.dialog('Save .*Attachment.*')
+        # places = save_as.child(roleName='table',
         #    name='Places')
-        #places.child(name='Desktop').click()
-        #if 'attachments' in attachment_label.text:
+        # places.child(name='Desktop').click()
+        # if 'attachments' in attachment_label.text:
         #    save_as.button('Open').doActionNamed('click')
-        #else:
+        # else:
         #    save_as.button('Save').doActionNamed('click')
         time.sleep(1)
         with open(attachment, 'r') as f:
             orig_attachment = f.read()
         saved_basepath = os.path.expanduser('~/Desktop/{}'.format(
-                os.path.basename(attachment)))
+            os.path.basename(attachment)))
         if os.path.exists(saved_basepath):
             with open(saved_basepath) as f:
                 received_attachment = f.read()
@@ -538,8 +548,8 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
             print("Attachment content ok")
         elif os.path.exists(saved_basepath + '.pgp'):
             p = subprocess.Popen(['qubes-gpg-client-wrapper'],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                stdin=open(saved_basepath + '.pgp', 'r'))
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                 stdin=open(saved_basepath + '.pgp', 'r'))
             (stdout, stderr) = p.communicate()
             if signed:
                 if b'Good signature' not in stderr:
@@ -552,8 +562,8 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
             raise Exception('Attachment {} not found'.format(saved_basepath))
         if os.path.exists(saved_basepath + '.sig'):
             p = subprocess.Popen(['qubes-gpg-client-wrapper', '--verify',
-                saved_basepath + '.sig', saved_basepath],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                  saved_basepath + '.sig', saved_basepath],
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             (stdout, stderr) = p.communicate()
             if signed:
                 if b'Good signature' not in stderr:
@@ -572,19 +582,19 @@ def quit_tb(tb):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--tbname', help='Thunderbird executable name',
-        default='thunderbird')
+                        default='thunderbird')
     subparsers = parser.add_subparsers(dest='command')
     subparsers.add_parser('setup', help='setup Thunderbird for tests')
-    parser_send_receive = subparsers.add_parser('send_receive',
-        help='send and receive an email')
+    parser_send_receive = subparsers.add_parser(
+        'send_receive', help='send and receive an email')
     parser_send_receive.add_argument('--encrypted', action='store_true',
-        default=False)
+                                     default=False)
     parser_send_receive.add_argument('--signed', action='store_true',
-        default=False)
+                                     default=False)
     parser_send_receive.add_argument('--inline', action='store_true',
-        default=False)
+                                     default=False)
     parser_send_receive.add_argument('--with-attachment',
-        action='store_true', default=False)
+                                     action='store_true', default=False)
     args = parser.parse_args()
 
     # log only to stdout since logging to file have broken unicode support
@@ -613,12 +623,14 @@ def main():
                 f.write('This is test attachment content')
         else:
             attachment = None
-        send_email(tb, sign=args.signed, encrypt=args.encrypted, inline=args.inline,
-            attachment=attachment)
+        send_email(tb, sign=args.signed, encrypt=args.encrypted,
+                   inline=args.inline,
+                   attachment=attachment)
         time.sleep(5)
         receive_message(tb, signed=args.signed, encrypted=args.encrypted,
-            attachment=attachment)
+                        attachment=attachment)
         quit_tb(tb)
+
 
 if __name__ == '__main__':
     main()
