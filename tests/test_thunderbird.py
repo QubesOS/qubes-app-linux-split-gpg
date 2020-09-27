@@ -33,8 +33,11 @@ import time
 
 subject = 'Test message {}'.format(os.getpid())
 
-config.actionDelay = 0.5
-config.searchCutoffCount = 10
+defaultCutoffCount = 10
+
+config.actionDelay = 1.0
+config.defaultDelay = 1.0
+config.searchCutoffCount = defaultCutoffCount
 
 
 class orPredicate(Predicate):
@@ -94,20 +97,11 @@ def export_pub_key():
 def get_app():
     config.searchCutoffCount = 50
     tb = tree.root.application('Thunderbird|Icedove')
-    config.searchCutoffCount = 10
+    config.searchCutoffCount = defaultCutoffCount
     return tb
 
 
-def skip_autoconf(tb):
-    # Thunderbird 52 flavor
-    try:
-        welcome = tb.childNamed('Welcome to .*')
-        welcome.button(
-            'I think I\'ll configure my account later.'). \
-            doActionNamed('press')
-    except tree.SearchError:
-        pass
-    config.searchCutoffCount = 5
+def skip_autoconf(tb, version):
     # Icedove/Thunderbird 60+ flavor
     try:
         welcome = tb.childNamed('Mail Account Setup'
@@ -115,13 +109,14 @@ def skip_autoconf(tb):
         welcome.button('Cancel').doActionNamed('press')
     except tree.SearchError:
         pass
-    # if enigmail is already installed
-    try:
-        tb.dialog('Enigmail Setup Wizard').button('Cancel'). \
-            doActionNamed('press')
-        tb.dialog('Enigmail Alert').button('Close').doActionNamed('press')
-    except tree.SearchError:
-        pass
+    if version < 78:
+        # if enigmail is already installed
+        try:
+            tb.dialog('Enigmail Setup Wizard').button('Cancel'). \
+                doActionNamed('press')
+            tb.dialog('Enigmail Alert').button('Close').doActionNamed('press')
+        except tree.SearchError:
+            pass
     # Accept Qubes Attachment
     try:
         qubes_att = tb.child(name='Qubes Attachments added', roleName='label')
@@ -130,7 +125,7 @@ def skip_autoconf(tb):
         qubes_att.parent.button('Enable').doActionNamed('press')
     except tree.SearchError:
         pass
-    config.searchCutoffCount = 10
+    config.searchCutoffCount = defaultCutoffCount
 
 
 def skip_system_integration(tb):
@@ -208,7 +203,7 @@ def add_local_account(tb, version):
             settings.button('OK').doActionNamed('press')
         except tree.SearchError:
             pass
-    config.searchCutoffCount = 10
+    config.searchCutoffCount = defaultCutoffCount
 
 
 def install_enigmail_web_search(tb, search):
@@ -251,7 +246,7 @@ def install_enigmail_web_search(tb, search):
         installed.parent.button('OK').doActionNamed('press')
     else:
         install_dialog.button('Install Now').doActionNamed('press')
-    config.searchCutoffCount = 10
+    config.searchCutoffCount = defaultCutoffCount
 
 
 def install_enigmail_builtin(tb, search):
@@ -273,7 +268,7 @@ def install_enigmail_builtin(tb, search):
         addons_tab.button('').doActionNamed('press')
         return
     finally:
-        config.searchCutoffCount = 10
+        config.searchCutoffCount = defaultCutoffCount
 
     tree.doDelay(5)
     tb = get_app()
@@ -304,7 +299,7 @@ def install_enigmail(tb):
         # already installed
         return
     finally:
-        config.searchCutoffCount = 10
+        config.searchCutoffCount = defaultCutoffCount
     search = addons.child(
         name='Search all add-ons|Search on addons.thunderbird.net|Find more extensions',
         roleName='section')
@@ -331,7 +326,7 @@ def configure_enigmail_global(tb):
     except tree.SearchError:
         preferences.child(name='Privacy', roleName='list item'). \
             doActionNamed('')
-    config.searchCutoffCount = 10
+    config.searchCutoffCount = defaultCutoffCount
     preferences.child(
         name='Force using S/MIME and Enigmail',
         roleName='radio button'). \
@@ -342,7 +337,7 @@ def configure_enigmail_global(tb):
             button('').doActionNamed('press')
     except tree.SearchError:
         preferences.button('Close').doActionNamed('press')
-    config.searchCutoffCount = 10
+    config.searchCutoffCount = defaultCutoffCount
 
     menu = tb.menu('Enigmail.*')
     menu.doActionNamed('click')
@@ -374,7 +369,7 @@ def configure_enigmail_global(tb):
     except tree.SearchError:
         pass
     finally:
-        config.searchCutoffCount = 10
+        config.searchCutoffCount = defaultCutoffCount
 
 
 def configure_openpgp_global(tb):
@@ -414,9 +409,13 @@ def configure_openpgp_global(tb):
     gpg_entry_value.findChild(
         GenericPredicate(name='OK', roleName='push button')).doActionNamed(
         'press')
+    file = preferences.menu('File')
+    file.doActionNamed('click')
+    file.child('Close').doActionNamed('click')
 
 
 def show_menu_bar(tb):
+    config.searchCutoffCount = 20
     app = tb.findChild(
         GenericPredicate(name='Application', roleName='menu bar'))
     app.findChild(GenericPredicate(
@@ -425,6 +424,7 @@ def show_menu_bar(tb):
         name='Toolbars', roleName='menu')).doActionNamed('click')
     app.findChild(GenericPredicate(
         name='Menu Bar', roleName='check menu item')).doActionNamed('click')
+    config.searchCutoffCount = defaultCutoffCount
 
 
 def disable_html(tb, version):
@@ -545,15 +545,17 @@ def attach(tb, compose_window, path):
 
 def send_email(tb, version=0, sign=False, encrypt=False, inline=False,
                attachment=None):
-    tb.child(roleName='page tab list').children[0].doActionNamed('switch')
+    config.searchCutoffCount = 20
     write = tb.button('Write')
+    config.searchCutoffCount = defaultCutoffCount
     write.doActionNamed('press')
-    try:
-        # write.menuItem('Message').doActionNamed('click')
-        tb.button('Write').menuItem('Message').doActionNamed('click')
-    except tree.SearchError:
-        # no write what submenu
-        pass
+    if version < 78:
+        try:
+            # write.menuItem('Message').doActionNamed('click')
+            tb.button('Write').menuItem('Message').doActionNamed('click')
+        except tree.SearchError:
+            # no write what submenu
+            pass
     compose = tb.child(name='Write: .*', roleName='frame')
     to_entry = compose.findChild(
         orPredicate(GenericPredicate(name='To:', roleName='entry'),
@@ -633,7 +635,7 @@ def send_email(tb, version=0, sign=False, encrypt=False, inline=False,
     except tree.SearchError:
         pass
     finally:
-        config.searchCutoffCount = 10
+        config.searchCutoffCount = defaultCutoffCount
 
 
 def receive_message(tb, version=0, signed=False, encrypted=False,
@@ -651,7 +653,7 @@ def receive_message(tb, version=0, signed=False, encrypted=False,
     except tree.SearchError:
         pass
     finally:
-        config.searchCutoffCount = 10
+        config.searchCutoffCount = defaultCutoffCount
     tb.child(name='.*{}.*'.format(subject),
              roleName='table row').doActionNamed('activate')
     # wait a little to TB decrypt/check the message
@@ -705,7 +707,7 @@ def receive_message(tb, version=0, signed=False, encrypted=False,
         if signed or encrypted:
             raise
     finally:
-        config.searchCutoffCount = 10
+        config.searchCutoffCount = defaultCutoffCount
 
     if attachment:
         # it can be either "1 attachment:" or "2 attachments"
@@ -820,7 +822,7 @@ def main():
     if args.command == 'setup':
         tb = get_app()
         show_menu_bar(tb)
-        skip_autoconf(tb)
+        skip_autoconf(tb, version)
         if version < 78:
             install_enigmail(tb)
             configure_enigmail_global(tb)
@@ -831,7 +833,7 @@ def main():
         proc.wait()
         proc = run(args.tbname)
         tb = get_app()
-        skip_autoconf(tb)
+        skip_autoconf(tb, version)
         add_local_account(tb, version)
         if version < 78:
             configure_enigmail_account(tb)
