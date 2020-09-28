@@ -106,6 +106,7 @@ def skip_autoconf(tb, version):
     try:
         welcome = tb.childNamed('Mail Account Setup'
                                 '|Set Up .* Existing Email .*')
+        time.sleep(3)
         welcome.button('Cancel').doActionNamed('press')
     except tree.SearchError:
         pass
@@ -123,6 +124,11 @@ def skip_autoconf(tb, version):
         # give it some time to settle
         time.sleep(3)
         qubes_att.parent.button('Enable').doActionNamed('press')
+
+        qubes_att = tb.child(name='Qubes Attachments has been added.*', roleName='label')
+        # give it some time to settle
+        time.sleep(3)
+        qubes_att.parent.button('Not now').doActionNamed('press')
     except tree.SearchError:
         pass
     config.searchCutoffCount = defaultCutoffCount
@@ -175,10 +181,13 @@ def add_local_account(tb, version):
 
     # set outgoing server
     settings.childNamed('Outgoing Server (SMTP)').doActionNamed('activate')
-    smtp_settings = settings.findChild(
-        GenericPredicate(name='Outgoing Server (SMTP) Settings',
-                         roleName='document web'))
-    smtp_settings.button('Add.*').doActionNamed('press')
+    if version >= 78:
+        smtp_settings = settings.findChild(
+            GenericPredicate(name='Outgoing Server (SMTP) Settings',
+                             roleName='document web'))
+        smtp_settings.button('Add.*').doActionNamed('press')
+    else:
+        settings.button('Add.*').doActionNamed('press')
     add_server = tb.findChild(orPredicate(
         GenericPredicate(name='SMTP Server.*', roleName='frame'),
         GenericPredicate(name='SMTP Server', roleName='dialog'),
@@ -218,17 +227,19 @@ def install_enigmail_web_search(tb, search):
         name='enigmail :: Search :: Add-ons for Thunderbird',
         roleName='document web')
 
-    # navigation on the website is fragile and ugly, but what we can do, the
-    # old addons manager is gone
-    # find "Enigmail" link, then navigate through the table to a column to its
-    # right with "Add to Thunderbird link"
-    enigmail_link = results.child(
-        name='Enigmail',
-        roleName='link')
-    # Enigmail (link) -> Enigmail FEATURED (heading) -> '' (section) -> '' (section)
-    # TODO: how to find next sibling? right now it relies on first result being the right one
-    install_link = enigmail_link.parent.parent.parent. \
-        children[1].child(name='Add to Thunderbird', roleName='link')
+    # # navigation on the website is fragile and ugly, but what we can do, the
+    # # old addons manager is gone
+    # # find "Enigmail" link, then navigate through the table to a column to its
+    # # right with "Add to Thunderbird link"
+    # enigmail_link = results.findChild(GenericPredicate(name='Enigmail', roleName='link'))
+    # # Enigmail (link) -> Enigmail FEATURED (heading) -> '' (section) -> '' (section)
+    # # TODO: how to find next sibling? right now it relies on first result being the right one
+    # time.sleep(3)
+    # install_link = enigmail_link.parent.parent.parent. \
+    #     children[1].child(name='Add to Thunderbird', roleName='link')
+
+    # TODO: right now it relies on first result being the right one
+    install_link = results.findChild(GenericPredicate(name='Add to Thunderbird', roleName='link'))
     install_link.doActionNamed('jump')
     config.searchCutoffCount = 20
     install_dialog = tb.findChild(orPredicate(
@@ -276,6 +287,9 @@ def install_enigmail_builtin(tb, search):
 
     tb.dialog('Enigmail Setup Wizard').button('Cancel').doActionNamed('press')
     tb.dialog('Enigmail Alert').button('Close').doActionNamed('press')
+    file = tb.menu('File')
+    file.doActionNamed('click')
+    file.child('Close').doActionNamed('click')
 
 
 def install_enigmail(tb):
@@ -307,6 +321,19 @@ def install_enigmail(tb):
         install_enigmail_web_search(tb, search)
     else:
         install_enigmail_builtin(tb, search)
+    file = tb.menu('File')
+    file.doActionNamed('click')
+    file.child('Close').doActionNamed('click')
+
+    # in case where addons tab is still here
+    try:
+        addons = tb.child(name='Add-ons Manager', roleName='embedded')
+        if addons:
+            file = tb.menu('File')
+            file.doActionNamed('click')
+            file.child('Close').doActionNamed('click')
+    except tree.SearchError:
+        pass
 
 
 def configure_enigmail_global(tb):
@@ -557,9 +584,10 @@ def send_email(tb, version=0, sign=False, encrypt=False, inline=False,
             # no write what submenu
             pass
     compose = tb.child(name='Write: .*', roleName='frame')
-    to_entry = compose.findChild(
-        orPredicate(GenericPredicate(name='To:', roleName='entry'),
-                    TBEntry(name='To')))
+    if version < 78:
+        to_entry = compose.findChild(GenericPredicate(name='To:', roleName='autocomplete')).children[0]
+    else:
+        to_entry = compose.findChild(TBEntry(name='To'))
     to_entry.text = 'user@localhost'
     # lets thunderbird settle down on default values (after filling recipients)
     time.sleep(1)
