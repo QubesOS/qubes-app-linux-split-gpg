@@ -849,8 +849,8 @@ def main():
     proc = run(args.tbname)
     if args.command == 'setup':
         tb = get_app()
-        show_menu_bar(tb)
         skip_autoconf(tb, version)
+        show_menu_bar(tb)
         if version < 78:
             install_enigmail(tb)
             configure_enigmail_global(tb)
