@@ -1,3 +1,22 @@
+qubes-gpg-split (2.0.48-1) unstable; urgency=medium
+
+  [ Frédéric Pierret (fepitre) ]
+  * Update makefile
+  * Update travis
+  * spec: replace hardcoded python3
+
+  [ Ludovic Bellier ]
+  * Fix tmpfiles.d using a directory link
+
+  [ Frédéric Pierret (fepitre) ]
+  * test_thunderbird: make PEP8 happier
+  * test_thunderbird: handle thunderbird-78+
+  * tests: enhance behavior and increase action and default delays
+  * Fix tests for Thunderbird 68
+  * tests: do show_menu_bar after skip_autoconf
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sat, 10 Oct 2020 05:16:13 +0200
+
 qubes-gpg-split (2.0.47-1) unstable; urgency=medium
 
   * Ignore tty/display related options
