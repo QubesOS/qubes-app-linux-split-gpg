@@ -712,17 +712,35 @@ def receive_message(tb, version=0, signed=False, encrypted=False,
     try:
         if version >= 78:
             if signed or encrypted:
+                # 'Message Security' can be either full dialog or a popup -
+                # depending on TB version
+                popup = False
                 tb.findChild(GenericPredicate(
                     name='View', roleName='menu')).doActionNamed('click')
-                tb.findChild(GenericPredicate(
-                    name='Message Security Info',
-                    roleName='menu item')).doActionNamed('click')
-                message_security = tb.child('Message Security')
+                try:
+                    tb.findChild(GenericPredicate(
+                        name='Message Security Info',
+                        roleName='menu item')).doActionNamed('click')
+                    message_security = tb.child('Message Security')
+                except tree.SearchError:
+                    # on debian there is no menu entry, but OpenPGP button
+                    # first close view menu
+                    tb.findChild(GenericPredicate(
+                        name='View', roleName='menu')).doActionNamed('click')
+                    tb.button('OpenPGP').doActionNamed('press')
+                    # 'Message Security - OpenPGP' is an internal label,
+                    # nested 2 levels into the popup
+                    message_security = tb.child('Message Security - OpenPGP')
+                    message_security = message_security.parent.parent
+                    popup = True
                 if signed:
                     message_security.child('Good Digital Signature')
                 if encrypted:
                     message_security.child('Message Is Encrypted')
-                message_security.button('OK').doActionNamed('press')
+                if not popup:
+                    message_security.button('OK').doActionNamed('press')
+                else:
+                    message_security.parent.click()
         else:
             details = tb.button('Details')
             enigmail_status = details.parent.children[details.indexInParent - 1]
