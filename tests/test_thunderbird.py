@@ -97,6 +97,10 @@ def export_pub_key():
 def get_app():
     config.searchCutoffCount = 50
     tb = tree.root.application('Thunderbird|Icedove')
+    time.sleep(5)
+    # now get it again to make sure we have the main window,
+    # not any splash screen
+    tb = tree.root.application('Thunderbird|Icedove')
     config.searchCutoffCount = defaultCutoffCount
     return tb
 
