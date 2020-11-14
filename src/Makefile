@@ -1,5 +1,5 @@
 #CFLAGS=-Wall -Werror -g -DDEBUG
-CFLAGS=-Wall -Wextra -Werror -O -g
+CFLAGS=-Wall -Wextra -Werror -O -g -ffile-prefix-map=$(PWD)=.
 LDLIBS=-lpthread
 
 all: gpg-client gpg-server pipe-cat
