@@ -528,8 +528,10 @@ def configure_openpgp_account(tb):
     click(*file_chooser.childNamed('Home').position)
     click(*file_chooser.childNamed('pub.asc').position)
     file_chooser.childNamed('Open').doActionNamed('click')
-    accept_dialog = tb.findChild(
-        GenericPredicate(name='.*(%s).*' % keyid)).parent
+    accept_dialog = tb.findChild(orPredicate(
+        GenericPredicate(name='.*(%s).*' % keyid),
+        GenericPredicate(name='.[0-9A-F]*%s' % keyid),
+        )).parent
     accept_dialog.childNamed('OK').doActionNamed('press')
     tb.childNamed('Success! Keys imported.*').childNamed('OK').doActionNamed(
         'press')
