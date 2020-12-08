@@ -1,3 +1,15 @@
+qubes-gpg-split (2.0.50-1) unstable; urgency=medium
+
+  [ Frédéric Pierret (fepitre) ]
+  * Add .gitlab-ci.yml
+  * Improve reproducibility
+  * Allow to override defined CFLAGS
+
+  [ Marek Marczykowski-Górecki ]
+  * tests: adjust key import dialog in debian-10
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Tue, 08 Dec 2020 18:31:56 +0100
+
 qubes-gpg-split (2.0.49-1) unstable; urgency=medium
 
   * Adjust tests for Debian 10
