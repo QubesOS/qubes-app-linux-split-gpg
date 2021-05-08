@@ -44,7 +44,7 @@ Vendor:		Invisible Things Lab
 License:	GPL
 URL:		http://www.qubes-os.org
 
-Requires:	gpg
+BuildRequires: make
 %if %{with python2}
 BuildRequires: python-setuptools
 BuildRequires: python2-rpm-macros
@@ -54,6 +54,7 @@ BuildRequires: python3-rpm-macros
 BuildRequires: python3-setuptools
 BuildRequires: python3-devel
 %endif
+Requires:	gpg
 
 Source0: qubes-gpg-split-%{version}.tar.gz
 
