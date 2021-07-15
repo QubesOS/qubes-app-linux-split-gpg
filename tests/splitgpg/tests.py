@@ -46,7 +46,10 @@ class SplitGPGBase(qubes.tests.extra.ExtraTestCase):
         p.communicate('''
 Key-Type: RSA
 Key-Length: 1024
-Key-Usage: sign encrypt
+Key-Usage: sign
+Subkey-Type: RSA
+Subkey-Length: 1024
+Subkey-Usage: encrypt
 Name-Real: Qubes test
 Name-Email: user@localhost
 Expire-Date: 0
