@@ -173,7 +173,10 @@ class TC_00_Direct(SplitGPGBase):
         p.communicate('''
 Key-Type: RSA
 Key-Length: 1024
-Key-Usage: sign encrypt
+Key-Usage: sign
+Subkey-Type: RSA
+Subkey-Length: 1024
+Subkey-Usage: encrypt
 Name-Real: Qubes test2
 Name-Email: user2@localhost
 Expire-Date: 0
@@ -209,7 +212,10 @@ Expire-Date: 0
         p.communicate('''
 Key-Type: RSA
 Key-Length: 1024
-Key-Usage: sign encrypt
+Key-Usage: sign
+Subkey-Type: RSA
+Subkey-Length: 1024
+Subkey-Usage: encrypt
 Name-Real: Qubes test2
 Name-Email: user2@localhost
 Expire-Date: 0
