@@ -525,6 +525,9 @@ def configure_openpgp_account(tb):
                          roleName='menu item')).doActionNamed('click')
     file_chooser = tb.findChild(GenericPredicate(name='Import OpenPGP Key File',
                                                  roleName='file chooser'))
+    # wait for dialog to completely initialize, otherwise it may try to click
+    # on "Home" before it is active.
+    time.sleep(1)
     click(*file_chooser.childNamed('Home').position)
     click(*file_chooser.childNamed('pub.asc').position)
     file_chooser.childNamed('Open').doActionNamed('click')
