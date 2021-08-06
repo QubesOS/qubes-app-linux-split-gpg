@@ -56,13 +56,48 @@ class orPredicate(Predicate):
     def describeSearchResult(self):
         return ' or '.join(p.describeSearchResult() for p in self.predicates)
 
+class Thunderbird:
+    """
+    Manages the state of a thunderbird instance
+    """
 
-def run(cmd):
-    env = os.environ.copy()
-    env['GTK_MODULES'] = 'gail:atk-bridge'
-    null = open(os.devnull, 'r+')
-    return subprocess.Popen(
-        [cmd], stdout=null, stdin=null, stderr=null, env=env)
+    def __init__(self, tb_name):
+        self.name = tb_name
+        self.start()
+
+    def start(self):
+        env = os.environ.copy()
+        env['GTK_MODULES'] = 'gail:atk-bridge'
+        null = open(os.devnull, 'r+')
+        self.process = subprocess.Popen(
+            [self.name], stdout=null, stdin=null, stderr=null, env=env)
+        self.app = self._get_app()
+
+    def _get_app(self):
+        config.searchCutoffCount = 50
+        tb = tree.root.application('Thunderbird|Icedove')
+        time.sleep(5)
+        # now get it again to make sure we have the main window,
+        # not any splash screen
+        tb = tree.root.application('Thunderbird|Icedove')
+        config.searchCutoffCount = defaultCutoffCount
+        return tb
+
+    def get_version(self):
+        try:
+            res = subprocess.check_output([self.name, '--version'])
+            version = res.decode('utf-8').replace('Thunderbird ', '').split('.')[0]
+        except (subprocess.SubprocessError, IndexError):
+            raise Exception('Cannot determine version')
+        return int(version)
+
+    def quit(self):
+        self.app.menu('File').doActionNamed('click')
+        self.app.menu('File').menuItem('Quit').doActionNamed('click')
+        self.process.wait()
+
+    def kill(self):
+        self.process.terminate()
 
 
 def get_key_fpr():
@@ -85,21 +120,10 @@ def export_pub_key():
         raise Exception('Cannot export public key')
 
 
-def get_app():
-    config.searchCutoffCount = 50
-    tb = tree.root.application('Thunderbird|Icedove')
-    time.sleep(5)
-    # now get it again to make sure we have the main window,
-    # not any splash screen
-    tb = tree.root.application('Thunderbird|Icedove')
-    config.searchCutoffCount = defaultCutoffCount
-    return tb
-
-
 def skip_autoconf(tb):
     # Icedove/Thunderbird 60+ flavor
     try:
-        welcome = tb.childNamed('Mail Account Setup'
+        welcome = tb.app.childNamed('Mail Account Setup'
                                 '|Set Up .* Existing Email .*')
         time.sleep(3)
         welcome.button('Cancel').doActionNamed('press')
@@ -107,12 +131,12 @@ def skip_autoconf(tb):
         pass
     # Accept Qubes Attachment
     try:
-        qubes_att = tb.child(name='Qubes Attachments added', roleName='label')
+        qubes_att = tb.app.child(name='Qubes Attachments added', roleName='label')
         # give it some time to settle
         time.sleep(3)
         qubes_att.parent.button('Enable').doActionNamed('press')
 
-        qubes_att = tb.child(name='Qubes Attachments has been added.*', roleName='label')
+        qubes_att = tb.app.child(name='Qubes Attachments has been added.*', roleName='label')
         # give it some time to settle
         time.sleep(3)
         qubes_att.parent.button('Not now').doActionNamed('press')
@@ -122,7 +146,7 @@ def skip_autoconf(tb):
 
 
 def open_account_setup(tb):
-    edit = tb.menu('Edit')
+    edit = tb.app.menu('Edit')
     edit.doActionNamed('click')
     account_settings = edit.menuItem('Account Settings')
     account_settings.doActionNamed('click')
@@ -135,13 +159,13 @@ class TBEntry(GenericPredicate):
 
 def add_local_account(tb):
     open_account_setup(tb)
-    settings = tb.findChild(orPredicate(
+    settings = tb.app.findChild(orPredicate(
         GenericPredicate(name='Account Settings.*', roleName='frame'),
         GenericPredicate(name='Account Settings', roleName='dialog'),
     ))
     settings.button('Account Actions').doActionNamed('press')
     settings.menuItem('Add Other Account.*').doActionNamed('click')
-    wizard = tb.findChild(orPredicate(
+    wizard = tb.app.findChild(orPredicate(
         GenericPredicate(name='Account Wizard.*', roleName='frame'),
         GenericPredicate(name='Account Wizard', roleName='dialog'),
     ))
@@ -163,14 +187,14 @@ def add_local_account(tb):
         GenericPredicate(name='Outgoing Server (SMTP) Settings',
                             roleName='document web'))
     smtp_settings.button('Add.*').doActionNamed('press')
-    add_server = tb.findChild(orPredicate(
+    add_server = tb.app.findChild(orPredicate(
         GenericPredicate(name='SMTP Server.*', roleName='frame'),
         GenericPredicate(name='SMTP Server', roleName='dialog'),
     ))
     add_server.findChild(TBEntry('Description:')).text = 'localhost'
     add_server.findChild(TBEntry('Server Name:')).text = 'localhost'
     config.searchCutoffCount = 5
-    port = tb.findChild(
+    port = tb.app.findChild(
         GenericPredicate(name='Port:', roleName='spin button'))
     port.text = '8025'
     add_server.menuItem('No authentication').doActionNamed('click')
@@ -182,11 +206,11 @@ def add_local_account(tb):
 
 
 def configure_openpgp_global(tb):
-    menu = tb.menu('Edit')
+    menu = tb.app.menu('Edit')
     menu.doActionNamed('click')
     menu.menuItem('Preferences').doActionNamed('click')
 
-    preferences = tb.findChild(
+    preferences = tb.app.findChild(
         GenericPredicate(name='Preferences.*', roleName='frame'))
     config_editor = preferences.findChild(
         GenericPredicate(name='Config Editor.*', roleName='push button'))
@@ -211,7 +235,7 @@ def configure_openpgp_global(tb):
         roleName='table row'))
     doubleClick(*alternative_gpg_path.position)
 
-    gpg_entry_value = tb.findChild(
+    gpg_entry_value = tb.app.findChild(
         GenericPredicate(name='Enter string value', roleName='frame'))
     gpg_entry_value.findChild(GenericPredicate(
         roleName='entry')).text = '/usr/bin/qubes-gpg-client-wrapper'
@@ -225,7 +249,7 @@ def configure_openpgp_global(tb):
 
 def show_menu_bar(tb):
     config.searchCutoffCount = 20
-    app = tb.findChild(
+    app = tb.app.findChild(
         GenericPredicate(name='Application', roleName='menu bar'))
     app.findChild(GenericPredicate(
         name='View', roleName='menu')).doActionNamed('click')
@@ -238,7 +262,7 @@ def show_menu_bar(tb):
 
 def disable_html(tb):
     open_account_setup(tb)
-    settings = tb.findChild(orPredicate(
+    settings = tb.app.findChild(orPredicate(
         GenericPredicate(name='Account Settings.*', roleName='frame'),
         GenericPredicate(name='Account Settings', roleName='dialog'),
     ))
@@ -259,7 +283,7 @@ def configure_openpgp_account(tb):
     keyid = get_key_fpr()
     export_pub_key()
     open_account_setup(tb)
-    settings = tb.findChild(orPredicate(
+    settings = tb.app.findChild(orPredicate(
         GenericPredicate(name='Account Settings.*', roleName='frame'),
         GenericPredicate(name='Account Settings', roleName='dialog'),
     ))
@@ -274,14 +298,14 @@ def configure_openpgp_account(tb):
                                         roleName='radio button')).doActionNamed(
         'select')
     settings.childNamed('OpenPGP Key Manager.*').doActionNamed('press')
-    key_manager = tb.findChild(
+    key_manager = tb.app.findChild(
         GenericPredicate(name='OpenPGP Key Manager', roleName='frame'))
     key_manager.findChild(
         GenericPredicate(name='File', roleName='menu')).doActionNamed('click')
     key_manager.findChild(
         GenericPredicate(name='Import Public Key(s) From File',
                          roleName='menu item')).doActionNamed('click')
-    file_chooser = tb.findChild(GenericPredicate(name='Import OpenPGP Key File',
+    file_chooser = tb.app.findChild(GenericPredicate(name='Import OpenPGP Key File',
                                                  roleName='file chooser'))
     # wait for dialog to completely initialize, otherwise it may try to click
     # on "Home" before it is active.
@@ -289,16 +313,16 @@ def configure_openpgp_account(tb):
     click(*file_chooser.childNamed('Home').position)
     click(*file_chooser.childNamed('pub.asc').position)
     file_chooser.childNamed('Open').doActionNamed('click')
-    accept_dialog = tb.findChild(orPredicate(
+    accept_dialog = tb.app.findChild(orPredicate(
         GenericPredicate(name='.*(%s).*' % keyid),
         GenericPredicate(name='.[0-9A-F]*%s' % keyid),
         )).parent
     accept_dialog.childNamed('OK').doActionNamed('press')
-    tb.childNamed('Success! Keys imported.*').childNamed('OK').doActionNamed(
+    tb.app.childNamed('Success! Keys imported.*').childNamed('OK').doActionNamed(
         'press')
     doubleClick(*key_manager.findChild(
         GenericPredicate(name='Qubes test <user@localhost>.*')).position)
-    key_property = tb.findChild(
+    key_property = tb.app.findChild(
         GenericPredicate(name="Key Properties.*", roleName='frame'))
     key_property.findChild(
         GenericPredicate(name="Yes, I've verified in person.*",
@@ -323,7 +347,7 @@ def attach(tb, compose_window, path):
     subprocess.check_call(
         ['xdotool', 'search', '--name', 'Attach File.*', 'key', 'Return'])
     time.sleep(1)
-    # select_file = tb.dialog('Attach File.*')
+    # select_file = tb.app.dialog('Attach File.*')
     # places = select_file.child(roleName='table',
     #    name='Places')
     # places.child(name='Desktop').click()
@@ -339,10 +363,10 @@ def attach(tb, compose_window, path):
 
 def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
     config.searchCutoffCount = 20
-    write = tb.button('Write')
+    write = tb.app.button('Write')
     config.searchCutoffCount = defaultCutoffCount
     write.doActionNamed('press')
-    compose = tb.child(name='Write: .*', roleName='frame')
+    compose = tb.app.child(name='Write: .*', roleName='frame')
     to_entry = compose.findChild(TBEntry(name='To'))
     to_entry.text = 'user@localhost'
     # lets thunderbird settle down on default values (after filling recipients)
@@ -376,7 +400,7 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
     config.searchCutoffCount = 5
     try:
         if encrypt:
-            tb.dialog('Enable Protection of Subject?'). \
+            tb.app.dialog('Enable Protection of Subject?'). \
                 button('Protect subject').doActionNamed('press')
     except tree.SearchError:
         pass
@@ -385,21 +409,21 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
 
 
 def receive_message(tb, signed=False, encrypted=False, attachment=None):
-    tb.child(name='user@localhost',
+    tb.app.child(name='user@localhost',
              roleName='table row').doActionNamed('activate')
-    tb.button('Get Messages').doActionNamed('press')
-    tb.menuItem('Get All New Messages').doActionNamed('click')
-    tb.child(name='Inbox.*', roleName='table row').doActionNamed(
+    tb.app.button('Get Messages').doActionNamed('press')
+    tb.app.menuItem('Get All New Messages').doActionNamed('click')
+    tb.app.child(name='Inbox.*', roleName='table row').doActionNamed(
         'activate')
     config.searchCutoffCount = 5
     try:
-        tb.child(name='Encrypted Message .*|.*\.\.\. .*',
+        tb.app.child(name='Encrypted Message .*|.*\.\.\. .*',
                  roleName='table row').doActionNamed('activate')
     except tree.SearchError:
         pass
     finally:
         config.searchCutoffCount = defaultCutoffCount
-    tb.child(name='.*{}.*'.format(subject),
+    tb.app.child(name='.*{}.*'.format(subject),
              roleName='table row').doActionNamed('activate')
     # wait a little to TB decrypt/check the message
     time.sleep(2)
@@ -407,10 +431,10 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
     # parentheses, since grouping will never be needed here", so it can't be used
     # here either
     try:
-        msg = tb.child(roleName='document web',
+        msg = tb.app.child(roleName='document web',
                        name=subject + '$|Encrypted Message|\.\.\.')
     except tree.SearchError:
-        msg = tb.child(roleName='document frame',
+        msg = tb.app.child(roleName='document frame',
                        name=subject + '$|Encrypted Message|\.\.\.')
     try:
         msg = msg.child(roleName='section')
@@ -431,22 +455,22 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
             # 'Message Security' can be either full dialog or a popup -
             # depending on TB version
             popup = False
-            tb.findChild(GenericPredicate(
+            tb.app.findChild(GenericPredicate(
                 name='View', roleName='menu')).doActionNamed('click')
             try:
-                tb.findChild(GenericPredicate(
+                tb.app.findChild(GenericPredicate(
                     name='Message Security Info',
                     roleName='menu item')).doActionNamed('click')
-                message_security = tb.child('Message Security')
+                message_security = tb.app.child('Message Security')
             except tree.SearchError:
                 # on debian there is no menu entry, but OpenPGP button
                 # first close view menu
-                tb.findChild(GenericPredicate(
+                tb.app.findChild(GenericPredicate(
                     name='View', roleName='menu')).doActionNamed('click')
-                tb.button('OpenPGP').doActionNamed('press')
+                tb.app.button('OpenPGP').doActionNamed('press')
                 # 'Message Security - OpenPGP' is an internal label,
                 # nested 2 levels into the popup
-                message_security = tb.child('Message Security - OpenPGP')
+                message_security = tb.app.child('Message Security - OpenPGP')
                 message_security = message_security.parent.parent
                 popup = True
             if signed:
@@ -465,7 +489,7 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
 
     if attachment:
         # it can be either "1 attachment:" or "2 attachments"
-        attachment_label = tb.child(name='.* attachment[:s]', roleName='label')
+        attachment_label = tb.app.child(name='.* attachment[:s]', roleName='label')
         offset = 0
         if attachment_label.name == '1 attachment:':
             offset += 1
@@ -485,13 +509,13 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
                 'click')
         # for some reasons some Thunderbird versions do not expose 'Attach File'
         # dialog through accessibility API, use xdotool instead
-        save_as = tb.findChild(
+        save_as = tb.app.findChild(
             GenericPredicate(name='Save All Attachments',
                                 roleName='file chooser'))
         click(*save_as.childNamed('Home').position)
         click(*save_as.childNamed('Desktop').position)
         save_as.childNamed('Open').doActionNamed('click')
-        # save_as = tb.dialog('Save .*Attachment.*')
+        # save_as = tb.app.dialog('Save .*Attachment.*')
         # places = save_as.child(roleName='table',
         #    name='Places')
         # places.child(name='Desktop').click()
@@ -534,12 +558,7 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
                     raise AssertionError('no good signature found')
                 print("Attachment detached signature ok")
 
-    # tb.button('Delete').doActionNamed('press')
-
-
-def quit_tb(tb):
-    tb.menu('File').doActionNamed('click')
-    tb.menu('File').menuItem('Quit').doActionNamed('click')
+    # tb.app.button('Delete').doActionNamed('press')
 
 
 def main():
@@ -563,24 +582,20 @@ def main():
     # log only to stdout since logging to file have broken unicode support
     config.logDebugToFile = False
 
-    proc = run(args.tbname)
+    tb = Thunderbird(args.tbname)
     if args.command == 'setup':
-        tb = get_app()
         skip_autoconf(tb)
         show_menu_bar(tb)
         configure_openpgp_global(tb)
-        quit_tb(tb)
+        tb.quit()
         subprocess.call(['pkill', 'pep-json-server'])
-        proc.wait()
-        proc = run(args.tbname)
-        tb = get_app()
+        tb.start()
         skip_autoconf(tb)
         add_local_account(tb)
         configure_openpgp_account(tb)
         disable_html(tb)
-        quit_tb(tb)
+        tb.quit()
     if args.command == 'send_receive':
-        tb = get_app()
         if args.with_attachment:
             attachment = '/home/user/attachment{}.txt'.format(os.getpid())
             with open(attachment, 'w') as f:
@@ -590,9 +605,10 @@ def main():
         send_email(tb, sign=args.signed, encrypt=args.encrypted,
                    inline=args.inline, attachment=attachment)
         time.sleep(5)
+
         receive_message(tb, signed=args.signed, encrypted=args.encrypted,
                         attachment=attachment)
-        quit_tb(tb)
+        tb.quit()
 
 
 if __name__ == '__main__':
