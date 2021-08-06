@@ -1,3 +1,15 @@
+qubes-gpg-split (2.0.51-1) unstable; urgency=medium
+
+  [ Frédéric Pierret (fepitre) ]
+  * spec: add BR make
+
+  [ deeplow ]
+  * tests: master key sign-only + subkey
+  * tests: generate w/ subkeys in remaining tests
+  * test: fix missed clicks on "open file" dialogue
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Fri, 06 Aug 2021 03:20:31 +0200
+
 qubes-gpg-split (2.0.50-1) unstable; urgency=medium
 
   [ Frédéric Pierret (fepitre) ]
