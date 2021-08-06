@@ -340,9 +340,6 @@ class TC_10_Thunderbird(SplitGPGBase):
         #         != 0:
         #     self.skipTest('dogtail >= 0.9.0 testing framework not installed')
 
-        # enigmail checks for ~/.gnupg dir...
-        self.frontend.run('mkdir -p .gnupg', wait=True)
-
         p = self.frontend.run('gsettings set org.gnome.desktop.interface '
                               'toolkit-accessibility true', wait=True)
         assert p == 0, 'Failed to enable accessibility toolkit'
@@ -442,9 +439,6 @@ class TC_20_Evolution(SplitGPGBase):
         #         'sys.exit(dogtail.__version__ < "0.9.0")\'', wait=True) \
         #         != 0:
         #     self.skipTest('dogtail >= 0.9.0 testing framework not installed')
-
-        # enigmail checks for ~/.gnupg dir...
-        self.frontend.run('mkdir -p .gnupg', wait=True)
 
         p = self.frontend.run('gsettings set org.gnome.desktop.interface '
                               'toolkit-accessibility true', wait=True)
