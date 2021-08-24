@@ -100,6 +100,32 @@ class Thunderbird:
         self.process.terminate()
 
 
+def retry_if_failed(max_tries):
+    """ Decorator that repeats a function if any exception is thrown. Assumes
+    the decorated function is generally idempotent (i.e. if ran multiple times
+    consecutively or multiple partial times it leads to the same result as if
+    ran only once)
+    """
+    def retry_if_failed_decorator(func):
+        def wrapper(*args, **kwargs):
+            tb = args[0]
+
+            for retry in range(0, max_tries):
+                try:
+                    func(*args, **kwargs)
+                    break # if successful
+                except Exception as e:
+                    if retry == max_tries:
+                        raise e
+                    else:
+                        print("failed during setup in {}.\n Retrying".format(
+                            func.__name__))
+                        tb.kill()
+                        tb.start()
+        return wrapper
+    return retry_if_failed_decorator
+
+
 def get_key_fpr():
     try:
         cmd = '/usr/bin/qubes-gpg-client-wrapper -K --with-colons'
@@ -279,6 +305,7 @@ def disable_html(tb):
     file.child('Close').doActionNamed('click')
 
 
+@retry_if_failed(max_tries=3)
 def configure_openpgp_account(tb):
     keyid = get_key_fpr()
     export_pub_key()
