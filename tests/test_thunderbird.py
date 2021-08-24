@@ -183,6 +183,7 @@ class TBEntry(GenericPredicate):
         super(TBEntry, self).__init__(name=name, roleName='entry')
 
 
+@retry_if_failed(max_tries=3)
 def add_local_account(tb):
     open_account_setup(tb)
     settings = tb.app.findChild(orPredicate(
@@ -203,9 +204,12 @@ def add_local_account(tb):
     # outgoing server
     wizard.button('Next').doActionNamed('press')
     # account name
-    wizard.button('Next').doActionNamed('press')
-    # summary
-    wizard.button('Finish').doActionNamed('press')
+    if wizard.button('Next').sensitive:
+        wizard.button('Next').doActionNamed('press')
+        wizard.button('Finish').doActionNamed('press')
+    else:
+        # button disabled => account already created in previous try
+        wizard.button('Cancel').doActionNamed('press')
 
     # set outgoing server
     settings.childNamed('Outgoing Server (SMTP)').doActionNamed('activate')
