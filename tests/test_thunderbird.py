@@ -30,6 +30,7 @@ from dogtail.rawinput import click, doubleClick
 import subprocess
 import os
 import time
+import functools
 
 subject = 'Test message {}'.format(os.getpid())
 
@@ -106,7 +107,9 @@ def retry_if_failed(max_tries):
     consecutively or multiple partial times it leads to the same result as if
     ran only once)
     """
-    def retry_if_failed_decorator(func):
+
+    def decorator(func):
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
             tb = args[0]
 
@@ -123,7 +126,7 @@ def retry_if_failed(max_tries):
                         tb.kill()
                         tb.start()
         return wrapper
-    return retry_if_failed_decorator
+    return decorator
 
 
 def get_key_fpr():
