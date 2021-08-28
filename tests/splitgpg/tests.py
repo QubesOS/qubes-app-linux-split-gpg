@@ -327,7 +327,7 @@ class TC_10_Thunderbird(SplitGPGBase):
         # use dogtail 0.9.10 directly from git, until 0.9.10 gets packaged in
         # relevant distros; 0.9.9 have problems with handling unicode
         p = self.frontend.run(
-                'git clone -n https://gitlab.com/dogtail/dogtail && '
+                'git clone -n https://gitlab.com/dogtail/dogtail.git && '
                 'cd dogtail && '
                 'git checkout 4d7923dcda92c2c44309d2a56b0bb616a1855155',
                 passio_popen=True, passio_stderr=True)
@@ -434,7 +434,7 @@ class TC_20_Evolution(SplitGPGBase):
         # use dogtail 0.9.10 directly from git, until 0.9.10 gets packaged in
         # relevant distros; 0.9.9 have problems with handling unicode
         p = self.frontend.run(
-                'git clone -n https://gitlab.com/dogtail/dogtail && '
+                'git clone -n https://gitlab.com/dogtail/dogtail.git && '
                 'cd dogtail && '
                 'git checkout 4d7923dcda92c2c44309d2a56b0bb616a1855155',
                 passio_popen=True, passio_stderr=True)
