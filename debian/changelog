@@ -1,3 +1,18 @@
+qubes-gpg-split (2.0.52-1) unstable; urgency=medium
+
+  [ deeplow ]
+  * tests: remove deprecated enigmail and tb<78 code
+  * tests: remove creation of .gnupg (enigmail req.)
+  * tests: manage thunderbird through dedicated class
+  * add retry_if_failed wrapper to setup function
+  * retry_if_failed add_local_account (now idempotent)
+  * use functools wraps in decorator
+
+  [ Marek Marczykowski-Górecki ]
+  * tests: avoid redirect to dogtail repo
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 02 Sep 2021 03:47:58 +0200
+
 qubes-gpg-split (2.0.51-1) unstable; urgency=medium
 
   [ Frédéric Pierret (fepitre) ]
