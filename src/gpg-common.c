@@ -18,31 +18,32 @@ void add_arg_to_fd_list(int *list, int *list_count)
 {
     int i;
     char *endptr;
-    int cur_fd, untrusted_cur_fd;
+    int cur_fd;
+    long untrusted_cur_fd;
 
     if (*list_count >= MAX_FDS - 1) {
         fprintf(stderr, "Too many FDs specified\n");
         exit(1);
     }
     /* optarg is untrusted! */
-    if (optarg[0] == 0)
+    if (optarg == NULL || optarg[0] < '0' || optarg[0] > '9')
         goto fail;
     untrusted_cur_fd = strtol(optarg, &endptr, 0);
     if (untrusted_cur_fd < 0)
-        goto fail;
+        abort(); // should have been caught by the optarg[0] checks
     if (endptr != NULL && endptr[0] == 0) {
         // limit fd value
         if (untrusted_cur_fd > MAX_FD_VALUE) {
-            fprintf(stderr, "FD value too big (%d > %d)\n",
+            fprintf(stderr, "FD value too big (%ld > %d)\n",
                     untrusted_cur_fd, MAX_FD_VALUE);
             exit(1);
         }
         // check if not already in list
         for (i = 0; i < *list_count; i++) {
-            if (list[i] == untrusted_cur_fd)
+            if (list[i] == (int)untrusted_cur_fd)
                 break;
         }
-        cur_fd = untrusted_cur_fd;
+        cur_fd = (int)untrusted_cur_fd;
         /* FD sanitization end */
         if (i == *list_count)
             list[(*list_count)++] = cur_fd;
@@ -131,7 +132,6 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
     output_fds[(*output_fds_count)++] = 1;	//stdout
     output_fds[(*output_fds_count)++] = 2;	//stderr
 
-    /* getopt will filter out not allowed options */
     while ((opt =
                 getopt_long(argc, untrusted_argv, gpg_short_options,
                     gpg_long_options, NULL)) != -1) {
