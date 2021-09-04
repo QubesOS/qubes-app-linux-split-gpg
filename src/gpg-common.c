@@ -129,6 +129,12 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
     *input_fds_count = 0;
     *output_fds_count = 0;
 
+    // Do not print error messages on the server side.  The client side should
+    // have already printed an error, so the error-message generation code is
+    // useless attack surface.
+    if (!is_client)
+        opterr = 0;
+
     // Standard FDs
     input_fds[(*input_fds_count)++] = 0;	//stdin
     output_fds[(*output_fds_count)++] = 1;	//stdout
