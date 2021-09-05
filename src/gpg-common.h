@@ -275,7 +275,6 @@ static const struct option gpg_long_options[] = {
     {"export-ssh-key", 0, 0, opt_export_ssh},
     {"fingerprint", 0, 0, opt_fingerprint},
     {"fixed-list-mode", 0, 0, opt_fixed_list_mode},
-    {"fixed-list-mode", 0, 0, opt_fixed_list_mode},
     {"force-mdc", 0, 0, opt_force_mdc},
     {"force-v3-sigs", 0, 0, opt_force_v3_sigs},
     {"force-v4-certs", 0, 0, opt_force_v4_certs},
