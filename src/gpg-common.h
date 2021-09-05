@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <getopt.h>
+#include <stdbool.h>
 
 #define COMMAND_MAX_LEN 1024
 
@@ -212,6 +213,34 @@ static const int gpg_allowed_options[] = {
     0
 };
 
+/*
+ * Options that define command to perform. There can be only one of those, and
+ * the command define how non-option arguments are interpreted (either file
+ * path, or user id).
+ */
+struct gpg_command_opt {
+    int opt;
+    bool userid_args;
+};
+static const struct gpg_command_opt gpg_commands[] = {
+    {'K', true},
+    {'b', false},
+    {'c', false},
+    {'d', false},
+    {'e', false},
+    {'k', true},
+    {'s', false},
+    {opt_clearsign, false},
+    {opt_export, true},
+    {opt_export_ssh, true},
+    {opt_fingerprint, true},
+    {opt_list_config, false},
+    {opt_list_sigs, true},
+    {opt_store, false},
+    {opt_verify, false},
+    {0, false},
+};
+
 static const char gpg_short_options[] = "bacdekKnN:qr:R:stu:";
 
 static const struct option gpg_long_options[] = {
@@ -240,8 +269,8 @@ static const struct option gpg_long_options[] = {
     {"encrypt", 0, 0, 'e'},
     {"encrypt-to", 1, 0, opt_encrypt_to},
     {"exit-on-status-write-error", 0, 0, opt_exit_on_status_write_error},
-    {"export", 2, 0, opt_export},
-    {"export-ssh-key", 1, 0, opt_export_ssh},
+    {"export", 0, 0, opt_export},
+    {"export-ssh-key", 0, 0, opt_export_ssh},
     {"fingerprint", 0, 0, opt_fingerprint},
     {"fixed-list-mode", 0, 0, opt_fixed_list_mode},
     {"fixed-list-mode", 0, 0, opt_fixed_list_mode},
@@ -252,12 +281,12 @@ static const struct option gpg_long_options[] = {
     {"hidden-encrypt-to", 1, 0, opt_hidden_encrypt_to},
     {"hidden-recipient", 1, 0, 'R'},
     {"list-config", 0, 0, opt_list_config},
-    {"list-keys", 2, 0, 'k'},
+    {"list-keys", 0, 0, 'k'},
     {"list-only", 0, 0, opt_list_only},
     {"list-options", 1, 0, opt_list_options},
-    {"list-public-keys", 2, 0, 'k'},
-    {"list-secret-keys", 2, 0, 'K'},
-    {"list-sigs", 2, 0, opt_list_sigs},
+    {"list-public-keys", 0, 0, 'k'},
+    {"list-secret-keys", 0, 0, 'K'},
+    {"list-sigs", 0, 0, opt_list_sigs},
     {"local-user", 1, 0, 'u'},
     {"logger-fd", 1, 0, opt_logger_fd},
     {"keyid-format", 1, 0, opt_keyid_format},

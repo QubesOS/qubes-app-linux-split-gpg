@@ -119,9 +119,9 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
         int *input_fds_count, int *output_fds,
         int *output_fds_count, int is_client)
 {
-    int opt;
+    int opt, command = 0;
     int i, ok;
-    int mode_list_keys = 0, mode_verify = 0;
+    bool userid_args = false, mode_verify = false;
 
     *input_fds_count = 0;
     *output_fds_count = 0;
@@ -154,10 +154,21 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
                     untrusted_argv[optind - 1]);
             exit(1);
         }
-        if (opt == 'k' || opt == 'K' || opt == opt_export || opt == opt_export_ssh) {
-            // --list-keys and --export can have multiple key IDs as arguments
-            mode_list_keys = 1;
-        } else if (opt == opt_status_fd) {
+        i = 0;
+        while (gpg_commands[i].opt) {
+            if (gpg_commands[i].opt == opt) {
+                if (command && userid_args != gpg_commands[i].userid_args) {
+                    /* gpg gives similarly vague error message */
+                    fprintf(stderr, "conflicting commands\n");
+                    exit(1);
+                }
+                command = opt;
+                userid_args = gpg_commands[i].userid_args;
+                break;
+            }
+            i++;
+        }
+        if (opt == opt_status_fd) {
             add_arg_to_fd_list(output_fds, output_fds_count);
         } else if (opt == opt_logger_fd) {
             add_arg_to_fd_list(output_fds, output_fds_count);
@@ -180,7 +191,7 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
         }
 
     }
-    if (mode_list_keys) {
+    if (userid_args) {
         // all the arguments are key IDs/user IDs, so do not try to handle them
         // as input files
         optind = argc;
