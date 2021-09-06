@@ -315,6 +315,73 @@ Expire-Date: 0
         self.assertEquals(decoded_msg.decode(), msg)
         self.assertIn('\ngpg: Good signature from', verification_result.decode())
 
+    def _check_if_options_takes_argument(self, prog, option, message_fmts):
+        """Check whether an option expect an argument or not.
+        The *prog* will be called with *option* and --garbage-1 --garbage-2.
+        Based on which one is rejected, it will deduce whether the option
+        requires an argument or not.
+
+        :param prog: program to test (gpg2, qubes-gpg-client)
+        :param option: option to test
+        :param message_fmt: error message format, about rejected option
+        """
+
+        # check if option requires an argument by seeing if --garbage-1 was
+        # interpreted as another option, or an argument
+        cmd = '{} {} --garbage-1 --garbage-2'.format(prog, option)
+        p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
+        (stdout, stderr) = p.communicate()
+        stderr = stderr.decode()
+        self.assertNotEquals(p.returncode, 0,
+            cmd + ' should have failed: ' + stderr)
+        for message_fmt in message_fmts:
+            if message_fmt.format('--garbage-1') in stderr:
+                return False
+            if message_fmt.format('--garbage-2') in stderr:
+                return True
+            if message_fmt.format(option) in stderr:
+                return None
+        if 'invalid argument for option "{}"'.format(option) in stderr:
+            return True
+        if 'Invalid fd argument' in stderr:
+            return True
+        self.fail(
+            '{} {} have not complained about --garbage options: {}'.format(
+                'qubes-gpg-client' if 'qubes' in prog else 'gpg2',
+                option, stderr))
+
+    def test_080_option_parser(self):
+        """Check if split-gpg agrees with gpg about options parsing"""
+        cmd = 'gpg --dump-options'
+        p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
+        (stdout, stderr) = p.communicate()
+        self.assertEquals(p.returncode, 0, '{} failed: {}'.format(cmd,
+            stderr.decode()))
+        all_options = stdout.decode().splitlines()
+        noarg_options = []
+        for opt in all_options:
+            if opt in ('--output', '--logger-fd', '--version'):
+                # those options are problematic for testing (different error
+                # messages, messes with logging) and are checked manually
+                continue
+            splitgpg_needs_arg = self._check_if_options_takes_argument(
+                'QUBES_GPG_DOMAIN={} qubes-gpg-client'.format(self.backend.name),
+                opt, ['unrecognized option \'{}\'',
+                      'option \'{}\' is ambiguous',
+                      'Forbidden option: {}'])
+            if splitgpg_needs_arg is None:
+                # option rejected
+                continue
+            gpg_needs_arg = self._check_if_options_takes_argument(
+                'gpg2', opt, ['invalid option "{}"'])
+            self.assertEquals(gpg_needs_arg, splitgpg_needs_arg,
+                'gpg and splitgpg disagrees on {} option: {}, {}'.format(
+                    opt, gpg_needs_arg, splitgpg_needs_arg))
+            if not gpg_needs_arg:
+                noarg_options.append(opt)
+        # TODO: Test if gpg agrees with split-gpg, whether positional
+        #  argument(s) are a path or user id. Somehow...
+
     # TODO:
     #  - encrypt/decrypt
     #  - large file (bigger than pipe/qrexec buffers)
