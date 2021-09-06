@@ -89,34 +89,37 @@ class TC_00_Direct(SplitGPGBase):
 
     def test_010_list_keys(self):
         cmd = 'qubes-gpg-client-wrapper --list-keys'
-        p = self.frontend.run(cmd, passio_popen=True)
-        (keys, _) = p.communicate()
-        self.assertEquals(p.returncode, 0, '{} failed'.format(cmd))
+        p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
+        (keys, stderr) = p.communicate()
+        self.assertEquals(p.returncode, 0,
+            '{} failed: {}'.format(cmd, stderr.decode()))
         self.assertIn("Qubes test", keys.decode())
 
     def test_020_export_secret_key_deny(self):
         # TODO check if backend really deny such operation, here it is denied
         # by the frontend
         cmd = 'qubes-gpg-client-wrapper -a --export-secret-keys user@localhost'
-        p = self.frontend.run(cmd, passio_popen=True)
-        keys, _ = p.communicate()
+        p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
+        keys, stderr = p.communicate()
         self.assertNotEquals(p.returncode, 0,
-            '{} succeeded unexpectedly'.format(cmd))
+            '{} succeeded unexpectedly: {}'.format(cmd, stderr.decode()))
         self.assertEquals(keys.decode(), '')
 
     def test_030_sign_verify(self):
         msg = "Test message"
         cmd = 'qubes-gpg-client-wrapper -a --sign'
-        p = self.frontend.run(cmd, passio_popen=True)
-        (signature, _) = p.communicate(msg.encode())
-        self.assertEquals(p.returncode, 0, '{} failed'.format(cmd))
+        p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
+        (signature, stderr) = p.communicate(msg.encode())
+        self.assertEquals(p.returncode, 0,
+            '{} failed: {}'.format(cmd, stderr.decode()))
         self.assertNotEquals('', signature.decode())
 
         # verify first through gpg-split
         cmd = 'qubes-gpg-client-wrapper'
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
         (decoded_msg, verification_result) = p.communicate(signature)
-        self.assertEquals(p.returncode, 0, '{} failed'.format(cmd))
+        self.assertEquals(p.returncode, 0,
+            '{} failed: {}'.format(cmd, verification_result.decode()))
         self.assertEquals(decoded_msg.decode(), msg)
         self.assertIn('\ngpg: Good signature from', verification_result.decode())
 
@@ -143,14 +146,17 @@ class TC_00_Direct(SplitGPGBase):
         msg = "Test message"
         self.frontend.run('echo "{}" > message'.format(msg), wait=True)
         cmd = 'qubes-gpg-client-wrapper -a -b --sign message > signature.asc'
-        p = self.frontend.run(cmd, wait=True)
-        self.assertEquals(p, 0, '{} failed'.format(cmd))
+        p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
+        stdout, stderr = p.communicate()
+        self.assertEquals(p.returncode, 0,
+            '{} failed: {}'.format(cmd, stderr.decode()))
 
         # verify through gpg-split
         cmd = 'qubes-gpg-client-wrapper --verify signature.asc message'
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
         decoded_msg, verification_result = p.communicate()
-        self.assertEquals(p.returncode, 0, '{} failed'.format(cmd))
+        self.assertEquals(p.returncode, 0,
+            '{} failed: {}'.format(cmd, verification_result.decode()))
         self.assertEquals(decoded_msg.decode(), '')
         self.assertIn('\ngpg: Good signature from', verification_result.decode())
 
@@ -160,7 +166,7 @@ class TC_00_Direct(SplitGPGBase):
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
         decoded_msg, verification_result = p.communicate()
         self.assertNotEquals(p.returncode, 0,
-            '{} unexpecedly succeeded'.format(cmd))
+            '{} unexpecedly succeeded: {}'.format(cmd, verification_result.decode()))
         self.assertEquals(decoded_msg.decode(), '')
         self.assertIn('\ngpg: BAD signature from', verification_result.decode())
 
@@ -208,8 +214,8 @@ Expire-Date: 0
         if 'whonix' in self.template:
             self.frontend.run("date -s -10min", user="root", wait=True)
         p = self.frontend.run('mkdir -p -m 0700 .gnupg; gpg2 --gen-key --batch',
-                passio_popen=True)
-        p.communicate('''
+                passio_popen=True, passio_stderr=True)
+        stdout, stderr = p.communicate('''
 Key-Type: RSA
 Key-Length: 1024
 Key-Usage: sign
@@ -222,7 +228,8 @@ Expire-Date: 0
 %no-protection
 %commit
         '''.encode())
-        assert p.returncode == 0, 'key generation failed'
+        assert p.returncode == 0, 'key generation failed: {}'.format(
+            stderr.decode())
         # see comment in setUp()
         if 'whonix' in self.template:
             self.frontend.run("date -s +10min", user="root", wait=True)
@@ -248,15 +255,17 @@ Expire-Date: 0
         """Test for --output option"""
         msg = "Test message"
         cmd = 'qubes-gpg-client-wrapper -a --sign --output /tmp/signed.asc'
-        p = self.frontend.run(cmd, passio_popen=True)
-        p.communicate(msg.encode())
-        self.assertEquals(p.returncode, 0, '{} failed'.format(cmd))
+        p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
+        stdout, stderr = p.communicate(msg.encode())
+        self.assertEquals(p.returncode, 0,
+            '{} failed: {}'.format(cmd, stderr.decode()))
 
         # verify first through gpg-split
         cmd = 'qubes-gpg-client-wrapper /tmp/signed.asc'
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
         decoded_msg, verification_result = p.communicate()
-        self.assertEquals(p.returncode, 0, '{} failed'.format(cmd))
+        self.assertEquals(p.returncode, 0,
+            '{} failed: {}'.format(cmd, verification_result.decode()))
         self.assertEquals(decoded_msg.decode(), msg)
         self.assertIn('\ngpg: Good signature from', verification_result.decode())
 
@@ -267,7 +276,8 @@ Expire-Date: 0
               '/tmp/signed.asc'
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
         (stdout, stderr) = p.communicate(msg.encode())
-        self.assertEquals(p.returncode, 0, '{} failed'.format(cmd))
+        self.assertEquals(p.returncode, 0,
+            '{} failed: {}'.format(cmd, stderr.decode()))
         self.assertTrue(all(x.startswith('[GNUPG:]') for x in
             stdout.decode().splitlines()), "Non-status output on stdout")
 
@@ -275,7 +285,8 @@ Expire-Date: 0
         cmd = 'qubes-gpg-client-wrapper /tmp/signed.asc'
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
         decoded_msg, verification_result = p.communicate()
-        self.assertEquals(p.returncode, 0, '{} failed'.format(cmd))
+        self.assertEquals(p.returncode, 0,
+            '{} failed: {}'.format(cmd, verification_result.decode()))
         self.assertEquals(decoded_msg.decode(), msg)
         self.assertIn('\ngpg: Good signature from', verification_result.decode())
 
@@ -299,7 +310,8 @@ Expire-Date: 0
         cmd = 'qubes-gpg-client-wrapper /tmp/signed.asc'
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
         decoded_msg, verification_result = p.communicate()
-        self.assertEquals(p.returncode, 0, '{} failed'.format(cmd))
+        self.assertEquals(p.returncode, 0,
+            '{} failed: {}'.format(cmd, verification_result.decode()))
         self.assertEquals(decoded_msg.decode(), msg)
         self.assertIn('\ngpg: Good signature from', verification_result.decode())
 
