@@ -120,6 +120,7 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
         int *output_fds_count, int is_client)
 {
     int opt, command = 0;
+    int longindex;
     int i, ok;
     bool userid_args = false, mode_verify = false;
 
@@ -132,9 +133,9 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
     output_fds[(*output_fds_count)++] = 2;	//stderr
 
     /* getopt will filter out not allowed options */
-    while ((opt =
+    while (longindex = -1, (opt =
                 getopt_long(argc, untrusted_argv, gpg_short_options,
-                    gpg_long_options, NULL)) != -1) {
+                    gpg_long_options, &longindex)) != -1) {
         if (opt == '?' || opt == ':') {
             /* forbidden/missing option - abort execution */
             //error message already printed by getopt
@@ -150,8 +151,11 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
             i++;
         }
         if (!ok) {
-            fprintf(stderr, "Forbidden option: %s\n",
-                    untrusted_argv[optind - 1]);
+            if (longindex != -1)
+                fprintf(stderr, "Forbidden option: --%s\n",
+                        gpg_long_options[longindex].name);
+            else
+                fprintf(stderr, "Forbidden option: -%c\n", opt);
             exit(1);
         }
         i = 0;
