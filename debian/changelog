@@ -1,3 +1,17 @@
+qubes-gpg-split (2.0.53-1) unstable; urgency=medium
+
+  * Correctly mark --s2k-* options as requiring an argument
+  * Properly handle gpg's command options
+  * Fix --with-colons declaration
+  * Remove duplicated --fixed-list-mode
+  * Add --default-recipient option to the parser
+  * Fix forbidden option reporting
+  * Add --display option to the parser
+  * tests: include stderr in the failure message
+  * tests: option arguments parsing
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 09 Sep 2021 22:27:04 +0200
+
 qubes-gpg-split (2.0.52-1) unstable; urgency=medium
 
   [ deeplow ]
