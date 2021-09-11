@@ -103,7 +103,6 @@ enum {
     opt_with_colons,
     opt_with_fingerprint,
     opt_with_keygrip,
-    opt_yes
 };
 
 int parse_options(int argc, char *argv[], int *input_fds,
@@ -211,7 +210,6 @@ static const int gpg_allowed_options[] = {
     opt_with_colons,
     opt_with_fingerprint,
     opt_with_keygrip,
-    opt_yes,
     0
 };
 
@@ -317,7 +315,6 @@ static const struct option gpg_long_options[] = {
     {"pgp6", 0, 0, opt_pgp6},
     {"pgp7", 0, 0, opt_pgp7},
     {"pgp8", 0, 0, opt_pgp8},
-    {"quiet", 0, 0, 'q'},
     {"recipient", 1, 0, 'r'},
     {"rfc2440", 0, 0, opt_rfc2440},
     {"rfc4880", 0, 0, opt_rfc4880},
@@ -349,7 +346,6 @@ static const struct option gpg_long_options[] = {
     {"with-colons", 0, 0, opt_with_colons},
     {"with-fingerprint", 0, 0, opt_with_fingerprint},
     {"with-keygrip", 0, 0, opt_with_keygrip},
-    {"yes", 0, 0, opt_yes},
     {0, 0, 0, 0}
 };
 
