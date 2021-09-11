@@ -61,7 +61,14 @@ while [[ $1 ]]; do
             # Keyserver options makes no sense for offline GPG VM, so it is
             # rejected by qubes-gpg-client and qubes-gpg-server. But since
             # it is forced by Torbirdy extension, simply ignore the option.
+            --keyserver-options=*)
+                shift
+                ;;
             --keyserver-options)
+                if [ "$#" -lt 2 ]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
+                fi
                 shift 2
                 ;;
             # Using dirmngr in an offline GPG VM makes no sense, however
@@ -73,17 +80,25 @@ while [[ $1 ]]; do
                 ;;
             # --photo-viewer shouldn't be passed to the backend as it allow
             # arbitrary command execution
+            --photo-viewer=*)
+                shift
+                ;;
             --photo-viewer)
+                if [ "$#" -lt 2 ]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
+                fi
                 shift 2
                 ;;
             # ignore tty/display related options - those are meaningless in another VM
-            --display)
-                shift 2
+            --ttyname=*|--display=*|--ttytype=*|--no-tty)
+                shift
                 ;;
-            --ttyname)
-                shift 2
-                ;;
-            --ttytype)
+            --ttyname|--ttytype|--display)
+                if [ "$#" -lt 2 ]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
+                fi
                 shift 2
                 ;;
             --yes)
@@ -93,7 +108,16 @@ while [[ $1 ]]; do
                 special_filenames=1
                 shift
                 ;;
-            -q)
+            # Deprecated legacy options
+            --disable-mdc|\
+            --force-mdc|\
+            --force-v3-sigs|\
+            --force-v4-certs|\
+            --no-sk-comments|\
+            --use-agent)
+                shift
+                ;;
+            -q|--quiet)
                 shift
                 ;;
             -o)
@@ -102,13 +126,26 @@ while [[ $1 ]]; do
                 shift 2
                 ;;
             --output)
+                if [ "$#" -lt 2 ]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
+                fi
                 output=1
                 target="$2"
                 shift 2
                 ;;
+            --output=*)
+                output=1
+                target=${1#--output=}
+                shift
+                ;;
             --status-fd|\
             --logger-fd|\
             --attribute-fd)
+                if [ "$#" -lt 2 ]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
+                fi
                 if [ "x$2" = "x1" ]; then
                     # don't use stdout for status fd, since it might be later
                     # redirected to a file with --output
@@ -119,6 +156,12 @@ while [[ $1 ]]; do
                     shift
                 fi
                 ;;    
+            --status-fd=*|\
+            --logger-fd=*|\
+            --attribute-fd=*)
+                printf 'ERROR: use separate arguments for the FD and the option\n' >&2
+                exit 1
+                ;;
             --log-file)
                 # rejected by split-gpg to not allow a write to arbitrary file
                 # on the backend side; emulate using --logger-fd
@@ -126,6 +169,94 @@ while [[ $1 ]]; do
                 exec 62>"$2"
                 options+=( "--logger-fd" "$fd_for_logfile" )
                 shift 2
+                ;;
+            --cert-digest-algo|\
+            --cert-notation|\
+            --charset|\
+            --cipher-algo|\
+            --command-fd|\
+            --comment|\
+            --compress-algo|\
+            --default-recipient|\
+            --digest-algo|\
+            --disable-cipher-algo|\
+            --disable-pubkey-algo|\
+            --display|\
+            --display-charset|\
+            --encrypt-to|\
+            --hidden-encrypt-to|\
+            --hidden-recipient|\
+            --list-options|\
+            --local-user|\
+            --logger-fd|\
+            --keyid-format|\
+            --max-output|\
+            --output|\
+            --personal-cipher-preferences|\
+            --personal-compress-preferences|\
+            --personal-digest-preferences|\
+            --recipient|\
+            --s2k-cipher-algo|\
+            --s2k-count|\
+            --s2k-digest-algo|\
+            --s2k-mode|\
+            --sender|\
+            --sig-notation|\
+            --set-filename|\
+            --set-notation|\
+            --status-fd|\
+            --trust-model|\
+            --trusted-key|\
+            --try-secret-key|\
+            --verify-options)
+                if [ "$#" -lt 2 ]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
+                fi
+                options+=("$1" "$2")
+                shift 2
+                ;;
+            --cert-digest-algo=*|\
+            --cert-notation=*|\
+            --charset=*|\
+            --cipher-algo=*|\
+            --command-fd=*|\
+            --comment=*|\
+            --compress-algo=*|\
+            --default-recipient=*|\
+            --digest-algo=*|\
+            --disable-cipher-algo=*|\
+            --disable-pubkey-algo=*|\
+            --display=*|\
+            --display-charset=*|\
+            --encrypt-to=*|\
+            --hidden-encrypt-to=*|\
+            --hidden-recipient=*|\
+            --list-options=*|\
+            --local-user=*|\
+            --logger-fd=*|\
+            --keyid-format=*|\
+            --max-output=*|\
+            --output=*|\
+            --personal-cipher-preferences=*|\
+            --personal-compress-preferences=*|\
+            --personal-digest-preferences=*|\
+            --recipient=*|\
+            --s2k-cipher-algo=*|\
+            --s2k-count=*|\
+            --s2k-digest-algo=*|\
+            --s2k-mode=*|\
+            --sender=*|\
+            --sig-notation=*|\
+            --set-filename=*|\
+            --set-notation=*|\
+            --status-fd=*|\
+            --trust-model=*|\
+            --trusted-key=*|\
+            --try-secret-key=*|\
+            --verify-options=*)
+                options+=("$1")
+                shift
                 ;;
             --)
                 eoo=1
