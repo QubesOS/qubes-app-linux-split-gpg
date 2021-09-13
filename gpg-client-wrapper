@@ -65,11 +65,13 @@ while [[ $1 ]]; do
                 shift
                 ;;
             --keyserver-options)
-                if [ "$#" -lt 2 ]; then
-                    printf 'Missing argument to %s\n' "$1" >&2
-                    exit 1
+                if (( $# >= 2 )); then
+                    options+=("$1" "$2")
+                    shift 2
+                else # let qubes-gpg-client error out
+                    options+=("$1")
+                    shift
                 fi
-                shift 2
                 ;;
             # Using dirmngr in an offline GPG VM makes no sense, however
             # qubes-gpg-client does not recognize the command line option
@@ -84,22 +86,26 @@ while [[ $1 ]]; do
                 shift
                 ;;
             --photo-viewer)
-                if [ "$#" -lt 2 ]; then
-                    printf 'Missing argument to %s\n' "$1" >&2
-                    exit 1
+                if (( $# >= 2 )); then
+                    options+=("$1" "$2")
+                    shift 2
+                else # let qubes-gpg-client error out
+                    options+=("$1")
+                    shift
                 fi
-                shift 2
                 ;;
             # ignore tty/display related options - those are meaningless in another VM
             --ttyname=*|--display=*|--ttytype=*|--no-tty)
                 shift
                 ;;
             --ttyname|--ttytype|--display)
-                if [ "$#" -lt 2 ]; then
-                    printf 'Missing argument to %s\n' "$1" >&2
-                    exit 1
+                if (( $# >= 2 )); then
+                    options+=("$1" "$2")
+                    shift 2
+                else # let qubes-gpg-client error out
+                    options+=("$1")
+                    shift
                 fi
-                shift 2
                 ;;
             --yes)
                 shift
@@ -120,11 +126,6 @@ while [[ $1 ]]; do
             -q|--quiet)
                 shift
                 ;;
-            -o)
-                output=1
-                target="$2"
-                shift 2
-                ;;
             --output)
                 if [ "$#" -lt 2 ]; then
                     printf 'Missing argument to %s\n' "$1" >&2
@@ -142,25 +143,31 @@ while [[ $1 ]]; do
             --status-fd|\
             --logger-fd|\
             --attribute-fd)
-                if [ "$#" -lt 2 ]; then
-                    printf 'Missing argument to %s\n' "$1" >&2
-                    exit 1
-                fi
-                if [ "x$2" = "x1" ]; then
-                    # don't use stdout for status fd, since it might be later
-                    # redirected to a file with --output
-                    options+=( "$1" "$fd_for_stdout" )
+                if (( $# >= 2 )); then
+                    if [[ "$2" =~ ^(0x)?0*1$ ]]; then
+                        # don't use stdout for status fd, since it might be later
+                        # redirected to a file with --output
+                        options+=( "$1" "$fd_for_stdout" )
+                    else
+                        options+=( "$1" "$2" )
+                    fi
                     shift 2
-                else
-                    options+=( "$1" )
+                else # let qubes-gpg-client error out
+                    options+=("$1")
                     shift
                 fi
                 ;;    
             --status-fd=*|\
             --logger-fd=*|\
             --attribute-fd=*)
-                printf 'ERROR: use separate arguments for the FD and the option\n' >&2
-                exit 1
+                if [[ $1 =~ ^([^=]*=)(0x)?0*1$ ]]; then
+                    # don't use stdout for status fd, since it might be later
+                    # redirected to a file with --output
+                    options+=( "${BASH_REMATCH[1]}$fd_for_stdout" )
+                else
+                    options+=( "$1" )
+                fi
+                shift
                 ;;
             --log-file)
                 # rejected by split-gpg to not allow a write to arbitrary file
@@ -209,54 +216,37 @@ while [[ $1 ]]; do
             --trusted-key|\
             --try-secret-key|\
             --verify-options)
-                if [ "$#" -lt 2 ]; then
-                    printf 'Missing argument to %s\n' "$1" >&2
-                    exit 1
+                if (( $# >= 2 )); then
+                    options+=("$1" "$2")
+                    shift 2
+                else # let qubes-gpg-client error out
+                    options+=("$1")
+                    shift
                 fi
-                options+=("$1" "$2")
-                shift 2
                 ;;
-            --cert-digest-algo=*|\
-            --cert-notation=*|\
-            --charset=*|\
-            --cipher-algo=*|\
-            --command-fd=*|\
-            --comment=*|\
-            --compress-algo=*|\
-            --default-recipient=*|\
-            --digest-algo=*|\
-            --disable-cipher-algo=*|\
-            --disable-pubkey-algo=*|\
-            --display=*|\
-            --display-charset=*|\
-            --encrypt-to=*|\
-            --hidden-encrypt-to=*|\
-            --hidden-recipient=*|\
-            --list-options=*|\
-            --local-user=*|\
-            --logger-fd=*|\
-            --keyid-format=*|\
-            --max-output=*|\
-            --output=*|\
-            --personal-cipher-preferences=*|\
-            --personal-compress-preferences=*|\
-            --personal-digest-preferences=*|\
-            --recipient=*|\
-            --s2k-cipher-algo=*|\
-            --s2k-count=*|\
-            --s2k-digest-algo=*|\
-            --s2k-mode=*|\
-            --sender=*|\
-            --sig-notation=*|\
-            --set-filename=*|\
-            --set-notation=*|\
-            --status-fd=*|\
-            --trust-model=*|\
-            --trusted-key=*|\
-            --try-secret-key=*|\
-            --verify-options=*)
-                options+=("$1")
-                shift
+            -[!-]*)
+                if [[ "$1" =~ ^-[bacdekKnqst]*[NrRu]$ ]] && (( $# >= 2 )); then
+                    options+=("$1" "$2")
+                    shift 2
+                elif [[ "$1" =~ ^(-[bacdekKnqst]*)o(.*)$ ]]; then
+                    output=1
+                    if (( ${#BASH_REMATCH[1]} > 1 )); then
+                        options+=("${BASH_REMATCH[1]}")
+                    fi
+                    if (( ${#BASH_REMATCH[2]} > 0 )); then
+                        target=${BASH_REMATCH[2]}
+                        shift
+                    elif (( $# >= 2 )); then
+                        target="$2"
+                        shift 2
+                    else
+                        printf 'Missing argument to -o\n' >&2
+                        exit 1
+                    fi
+                else # if $# is too small, let qubes-gpg-client error out
+                    options+=("$1")
+                    shift
+                fi
                 ;;
             --)
                 eoo=1
