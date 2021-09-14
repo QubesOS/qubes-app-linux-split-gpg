@@ -124,6 +124,7 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
     int longindex;
     int i, ok;
     bool userid_args = false, mode_verify = false;
+    char *lastarg = NULL;
 
     *input_fds_count = 0;
     *output_fds_count = 0;
@@ -134,9 +135,10 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
     output_fds[(*output_fds_count)++] = 2;	//stderr
 
     /* getopt will filter out not allowed options */
-    while (longindex = -1, (opt =
-                getopt_long(argc, untrusted_argv, gpg_short_options,
-                    gpg_long_options, &longindex)) != -1) {
+    while ((void)(longindex = -1),
+           (void)(lastarg = (optind <= argc ? untrusted_argv[optind] : NULL)),
+           (opt = getopt_long(argc, untrusted_argv, gpg_short_options,
+                              gpg_long_options, &longindex)) != -1) {
         if (opt == '?' || opt == ':') {
             /* forbidden/missing option - abort execution */
             //error message already printed by getopt
@@ -144,6 +146,31 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
         }
         i = 0;
         ok = 0;
+        if (!lastarg)
+            abort();
+        // Number of distinct long options
+        static const int opts = (int)(sizeof(gpg_long_options)/sizeof(gpg_long_options[0])) - 1;
+        if (lastarg[0] == '-' && lastarg[1] == '-') {
+            assert(longindex >= 0 && longindex < opts);
+            const char *const optname = gpg_long_options[longindex].name;
+            const size_t len = strlen(optname);
+            const char *const optval = lastarg + 2;
+            const char *const res = strchr(optval, '=');
+            const size_t delta = res ? (size_t)(res - optval) : strlen(optval);
+            if (delta > len || memcmp(optname, optval, delta)) {
+                fprintf(stderr,
+                        "split-gpg: internal error: option misparsed by getopt_long(3)\n");
+                abort();
+            }
+            if (delta < len) {
+                fprintf(stderr,
+                        "Abbreviated option '--%.*s' must be written as '--%s'\n",
+                        (int)delta, optname, optname);
+                exit(1);
+            }
+        } else {
+            assert(longindex == -1);
+        }
         while (gpg_allowed_options[i]) {
             if (gpg_allowed_options[i] == opt) {
                 ok = 1;
