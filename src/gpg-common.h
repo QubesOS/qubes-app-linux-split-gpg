@@ -241,7 +241,7 @@ static const struct gpg_command_opt gpg_commands[] = {
     {0, false},
 };
 
-static const char gpg_short_options[] = "bacdekKnN:qr:R:stu:";
+static const char gpg_short_options[] = "+bacdekKnN:qr:R:stu:";
 
 static const struct option gpg_long_options[] = {
     {"always-trust", 0, 0, opt_always_trust},

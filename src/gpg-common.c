@@ -229,6 +229,19 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
         }
 
     }
+    // Only allow key IDs to begin with ‘-’ if the options list was terminated by ‘--’,
+    // or if the argument is a literal “-” (which is never considered an option)
+    if (!lastarg || strcmp(lastarg, "--")) {
+        for (int i = optind; i < argc; ++i) {
+            const char *const untrusted_arg = untrusted_argv[i];
+            if (untrusted_arg[0] == '-' && untrusted_arg[1]) {
+                fprintf(stderr, "Non-option arguments must not start with '-', unless preceeded by \"--\"\n"
+                                "to mark the end of options.  "
+                                "As an exception, the literal string \"-\" of length 1 is allowed.\n");
+                exit(1);
+            }
+        }
+    }
     if (userid_args) {
         // all the arguments are key IDs/user IDs, so do not try to handle them
         // as input files
