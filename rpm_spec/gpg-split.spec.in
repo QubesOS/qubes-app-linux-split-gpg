@@ -55,6 +55,7 @@ Requires:   %{name}
 Requires:   python%{python3_pkgversion}-dogtail
 %endif
 Requires:   xdotool
+Requires:   dovecot
 
 %description tests
 Helper scripts for Split GPG tests.
