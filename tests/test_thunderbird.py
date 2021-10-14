@@ -62,12 +62,13 @@ class Thunderbird:
     Manages the state of a thunderbird instance
     """
 
-    def __init__(self, tb_name, profile_dir):
+    def __init__(self, tb_name, profile_dir, imap_pw):
         self.name = tb_name
         self.tb_cmd = [self.name]
         if profile_dir:
             self.tb_cmd.append('--profile')
             self.tb_cmd.append(profile_dir)
+        self.imap_pw = imap_pw
         self.start()
 
     def start(self):
@@ -81,6 +82,7 @@ class Thunderbird:
     def _get_app(self):
         config.searchCutoffCount = 50
         tb = tree.root.application('Thunderbird|Icedove')
+        config.searchCutoffCount = defaultCutoffCount
         return tb
 
     def get_version(self):
@@ -147,6 +149,14 @@ def export_pub_key():
     except subprocess.SubprocessError:
         raise Exception('Cannot export public key')
 
+def enter_imap_passwd(tb):
+    pass_prompt = tb.app.child(name='Enter your password for user', roleName='dialog')
+    pass_textbox = pass_prompt.findChild(GenericPredicate(roleName='password text'))
+    pass_textbox.text = tb.imap_pw
+    pass_prompt.childNamed("Use Password Manager to remember this password.")\
+               .doActionNamed('check')
+    pass_prompt.findChild(GenericPredicate(name='OK', roleName='push button'))\
+               .doActionNamed('press')
 
 def accept_qubes_attachments(tb):
     try:
@@ -475,6 +485,7 @@ def main():
     parser.add_argument('--tbname', help='Thunderbird executable name',
                         default='thunderbird')
     parser.add_argument('--profile', help='Thunderbird profile path')
+    parser.add_argument('--imap_pw', help='IMAP password')
     subparsers = parser.add_subparsers(dest='command')
     subparsers.add_parser('setup', help='setup Thunderbird for tests')
     parser_send_receive = subparsers.add_parser(
@@ -492,8 +503,9 @@ def main():
     # log only to stdout since logging to file have broken unicode support
     config.logDebugToFile = False
 
-    tb = Thunderbird(args.tbname, args.profile)
+    tb = Thunderbird(args.tbname, args.profile, args.imap_pw)
     if args.command == 'setup':
+        enter_imap_passwd(tb)
         accept_qubes_attachments(tb)
         show_menu_bar(tb)
         tb.quit()
