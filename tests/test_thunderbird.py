@@ -62,8 +62,12 @@ class Thunderbird:
     Manages the state of a thunderbird instance
     """
 
-    def __init__(self, tb_name):
+    def __init__(self, tb_name, profile_dir):
         self.name = tb_name
+        self.tb_cmd = [self.name]
+        if profile_dir:
+            self.tb_cmd.append('--profile')
+            self.tb_cmd.append(profile_dir)
         self.start()
 
     def start(self):
@@ -71,7 +75,7 @@ class Thunderbird:
         env['GTK_MODULES'] = 'gail:atk-bridge'
         null = open(os.devnull, 'r+')
         self.process = subprocess.Popen(
-            [self.name], stdout=null, stdin=null, stderr=null, env=env)
+            self.tb_cmd, stdout=null, stdin=null, stderr=null, env=env)
         self.app = self._get_app()
 
     def _get_app(self):
@@ -599,6 +603,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--tbname', help='Thunderbird executable name',
                         default='thunderbird')
+    parser.add_argument('--profile', help='Thunderbird profile path')
     subparsers = parser.add_subparsers(dest='command')
     subparsers.add_parser('setup', help='setup Thunderbird for tests')
     parser_send_receive = subparsers.add_parser(
@@ -616,7 +621,7 @@ def main():
     # log only to stdout since logging to file have broken unicode support
     config.logDebugToFile = False
 
-    tb = Thunderbird(args.tbname)
+    tb = Thunderbird(args.tbname, args.profile)
     if args.command == 'setup':
         skip_autoconf(tb)
         show_menu_bar(tb)

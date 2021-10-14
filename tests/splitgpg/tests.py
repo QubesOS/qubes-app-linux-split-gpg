@@ -451,10 +451,18 @@ class TC_10_Thunderbird(SplitGPGBase):
             wait=True)
         self.frontend.run('sudo systemctl restart dovecot', wait=True)
 
+        # setup thunderbird profile
+        profile_dir_src = "/usr/lib/qubes-gpg-split/test_thunderbird_profile"
+        tb_home = "$HOME/.thunderbird/"
+        self.profile_dir = tb_home + "qubes.default"
+        self.frontend.run('mkdir -p {} && cp -r {} {}'\
+                          .format(tb_home, profile_dir_src, self.profile_dir),
+                          user='user', wait=True)
+
         p = self.frontend.run(
             'PYTHONPATH=$HOME/dogtail LC_ALL=C.UTF-8 '
-            'python3 {} --tbname={} setup 2>&1'.format(
-                self.scriptpath, self.tb_name),
+            'python3 {} --tbname={} --profile {} setup 2>&1'.format(
+                self.scriptpath, self.tb_name, self.profile_dir),
             passio_popen=True)
         (stdout, _) = p.communicate()
         assert p.returncode == 0, 'Thunderbird setup failed: {}'.format(
@@ -471,9 +479,9 @@ class TC_10_Thunderbird(SplitGPGBase):
     def test_000_send_receive_default(self):
         p = self.frontend.run(
             'PYTHONPATH=$HOME/dogtail LC_ALL=C.UTF-8 '
-            'python3 {} --tbname={} send_receive '
+            'python3 {} --tbname={} --profile {} send_receive '
             '--encrypted --signed 2>&1'.format(
-                self.scriptpath, self.tb_name),
+                self.scriptpath, self.tb_name, self.profile_dir),
             passio_popen=True)
         (stdout, _) = p.communicate()
         self.assertEquals(p.returncode, 0,
@@ -483,10 +491,10 @@ class TC_10_Thunderbird(SplitGPGBase):
     def test_010_send_receive_inline_signed_only(self):
         p = self.frontend.run(
             'PYTHONPATH=$HOME/dogtail LC_ALL=C.UTF-8 '
-            'python3 {} --tbname={} '
+            'python3 {} --tbname={} --profile {}'
             'send_receive '
             '--encrypted --signed --inline 2>&1'.format(
-                self.scriptpath, self.tb_name),
+                self.scriptpath, self.tb_name, self.profile_dir),
             passio_popen=True)
         (stdout, _) = p.communicate()
         self.assertEquals(p.returncode, 0,
@@ -496,9 +504,9 @@ class TC_10_Thunderbird(SplitGPGBase):
     def test_020_send_receive_inline_with_attachment(self):
         p = self.frontend.run(
             'PYTHONPATH=$HOME/dogtail LC_ALL=C.UTF-8 '
-            'python3 {} --tbname={} send_receive '
+            'python3 {} --tbname={} --profile {} send_receive '
             '--encrypted --signed --inline --with-attachment 2>&1'.format(
-                self.scriptpath, self.tb_name),
+                self.scriptpath, self.tb_name, self.profile_dir),
             passio_popen=True)
         (stdout, _) = p.communicate()
         self.assertEquals(p.returncode, 0,

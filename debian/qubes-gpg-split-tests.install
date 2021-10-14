@@ -1,3 +1,4 @@
 usr/lib/qubes-gpg-split/test_smtpd.py
 usr/lib/qubes-gpg-split/test_thunderbird.py
 usr/lib/qubes-gpg-split/test_evolution.py
+usr/lib/qubes-gpg-split/test_thunderbird_profile/*
