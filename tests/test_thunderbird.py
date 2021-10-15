@@ -155,8 +155,10 @@ def enter_imap_passwd(tb):
     pass_textbox.text = tb.imap_pw
     pass_prompt.childNamed("Use Password Manager to remember this password.")\
                .doActionNamed('check')
-    pass_prompt.findChild(GenericPredicate(name='OK', roleName='push button'))\
-               .doActionNamed('press')
+    pass_prompt.findChild(orPredicate(
+        GenericPredicate(name='OK', roleName='push button'),       # tb < 91
+        GenericPredicate(name='Sign in', roleName='push button'))  # tb >= 91
+    ).doActionNamed('press')
 
 def accept_qubes_attachments(tb):
     try:
@@ -180,6 +182,10 @@ def open_account_setup(tb):
     account_settings = edit.menuItem('Account Settings')
     account_settings.doActionNamed('click')
 
+def close_account_setup(tb):
+    file = tb.app.menu('File')
+    file.doActionNamed('click')
+    file.child('Close').doActionNamed('click')
 
 class TBEntry(GenericPredicate):
     def __init__(self, name):
@@ -244,12 +250,13 @@ def configure_openpgp_account(tb):
     key_property = tb.app.findChild(
         GenericPredicate(name="Key Properties.*", roleName='frame'))
     key_property.findChild(
-        GenericPredicate(name="Yes, I've verified in person.*",
+        GenericPredicate(name="Yes, I['’]ve verified in person.*",
                          roleName='radio button')).doActionNamed('select')
     key_property.childNamed('OK').doActionNamed('press')
     key_manager.findChild(
         GenericPredicate(name='Close', roleName='menu item')).doActionNamed(
         'click')
+    close_account_setup(tb)
 
 
 def attach(tb, compose_window, path):
