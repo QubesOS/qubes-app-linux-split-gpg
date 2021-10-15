@@ -493,8 +493,7 @@ class TC_10_Thunderbird(SplitGPGBase):
     def test_010_send_receive_inline_signed_only(self):
         p = self.frontend.run(
             'PYTHONPATH=$HOME/dogtail LC_ALL=C.UTF-8 '
-            'python3 {} --tbname={} --profile {} --imap_pw {}'
-            'send_receive '
+            'python3 {} --tbname={} --profile {} --imap_pw {} send_receive '
             '--encrypted --signed --inline 2>&1'.format(
                 self.scriptpath, self.tb_name, self.profile_dir, self.imap_pw),
             passio_popen=True)
