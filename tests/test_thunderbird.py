@@ -378,35 +378,16 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
     config.searchCutoffCount = 5
     try:
         if signed or encrypted:
-            # 'Message Security' can be either full dialog or a popup -
-            # depending on TB version
-            popup = False
-            tb.app.findChild(GenericPredicate(
-                name='View', roleName='menu')).doActionNamed('click')
-            try:
-                tb.app.findChild(GenericPredicate(
-                    name='Message Security Info',
-                    roleName='menu item')).doActionNamed('click')
-                message_security = tb.app.child('Message Security')
-            except tree.SearchError:
-                # on debian there is no menu entry, but OpenPGP button
-                # first close view menu
-                tb.app.findChild(GenericPredicate(
-                    name='View', roleName='menu')).doActionNamed('click')
-                tb.app.button('OpenPGP').doActionNamed('press')
-                # 'Message Security - OpenPGP' is an internal label,
-                # nested 2 levels into the popup
-                message_security = tb.app.child('Message Security - OpenPGP')
-                message_security = message_security.parent.parent
-                popup = True
+            tb.app.button('OpenPGP').doActionNamed('press')
+            # 'Message Security - OpenPGP' is an internal label,
+            # nested 2 levels into the popup
+            message_security = tb.app.child('Message Security - OpenPGP')
+            message_security = message_security.parent.parent
             if signed:
                 message_security.child('Good Digital Signature')
             if encrypted:
                 message_security.child('Message Is Encrypted')
-            if not popup:
-                message_security.button('OK').doActionNamed('press')
-            else:
-                message_security.parent.click()
+            message_security.parent.click()
     except tree.SearchError:
         if signed or encrypted:
             raise
