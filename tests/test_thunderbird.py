@@ -378,7 +378,7 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
     config.searchCutoffCount = 5
     try:
         if signed or encrypted:
-            tb.app.button('OpenPGP').doActionNamed('press')
+            tb.app.button('OpenPGP.*').doActionNamed('press')
             # 'Message Security - OpenPGP' is an internal label,
             # nested 2 levels into the popup
             message_security = tb.app.child('Message Security - OpenPGP')
