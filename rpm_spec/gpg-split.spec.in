@@ -77,7 +77,6 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 %dir /usr/lib/qubes-gpg-split
-%dir /usr/lib/qubes-gpg-split/test_thunderbird_profile
 /usr/lib/qubes-gpg-split/gpg-server
 /usr/lib/qubes-gpg-split/pipe-cat
 /usr/bin/qubes-gpg-client
@@ -96,7 +95,6 @@ rm -rf $RPM_BUILD_ROOT
 /usr/lib/qubes-gpg-split/test_evolution.py*
 /usr/lib/qubes-gpg-split/test_thunderbird.py*
 /usr/lib/qubes-gpg-split/test_smtpd.py*
-/usr/lib/qubes-gpg-split/test_thunderbird_profile/*
 
 %changelog
 @CHANGELOG@

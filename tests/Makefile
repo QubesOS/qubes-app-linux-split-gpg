@@ -37,5 +37,3 @@ install-dom0-py3:
 install-vm:
 	install -d $(DESTDIR)/usr/lib/qubes-gpg-split
 	install test_*.py $(DESTDIR)/usr/lib/qubes-gpg-split/
-	install -d $(DESTDIR)/usr/lib/qubes-gpg-split/test_thunderbird_profile
-	install test_thunderbird_profile/* $(DESTDIR)/usr/lib/qubes-gpg-split/test_thunderbird_profile/
