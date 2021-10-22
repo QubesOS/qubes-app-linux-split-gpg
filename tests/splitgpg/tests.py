@@ -497,7 +497,6 @@ user_pref("mail.server.server1.login_at_startup", true);
 user_pref("mail.server.server1.name", "user@localhost");
 user_pref("mail.server.server1.type", "imap");
 user_pref("mail.server.server1.port", 143);
-user_pref("mail.server.server1.check_new_mail", true);
 """
         smtp_server = """
 user_pref("mail.smtpservers", "smtp1");

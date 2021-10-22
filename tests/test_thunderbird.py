@@ -150,6 +150,9 @@ def export_pub_key():
         raise Exception('Cannot export public key')
 
 def enter_imap_passwd(tb):
+    # check new mail so client can realize IMAP requires entering a password
+    get_messages(tb)
+    # password entry
     pass_prompt = tb.app.child(name='Enter your password for user', roleName='dialog')
     pass_textbox = pass_prompt.findChild(GenericPredicate(roleName='password text'))
     pass_textbox.text = tb.imap_pw
@@ -259,6 +262,14 @@ def configure_openpgp_account(tb):
     close_account_setup(tb)
 
 
+def get_messages(tb):
+    tb.app.child(name='user@localhost',
+            roleName='table row').doActionNamed('activate')
+    tb.app.button('Get Messages').doActionNamed('press')
+    tb.app.menuItem('Get All New Messages').doActionNamed('click')
+    tb.app.child(name='Inbox.*', roleName='table row').doActionNamed(
+        'activate')
+
 def attach(tb, compose_window, path):
     compose_window.button('Attach').button('Attach').doActionNamed('press')
     compose_window.button('Attach').menuItem('File.*').doActionNamed('click')
@@ -335,12 +346,7 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
 
 
 def receive_message(tb, signed=False, encrypted=False, attachment=None):
-    tb.app.child(name='user@localhost',
-             roleName='table row').doActionNamed('activate')
-    tb.app.button('Get Messages').doActionNamed('press')
-    tb.app.menuItem('Get All New Messages').doActionNamed('click')
-    tb.app.child(name='Inbox.*', roleName='table row').doActionNamed(
-        'activate')
+    get_messages(tb)
     config.searchCutoffCount = 5
     try:
         tb.app.child(name='Encrypted Message .*|.*\.\.\. .*',
