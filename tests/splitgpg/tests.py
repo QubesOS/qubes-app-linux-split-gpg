@@ -472,6 +472,16 @@ class TC_10_Thunderbird(SplitGPGBase):
         del self.smtp_server
         super(TC_10_Thunderbird, self).tearDown()
 
+    def get_key_fpr(self):
+        cmd = '/usr/bin/qubes-gpg-client-wrapper -K --with-colons'
+        p = self.frontend.run(cmd, passio_popen=True)
+        (stdout, _) = p.communicate()
+        self.assertEquals(p.returncode, 0, 'Failed to determin key id')
+        keyid = stdout.decode('utf-8').split('\n')[1]
+        keyid = keyid.split(':')[9]
+        keyid = keyid[-16:]
+        return keyid
+
     def setup_tb_profile(self, setup_openpgp):
         """SplitGPG Thunderbird Test Account Configuration
 
@@ -511,12 +521,20 @@ user_pref("mail.smtpserver.smtp1.try_ssl", 0);    // no encryption
 user_pref("mail.openpgp.allow_external_gnupg", true);
 user_pref("mail.openpgp.alternative_gpg_path", "/usr/bin/qubes-gpg-client-wrapper");
 """
+        key_fingerprint = self.get_key_fpr()
+        user_account_pgp = """
+user_pref("mail.identity.id1.is_gnupg_key_id", true);
+user_pref("mail.identity.id1.last_entered_external_gnupg_key_id", "{}");
+user_pref("mail.identity.id1.openpgp_key_id", "{}");
+user_pref("mail.identity.id1.sign_mail", false);
+""".format(key_fingerprint, key_fingerprint)
+
         self.profile_dir = "$HOME/.thunderbird/qubes.default"
         user_js_path = self.profile_dir + "/user.js"
 
         user_js = profile_base + imap_server + smtp_server
         if setup_openpgp:
-            user_js += open_pgp
+            user_js += open_pgp + user_account_pgp
 
         self.frontend.run('mkdir -p {}'.format(self.profile_dir),
                           user='user', wait=True)
