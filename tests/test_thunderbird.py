@@ -500,9 +500,6 @@ def main():
         enter_imap_passwd(tb)
         accept_qubes_attachments(tb)
         show_menu_bar(tb)
-        tb.quit()
-        subprocess.call(['pkill', 'pep-json-server'])
-        tb.start()
         configure_openpgp_account(tb)
         tb.quit()
     if args.command == 'send_receive':
