@@ -26,7 +26,7 @@ import argparse
 from dogtail import tree
 from dogtail.predicate import GenericPredicate, Predicate
 from dogtail.config import config
-from dogtail.rawinput import click, doubleClick
+from dogtail.rawinput import click, doubleClick, keyCombo
 import subprocess
 import os
 import time
@@ -388,17 +388,22 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
             # 'Message Security - OpenPGP' is an internal label,
             # nested 2 levels into the popup
             message_security = tb.app.child('Message Security - OpenPGP')
-            message_security = message_security.parent.parent
-            if signed:
-                message_security.child('Good Digital Signature')
-            if encrypted:
-                message_security.child('Message Is Encrypted')
-            message_security.parent.click()
+    except tree.SearchError:
+        # alternative way of opening 'message security'
+        keyCombo('<Control><Alt>s')
+        message_security = tb.app.child('Message Security - OpenPGP')
+    finally:
+        message_security = message_security.parent.parent
+    try:
+        if signed:
+            message_security.child('Good Digital Signature')
+        if encrypted:
+            message_security.child('Message Is Encrypted')
     except tree.SearchError:
         if signed or encrypted:
             raise
-    finally:
-        config.searchCutoffCount = defaultCutoffCount
+    message_security.parent.click()
+    config.searchCutoffCount = defaultCutoffCount
 
     if attachment:
         # it can be either "1 attachment:" or "2 attachments"
