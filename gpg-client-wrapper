@@ -3,12 +3,20 @@
 options=()  # the buffer array for the parameters
 eoo=0       # end of options reached
 output=0    # do we try to write to file
-target=()   # where do we try to write to
-fd_for_logfile=62 # some (hopefuly) unused FD, later redirected to logfile
-fd_for_stdout=63 # some (hopefuly) unused FD, later redirected to stdout
+target=''   # where do we try to write to
+readonly fd_for_logfile=62 # some (hopefuly) unused FD, later redirected to logfile
+readonly fd_for_stdout=63 # some (hopefuly) unused FD, later redirected to stdout
 special_filenames=0 # --enable-special-filenames was given
 localgpg=0 #use local gpg (for ex --gen-rand etc.)
 origargs=( "$@" )
+
+set_output () {
+    if (( output )); then
+        echo 'Output file already set'>&2
+        exit 1
+    fi
+    output=1 target=$1
+}
 
 while [[ $1 ]]; do
     if ! ((eoo)); then
@@ -65,13 +73,11 @@ while [[ $1 ]]; do
                 shift
                 ;;
             --keyserver-options)
-                if (( $# >= 2 )); then
-                    options+=("$1" "$2")
-                    shift 2
-                else # let qubes-gpg-client error out
-                    options+=("$1")
-                    shift
+                if [ "$#" -lt 2 ]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
                 fi
+                shift 2
                 ;;
             # Using dirmngr in an offline GPG VM makes no sense, however
             # qubes-gpg-client does not recognize the command line option
@@ -86,29 +92,22 @@ while [[ $1 ]]; do
                 shift
                 ;;
             --photo-viewer)
-                if (( $# >= 2 )); then
-                    options+=("$1" "$2")
-                    shift 2
-                else # let qubes-gpg-client error out
-                    options+=("$1")
-                    shift
+                if [ "$#" -lt 2 ]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
                 fi
+                shift 2
                 ;;
             # ignore tty/display related options - those are meaningless in another VM
             --ttyname=*|--display=*|--ttytype=*|--no-tty)
                 shift
                 ;;
-            --ttyname|--ttytype|--display)
-                if (( $# >= 2 )); then
-                    options+=("$1" "$2")
-                    shift 2
-                else # let qubes-gpg-client error out
-                    options+=("$1")
-                    shift
+            --ttyname|--ttytype|--display|--photo-viewer)
+                if [ "$#" -lt 2 ]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
                 fi
-                ;;
-            --yes)
-                shift
+                shift 2
                 ;;
             --enable-special-filenames)
                 special_filenames=1
@@ -123,7 +122,8 @@ while [[ $1 ]]; do
             --use-agent)
                 shift
                 ;;
-            -q|--quiet)
+            # Ignored options
+            -q|--quiet|--yes)
                 shift
                 ;;
             --output)
@@ -131,31 +131,27 @@ while [[ $1 ]]; do
                     printf 'Missing argument to %s\n' "$1" >&2
                     exit 1
                 fi
-                output=1
-                target="$2"
+                set_output "$2"
                 shift 2
                 ;;
             --output=*)
-                output=1
-                target=${1#--output=}
+                set_output "${1:9}"
                 shift
                 ;;
             --status-fd|\
             --logger-fd|\
             --attribute-fd)
-                if (( $# >= 2 )); then
-                    if [[ "$2" =~ ^(0x)?0*1$ ]]; then
-                        # don't use stdout for status fd, since it might be later
-                        # redirected to a file with --output
-                        options+=( "$1" "$fd_for_stdout" )
-                    else
-                        options+=( "$1" "$2" )
-                    fi
-                    shift 2
-                else # let qubes-gpg-client error out
-                    options+=("$1")
-                    shift
+                if [ "$#" -lt 2 ]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
+                elif [[ "$2" =~ ^(0x)?0*1$ ]]; then
+                    # don't use stdout for status fd, since it might be later
+                    # redirected to a file with --output
+                    options+=( "$1" "$fd_for_stdout" )
+                else
+                    options+=( "$1" "$2" )
                 fi
+                shift 2
                 ;;    
             --status-fd=*|\
             --logger-fd=*|\
@@ -169,7 +165,19 @@ while [[ $1 ]]; do
                 fi
                 shift
                 ;;
+            --log-file=*)
+                # rejected by split-gpg to not allow a write to arbitrary file
+                # on the backend side; emulate using --logger-fd
+                # 62 is $fd_for_logfile but bash seems to reject variables here
+                exec 62>"${1:11}"
+                options+=( "--logger-fd" "$fd_for_logfile" )
+                shift
+                ;;
             --log-file)
+                if [ "$#" -lt 2 ]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
+                fi
                 # rejected by split-gpg to not allow a write to arbitrary file
                 # on the backend side; emulate using --logger-fd
                 # 62 is $fd_for_logfile but bash seems to reject variables here
@@ -195,10 +203,8 @@ while [[ $1 ]]; do
             --hidden-recipient|\
             --list-options|\
             --local-user|\
-            --logger-fd|\
             --keyid-format|\
             --max-output|\
-            --output|\
             --personal-cipher-preferences|\
             --personal-compress-preferences|\
             --personal-digest-preferences|\
@@ -211,7 +217,6 @@ while [[ $1 ]]; do
             --sig-notation|\
             --set-filename|\
             --set-notation|\
-            --status-fd|\
             --trust-model|\
             --trusted-key|\
             --try-secret-key|\
@@ -268,7 +273,7 @@ while [[ $1 ]]; do
     fi
 done
 
-if [ $localgpg -eq 1 ]
+if [[ "$localgpg" -eq 1 ]]
 then
     exec /usr/bin/gpg "${origargs[@]}"
     exit $?
@@ -277,7 +282,7 @@ fi
 . /etc/profile.d/qubes-gpg.sh
 # 63 is $fd_for_stdout but bash seems to reject variables here
 
-if  ! (($output)) || [ "$target" = "-" ] ; then
+if  ! ((output)) || [[ "$target" = "-" ]] ; then
     exec qubes-gpg-client "${options[@]}" 63>&1
 else
     exec qubes-gpg-client "${options[@]}" 63>&1 >"$target"
