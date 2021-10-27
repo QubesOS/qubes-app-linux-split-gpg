@@ -153,7 +153,10 @@ def enter_imap_passwd(tb):
     # check new mail so client can realize IMAP requires entering a password
     get_messages(tb)
     # password entry
-    pass_prompt = tb.app.child(name='Enter your password for user', roleName='dialog')
+    pass_prompt = tb.app.findChild(orPredicate(
+        GenericPredicate(name='Enter your password for user', roleName='frame'),
+        GenericPredicate(name='Enter your password for user', roleName='dialog')
+    ))
     pass_textbox = pass_prompt.findChild(GenericPredicate(roleName='password text'))
     pass_textbox.text = tb.imap_pw
     pass_prompt.childNamed("Use Password Manager to remember this password.")\
@@ -226,8 +229,10 @@ def configure_openpgp_account(tb):
                                         roleName='radio button')).doActionNamed(
         'select')
     settings.childNamed('OpenPGP Key Manager.*').doActionNamed('press')
-    key_manager = tb.app.findChild(
-        GenericPredicate(name='OpenPGP Key Manager', roleName='frame'))
+    key_manager = tb.app.findChild(orPredicate(
+        GenericPredicate(name='OpenPGP Key Manager', roleName='frame'),
+        GenericPredicate(name='OpenPGP Key Manager', roleName='dialog')
+    ))
     key_manager.findChild(
         GenericPredicate(name='File', roleName='menu')).doActionNamed('click')
     key_manager.findChild(
@@ -250,8 +255,10 @@ def configure_openpgp_account(tb):
         'press')
     doubleClick(*key_manager.findChild(
         GenericPredicate(name='Qubes test <user@localhost>.*')).position)
-    key_property = tb.app.findChild(
-        GenericPredicate(name="Key Properties.*", roleName='frame'))
+    key_property = tb.app.findChild(orPredicate(
+        GenericPredicate(name='Key Properties.*', roleName='frame'),
+        GenericPredicate(name='Key Properties.*', roleName='dialog')
+    ))
     key_property.findChild(
         GenericPredicate(name="Yes, I['’]ve verified in person.*",
                          roleName='radio button')).doActionNamed('select')
