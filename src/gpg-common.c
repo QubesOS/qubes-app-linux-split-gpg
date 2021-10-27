@@ -99,7 +99,7 @@ void handle_opt_verify(char *untrusted_sig_path, int *list, int *list_count, int
          * space is critical here (for thunderbird it must fit in place of "/tmp/data.sig") */
         untrusted_sig_path_size = strlen(untrusted_sig_path)+1;
         written = snprintf(untrusted_sig_path, untrusted_sig_path_size, "/dev/fd/%d", cur_fd);
-        if (written < 0 || written > untrusted_sig_path_size) {
+        if (written < 0 || written + 1 > untrusted_sig_path_size) {
             fprintf(stderr, "Failed to fit /dev/fd/%d in place of signature path\n", cur_fd);
             exit(1);
         }
