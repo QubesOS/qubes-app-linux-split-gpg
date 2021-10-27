@@ -58,8 +58,8 @@ void handle_opt_verify(char *untrusted_sig_path, int *list, int *list_count, int
     int i;
     char *sig_path;
     int cur_fd, untrusted_cur_fd;
-    int untrusted_sig_path_size;
-    int written;
+    int untrusted_sig_path_len;
+    int fd_path_len;
 
     if (*list_count >= MAX_FDS - 1) {
         fprintf(stderr, "Too many FDs used\n");
@@ -97,9 +97,9 @@ void handle_opt_verify(char *untrusted_sig_path, int *list, int *list_count, int
         /* HACK: override original file path with FD virtual path, hope it will
          * fit; use /dev/fd instead of /proc/self/fd because is is shorter and
          * space is critical here (for thunderbird it must fit in place of "/tmp/data.sig") */
-        untrusted_sig_path_size = strlen(untrusted_sig_path)+1;
-        written = snprintf(untrusted_sig_path, untrusted_sig_path_size, "/dev/fd/%d", cur_fd);
-        if (written < 0 || written + 1 > untrusted_sig_path_size) {
+        untrusted_sig_path_len = strlen(untrusted_sig_path);
+        fd_path_len = snprintf(untrusted_sig_path, untrusted_sig_path_len + 1, "/dev/fd/%d", cur_fd);
+        if (fd_path_len < 0 || fd_path_len > untrusted_sig_path_len) {
             fprintf(stderr, "Failed to fit /dev/fd/%d in place of signature path\n", cur_fd);
             exit(1);
         }
