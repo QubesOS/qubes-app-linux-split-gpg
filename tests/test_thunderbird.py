@@ -149,6 +149,7 @@ def export_pub_key():
     except subprocess.SubprocessError:
         raise Exception('Cannot export public key')
 
+@retry_if_failed(max_tries=3)
 def enter_imap_passwd(tb):
     # check new mail so client can realize IMAP requires entering a password
     get_messages(tb)
