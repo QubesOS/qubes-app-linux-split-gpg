@@ -334,8 +334,15 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
                 button('Protect subject').doActionNamed('press')
     except tree.SearchError:
         pass
+    # if there is a dialog window, then there must have been some issue sending
+    try:
+        tb.app.dialog('.*')
+        raise Exception("Failed to send message")
+    except tree.SearchError:
+        pass
     finally:
         config.searchCutoffCount = defaultCutoffCount
+
 
 
 def receive_message(tb, signed=False, encrypted=False, attachment=None):
