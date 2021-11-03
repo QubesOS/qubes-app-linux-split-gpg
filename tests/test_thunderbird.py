@@ -336,8 +336,13 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
         pass
     # if there is a dialog window, then there must have been some issue sending
     try:
-        tb.app.dialog('.*')
-        raise Exception("Failed to send message")
+        dialog = tb.app.dialog('.*')
+        try:
+            dialog_text = dialog.child(roleName='label').text
+            raise Exception("Failed to send message with error '{}'"\
+                .format(dialog_text))
+        except tree.SearchError:
+            raise Exception("Failed to send message")
     except tree.SearchError:
         pass
     finally:
