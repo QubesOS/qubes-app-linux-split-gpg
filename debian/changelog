@@ -1,3 +1,29 @@
+qubes-gpg-split (2.0.54-1) unstable; urgency=medium
+
+  [ Alyssa Ross ]
+  * Fix off-by-one in fd path replacement
+  * Make fd path replacement length check clearer
+
+  [ Demi Marie Obenour ]
+  * Tighten up parsing of file descriptors
+
+  [ deeplow ]
+  * test: add IMAP server as tb 91+ removed movemail
+  * tests: thunderbird use user.js for default profile
+  * tests: remove autoconf and local account setup code
+  * tests: autotype IMAP password
+  * tests: fix bug where arguments were missing a space
+  * tests: more fixes for tb 91+
+  * tests: remove deprecated tb OpenPGP message code
+  * tests: tb fix OpenPGP opening in tb91+
+  * tests: make thunderbird user.js dynamically generated
+  * tests: check mail manually instead
+  * tests: improve resilience of OpenPGP button click
+  * tests: support windows with role 'frame' or 'dialog'
+  * tests: retry "enter imap password" on fail
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Tue, 09 Nov 2021 05:08:38 +0100
+
 qubes-gpg-split (2.0.53-1) unstable; urgency=medium
 
   * Correctly mark --s2k-* options as requiring an argument
