@@ -126,6 +126,10 @@ while [[ $1 ]]; do
             -q|--quiet|--yes)
                 shift
                 ;;
+            --detach)
+                options+=( --detach-sign )
+                shift
+                ;;
             --output)
                 if [ "$#" -lt 2 ]; then
                     printf 'Missing argument to %s\n' "$1" >&2
