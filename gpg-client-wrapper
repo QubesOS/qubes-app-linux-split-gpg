@@ -73,7 +73,7 @@ while [[ $1 ]]; do
                 shift
                 ;;
             --keyserver-options)
-                if [ "$#" -lt 2 ]; then
+                if [[ "$#" -lt 2 ]]; then
                     printf 'Missing argument to %s\n' "$1" >&2
                     exit 1
                 fi
@@ -92,7 +92,7 @@ while [[ $1 ]]; do
                 shift
                 ;;
             --photo-viewer)
-                if [ "$#" -lt 2 ]; then
+                if [[ "$#" -lt 2 ]]; then
                     printf 'Missing argument to %s\n' "$1" >&2
                     exit 1
                 fi
@@ -103,7 +103,7 @@ while [[ $1 ]]; do
                 shift
                 ;;
             --ttyname|--ttytype|--display|--photo-viewer)
-                if [ "$#" -lt 2 ]; then
+                if [[ "$#" -lt 2 ]]; then
                     printf 'Missing argument to %s\n' "$1" >&2
                     exit 1
                 fi
@@ -131,7 +131,7 @@ while [[ $1 ]]; do
                 shift
                 ;;
             --output)
-                if [ "$#" -lt 2 ]; then
+                if [[ "$#" -lt 2 ]]; then
                     printf 'Missing argument to %s\n' "$1" >&2
                     exit 1
                 fi
@@ -145,7 +145,7 @@ while [[ $1 ]]; do
             --status-fd|\
             --logger-fd|\
             --attribute-fd)
-                if [ "$#" -lt 2 ]; then
+                if [[ "$#" -lt 2 ]]; then
                     printf 'Missing argument to %s\n' "$1" >&2
                     exit 1
                 elif [[ "$2" =~ ^(0x)?0*1$ ]]; then
@@ -178,7 +178,7 @@ while [[ $1 ]]; do
                 shift
                 ;;
             --log-file)
-                if [ "$#" -lt 2 ]; then
+                if [[ "$#" -lt 2 ]]; then
                     printf 'Missing argument to %s\n' "$1" >&2
                     exit 1
                 fi
