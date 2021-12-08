@@ -27,19 +27,7 @@ while [[ $1 ]]; do
             #    localgpg=1
             #    break
             #;;
-            --gen-rand)
-                localgpg=1
-                break
-                ;;
-            --gen-prime)
-                localgpg=1
-                break
-                ;;
-            --enarmor)
-                localgpg=1
-                break
-                ;;
-            --dearmor)
+            --gen-rand|--gen-prime|--enarmor|--dearmor|--print-md|--help|-h)
                 localgpg=1
                 break
                 ;;
@@ -48,19 +36,6 @@ while [[ $1 ]]; do
                 localgpg=1
                 break
                 ;;
-            --print-md)
-                localgpg=1
-                break
-                ;;
-            -h)
-                localgpg=1
-                break
-                ;;
-            --help)
-                localgpg=1
-                break
-                ;;
-
             --import)
                 # ignore all the options and only collect file name(s) - if any
                 shift
@@ -102,7 +77,7 @@ while [[ $1 ]]; do
             --ttyname=*|--display=*|--ttytype=*|--no-tty)
                 shift
                 ;;
-            --ttyname|--ttytype|--display|--photo-viewer)
+            --ttyname|--ttytype|--display)
                 if [[ "$#" -lt 2 ]]; then
                     printf 'Missing argument to %s\n' "$1" >&2
                     exit 1
