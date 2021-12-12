@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
     int i;
     int remote_argc, parsed_argc;
     char *(untrusted_remote_argv[COMMAND_MAX_LEN+1]);	// far too big should not harm
-    char *(remote_argv[COMMAND_MAX_LEN+1]);	// far too big should not harm
+    char *(remote_argv[COMMAND_MAX_LEN+2]);	// far too big should not harm
     int input_fds[MAX_FDS], output_fds[MAX_FDS];
     int input_fds_count, output_fds_count;
 
@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
     len = untrusted_hdr->len;
     // split command line into argv
     remote_argc = 0;
-    untrusted_remote_argv[remote_argc] = untrusted_hdr->command;
+    untrusted_remote_argv[remote_argc] = argv[1];
     if (len) {
         remote_argc++;
         for (i = 0; i < len-1; i++) {
@@ -71,10 +71,14 @@ int main(int argc, char *argv[])
             exit(1);
         }
     }
-    memcpy(remote_argv, untrusted_remote_argv, sizeof(untrusted_remote_argv));
+    memcpy(remote_argv + 2, untrusted_remote_argv + 1,
+           sizeof(untrusted_remote_argv) - sizeof(untrusted_remote_argv[0]));
     /* now options are verified and we get here only when all are allowed */
+    remote_argv[0] = argv[1];
+    // provide a better error message than "inappropriate ioctl for device"
+    remote_argv[1] = "--no-tty";
     // Add NULL terminator to argv list
-    remote_argv[remote_argc] = NULL;
+    remote_argv[remote_argc+1] = NULL;
 
     return prepare_pipes_and_run(argv[1], remote_argv, input_fds,
             input_fds_count, output_fds,

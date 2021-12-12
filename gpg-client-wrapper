@@ -3,14 +3,22 @@
 options=()  # the buffer array for the parameters
 eoo=0       # end of options reached
 output=0    # do we try to write to file
-target=()   # where do we try to write to
-fd_for_logfile=62 # some (hopefuly) unused FD, later redirected to logfile
-fd_for_stdout=63 # some (hopefuly) unused FD, later redirected to stdout
+target=''   # where do we try to write to
+readonly fd_for_logfile=62 # some (hopefuly) unused FD, later redirected to logfile
+readonly fd_for_stdout=63 # some (hopefuly) unused FD, later redirected to stdout
 special_filenames=0 # --enable-special-filenames was given
 localgpg=0 #use local gpg (for ex --gen-rand etc.)
 origargs=( "$@" )
 
-while [[ $1 ]]; do
+set_output () {
+    if (( output )); then
+        echo 'Output file already set'>&2
+        exit 1
+    fi
+    output=1 target=$1
+}
+
+while (( $# )); do
     if ! ((eoo)); then
         case "$1" in
             #when those arguments are present will not use the keyring, and so they can be executed with local gpg
@@ -19,19 +27,7 @@ while [[ $1 ]]; do
             #    localgpg=1
             #    break
             #;;
-            --gen-rand)
-                localgpg=1
-                break
-                ;;
-            --gen-prime)
-                localgpg=1
-                break
-                ;;
-            --enarmor)
-                localgpg=1
-                break
-                ;;
-            --dearmor)
+            --gen-rand|--gen-prime|--enarmor|--dearmor|--print-md|--help|-h)
                 localgpg=1
                 break
                 ;;
@@ -40,19 +36,6 @@ while [[ $1 ]]; do
                 localgpg=1
                 break
                 ;;
-            --print-md)
-                localgpg=1
-                break
-                ;;
-            -h)
-                localgpg=1
-                break
-                ;;
-            --help)
-                localgpg=1
-                break
-                ;;
-
             --import)
                 # ignore all the options and only collect file name(s) - if any
                 shift
@@ -61,7 +44,14 @@ while [[ $1 ]]; do
             # Keyserver options makes no sense for offline GPG VM, so it is
             # rejected by qubes-gpg-client and qubes-gpg-server. But since
             # it is forced by Torbirdy extension, simply ignore the option.
+            --keyserver-options=*)
+                shift
+                ;;
             --keyserver-options)
+                if [[ "$#" -lt 2 ]]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
+                fi
                 shift 2
                 ;;
             # Using dirmngr in an offline GPG VM makes no sense, however
@@ -73,59 +63,174 @@ while [[ $1 ]]; do
                 ;;
             # --photo-viewer shouldn't be passed to the backend as it allow
             # arbitrary command execution
+            --photo-viewer=*)
+                shift
+                ;;
             --photo-viewer)
+                if [[ "$#" -lt 2 ]]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
+                fi
                 shift 2
                 ;;
             # ignore tty/display related options - those are meaningless in another VM
-            --display)
-                shift 2
-                ;;
-            --ttyname)
-                shift 2
-                ;;
-            --ttytype)
-                shift 2
-                ;;
-            --yes)
+            --ttyname=*|--display=*|--ttytype=*|--no-tty)
                 shift
+                ;;
+            --ttyname|--ttytype|--display)
+                if [[ "$#" -lt 2 ]]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
+                fi
+                shift 2
                 ;;
             --enable-special-filenames)
                 special_filenames=1
                 shift
                 ;;
-            -q)
+            # Deprecated legacy options
+            --disable-mdc|\
+            --force-mdc|\
+            --force-v3-sigs|\
+            --force-v4-certs|\
+            --no-sk-comments|\
+            --use-agent)
                 shift
                 ;;
-            -o)
-                output=1
-                target="$2"
-                shift 2
+            # Ignored options
+            -q|--quiet|--yes)
+                shift
+                ;;
+            --detach)
+                options+=( --detach-sign )
+                shift
                 ;;
             --output)
-                output=1
-                target="$2"
+                if [[ "$#" -lt 2 ]]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
+                fi
+                set_output "$2"
                 shift 2
+                ;;
+            --output=*)
+                set_output "${1:9}"
+                shift
                 ;;
             --status-fd|\
             --logger-fd|\
             --attribute-fd)
-                if [ "x$2" = "x1" ]; then
+                if [[ "$#" -lt 2 ]]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
+                elif [[ "$2" =~ ^(0x)?0*1$ ]]; then
                     # don't use stdout for status fd, since it might be later
                     # redirected to a file with --output
                     options+=( "$1" "$fd_for_stdout" )
-                    shift 2
+                else
+                    options+=( "$1" "$2" )
+                fi
+                shift 2
+                ;;    
+            --status-fd=*|\
+            --logger-fd=*|\
+            --attribute-fd=*)
+                if [[ $1 =~ ^([^=]*=)(0x)?0*1$ ]]; then
+                    # don't use stdout for status fd, since it might be later
+                    # redirected to a file with --output
+                    options+=( "${BASH_REMATCH[1]}$fd_for_stdout" )
                 else
                     options+=( "$1" )
-                    shift
                 fi
-                ;;    
+                shift
+                ;;
+            --log-file=*)
+                # rejected by split-gpg to not allow a write to arbitrary file
+                # on the backend side; emulate using --logger-fd
+                # 62 is $fd_for_logfile but bash seems to reject variables here
+                exec 62>"${1:11}"
+                options+=( "--logger-fd" "$fd_for_logfile" )
+                shift
+                ;;
             --log-file)
+                if [[ "$#" -lt 2 ]]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
+                fi
                 # rejected by split-gpg to not allow a write to arbitrary file
                 # on the backend side; emulate using --logger-fd
                 # 62 is $fd_for_logfile but bash seems to reject variables here
                 exec 62>"$2"
                 options+=( "--logger-fd" "$fd_for_logfile" )
                 shift 2
+                ;;
+            --cert-digest-algo|\
+            --cert-notation|\
+            --charset|\
+            --cipher-algo|\
+            --command-fd|\
+            --comment|\
+            --compress-algo|\
+            --default-recipient|\
+            --digest-algo|\
+            --disable-cipher-algo|\
+            --disable-pubkey-algo|\
+            --display|\
+            --display-charset|\
+            --encrypt-to|\
+            --hidden-encrypt-to|\
+            --hidden-recipient|\
+            --list-options|\
+            --local-user|\
+            --keyid-format|\
+            --max-output|\
+            --personal-cipher-preferences|\
+            --personal-compress-preferences|\
+            --personal-digest-preferences|\
+            --recipient|\
+            --s2k-cipher-algo|\
+            --s2k-count|\
+            --s2k-digest-algo|\
+            --s2k-mode|\
+            --sender|\
+            --sig-notation|\
+            --set-filename|\
+            --set-notation|\
+            --trust-model|\
+            --trusted-key|\
+            --try-secret-key|\
+            --verify-options)
+                if (( $# >= 2 )); then
+                    options+=("$1" "$2")
+                    shift 2
+                else # let qubes-gpg-client error out
+                    options+=("$1")
+                    shift
+                fi
+                ;;
+            -[!-]*)
+                if [[ "$1" =~ ^-[bacdekKnqst]*[NrRu]$ ]] && (( $# >= 2 )); then
+                    options+=("$1" "$2")
+                    shift 2
+                elif [[ "$1" =~ ^(-[bacdekKnqst]*)o(.*)$ ]]; then
+                    output=1
+                    if (( ${#BASH_REMATCH[1]} > 1 )); then
+                        options+=("${BASH_REMATCH[1]}")
+                    fi
+                    if (( ${#BASH_REMATCH[2]} > 0 )); then
+                        target=${BASH_REMATCH[2]}
+                        shift
+                    elif (( $# >= 2 )); then
+                        target="$2"
+                        shift 2
+                    else
+                        printf 'Missing argument to -o\n' >&2
+                        exit 1
+                    fi
+                else # if $# is too small, let qubes-gpg-client error out
+                    options+=("$1")
+                    shift
+                fi
                 ;;
             --)
                 eoo=1
@@ -147,7 +252,7 @@ while [[ $1 ]]; do
     fi
 done
 
-if [ $localgpg -eq 1 ]
+if [[ "$localgpg" -eq 1 ]]
 then
     exec /usr/bin/gpg "${origargs[@]}"
     exit $?
@@ -156,7 +261,7 @@ fi
 . /etc/profile.d/qubes-gpg.sh
 # 63 is $fd_for_stdout but bash seems to reject variables here
 
-if  ! (($output)) || [ "$target" = "-" ] ; then
+if  ! ((output)) || [[ "$target" = "-" ]] ; then
     exec qubes-gpg-client "${options[@]}" 63>&1
 else
     exec qubes-gpg-client "${options[@]}" 63>&1 >"$target"

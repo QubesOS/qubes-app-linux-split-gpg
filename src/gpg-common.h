@@ -78,7 +78,6 @@ enum {
     opt_pgp6,
     opt_pgp7,
     opt_pgp8,
-    opt_rfc1991,
     opt_rfc2440,
     opt_rfc4880,
     opt_s2k_cipher_algo,
@@ -104,7 +103,6 @@ enum {
     opt_with_colons,
     opt_with_fingerprint,
     opt_with_keygrip,
-    opt_yes
 };
 
 int parse_options(int argc, char *argv[], int *input_fds,
@@ -187,7 +185,6 @@ static const int gpg_allowed_options[] = {
     opt_pgp6,
     opt_pgp7,
     opt_pgp8,
-    opt_rfc1991,
     opt_rfc2440,
     opt_rfc4880,
     opt_s2k_cipher_algo,
@@ -213,7 +210,6 @@ static const int gpg_allowed_options[] = {
     opt_with_colons,
     opt_with_fingerprint,
     opt_with_keygrip,
-    opt_yes,
     0
 };
 
@@ -245,7 +241,7 @@ static const struct gpg_command_opt gpg_commands[] = {
     {0, false},
 };
 
-static const char gpg_short_options[] = "bacdekKnN:qr:R:stu:";
+static const char gpg_short_options[] = "+bacdekKnN:qr:R:stu:";
 
 static const struct option gpg_long_options[] = {
     {"always-trust", 0, 0, opt_always_trust},
@@ -286,11 +282,13 @@ static const struct option gpg_long_options[] = {
     {"hidden-encrypt-to", 1, 0, opt_hidden_encrypt_to},
     {"hidden-recipient", 1, 0, 'R'},
     {"list-config", 0, 0, opt_list_config},
+    {"list-key", 0, 0, 'k'},
     {"list-keys", 0, 0, 'k'},
     {"list-only", 0, 0, opt_list_only},
     {"list-options", 1, 0, opt_list_options},
     {"list-public-keys", 0, 0, 'k'},
     {"list-secret-keys", 0, 0, 'K'},
+    {"list-sig", 0, 0, opt_list_sigs},
     {"list-sigs", 0, 0, opt_list_sigs},
     {"local-user", 1, 0, 'u'},
     {"logger-fd", 1, 0, opt_logger_fd},
@@ -312,19 +310,14 @@ static const struct option gpg_long_options[] = {
     {"no-verbose", 0, 0, opt_no_verbose},
     {"openpgp", 0, 0, opt_openpgp},
     {"output", 1, 0, 'o'},
-    {"personal-cipher-preferences", 1, 0,
-        opt_personal_cipher_preferences},
-    {"personal-compress-preferences", 1, 0,
-        opt_personal_compress_preferences},
-    {"personal-digest-preferences", 1, 0,
-        opt_personal_digest_preferences},
+    {"personal-cipher-preferences", 1, 0, opt_personal_cipher_preferences},
+    {"personal-compress-preferences", 1, 0, opt_personal_compress_preferences},
+    {"personal-digest-preferences", 1, 0, opt_personal_digest_preferences},
     {"pgp2", 0, 0, opt_pgp2},
     {"pgp6", 0, 0, opt_pgp6},
     {"pgp7", 0, 0, opt_pgp7},
     {"pgp8", 0, 0, opt_pgp8},
-    {"quiet", 0, 0, 'q'},
     {"recipient", 1, 0, 'r'},
-    {"rfc1991", 0, 0, opt_rfc1991},
     {"rfc2440", 0, 0, opt_rfc2440},
     {"rfc4880", 0, 0, opt_rfc4880},
     {"s2k-cipher-algo", 1, 0, opt_s2k_cipher_algo},
@@ -355,7 +348,6 @@ static const struct option gpg_long_options[] = {
     {"with-colons", 0, 0, opt_with_colons},
     {"with-fingerprint", 0, 0, opt_with_fingerprint},
     {"with-keygrip", 0, 0, opt_with_keygrip},
-    {"yes", 0, 0, opt_yes},
     {0, 0, 0, 0}
 };
 

@@ -78,7 +78,7 @@ void *process_in(struct thread_args *args) {
                     sizeof(struct header)-total_read_len);
             switch (read_len) {
                 case 0:
-                    fprintf(stderr, "EOF");
+                    fprintf(stderr, "EOF\n");
                     exit(EXIT_SUCCESS);
                 case -1:
                     perror("read(hdr)");
