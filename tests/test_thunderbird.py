@@ -214,26 +214,13 @@ def show_menu_bar(tb):
 def configure_openpgp_account(tb):
     keyid = get_key_fpr()
     export_pub_key()
-    open_account_setup(tb)
-    settings = tb.app.findChild(orPredicate(
-        GenericPredicate(name='Account Settings.*', roleName='frame'),
-        GenericPredicate(name='Account Settings', roleName='dialog'),
-    ))
-    # assume only one account...
-    settings.childNamed('End-To-End Encryption').doActionNamed('activate')
-    settings.childNamed('Add Key.*').doActionNamed('press')
-    settings.childNamed('Use your external key.*').doActionNamed('select')
-    settings.childNamed('Continue').doActionNamed('press')
-    settings.findChild(TBEntry('123456789.*')).text = keyid
-    settings.button('Save key ID').doActionNamed('press')
-    settings.findChild(GenericPredicate(name='0x%s.*' % keyid,
-                                        roleName='radio button')).doActionNamed(
-        'select')
-    settings.childNamed('OpenPGP Key Manager.*').doActionNamed('press')
+    tb.app.findChild(GenericPredicate(
+        name='Tools', roleName='menu')).doActionNamed('click')
+    tb.app.findChild(GenericPredicate(
+        name='OpenPGP Key Manager', roleName='menu item')).doActionNamed('click')
     key_manager = tb.app.findChild(orPredicate(
-        GenericPredicate(name='OpenPGP Key Manager', roleName='frame'),
-        GenericPredicate(name='OpenPGP Key Manager', roleName='dialog')
-    ))
+        GenericPredicate(name='OpenPGP Key Manager', roleName='dialog'),
+        GenericPredicate(name='OpenPGP Key Manager', roleName='frame')))
     key_manager.findChild(
         GenericPredicate(name='File', roleName='menu')).doActionNamed('click')
     key_manager.findChild(
@@ -257,9 +244,8 @@ def configure_openpgp_account(tb):
     doubleClick(*key_manager.findChild(
         GenericPredicate(name='Qubes test <user@localhost>.*')).position)
     key_property = tb.app.findChild(orPredicate(
-        GenericPredicate(name='Key Properties.*', roleName='frame'),
-        GenericPredicate(name='Key Properties.*', roleName='dialog')
-    ))
+        GenericPredicate(name="Key Properties.*", roleName='frame'),
+        GenericPredicate(name="Key Properties.*", roleName='dialog')))
     key_property.findChild(
         GenericPredicate(name="Yes, I['’]ve verified in person.*",
                          roleName='radio button')).doActionNamed('select')
@@ -267,7 +253,6 @@ def configure_openpgp_account(tb):
     key_manager.findChild(
         GenericPredicate(name='Close', roleName='menu item')).doActionNamed(
         'click')
-    close_account_setup(tb)
 
 
 def get_messages(tb):
@@ -515,9 +500,6 @@ def main():
         enter_imap_passwd(tb)
         accept_qubes_attachments(tb)
         show_menu_bar(tb)
-        tb.quit()
-        subprocess.call(['pkill', 'pep-json-server'])
-        tb.start()
         configure_openpgp_account(tb)
         tb.quit()
     if args.command == 'send_receive':
