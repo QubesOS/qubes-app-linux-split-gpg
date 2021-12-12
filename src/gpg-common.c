@@ -365,8 +365,8 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
         }
 
     }
-    // Only allow key IDs to begin with ‘-’ if the options list was terminated by ‘--’,
-    // or if the argument is a literal “-” (which is never considered an option)
+    // Only allow key IDs to begin with '-' if the options list was terminated by '--',
+    // or if the argument is a literal "-" (which is never considered an option)
     if (!lastarg || strcmp(lastarg, "--")) {
         for (int i = optind; i < argc; ++i) {
             const char *const untrusted_arg = untrusted_argv[i];

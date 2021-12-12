@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
            sizeof(untrusted_remote_argv) - sizeof(untrusted_remote_argv[0]));
     /* now options are verified and we get here only when all are allowed */
     remote_argv[0] = argv[1];
-    // provide a better error message than “inappropriate ioctl for device”
+    // provide a better error message than "inappropriate ioctl for device"
     remote_argv[1] = "--no-tty";
     // Add NULL terminator to argv list
     remote_argv[remote_argc+1] = NULL;

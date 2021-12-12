@@ -1,7 +1,7 @@
 Qubes Split GPG
 ===============
 Split GPG implements a concept similar to having a smart card with your private 
-GPG keys, except that the role of the “smart card” plays another Qubes AppVM. 
+GPG keys, except that the role of the "smart card" plays another Qubes AppVM. 
 This way one, not-so-trusted domain, e.g. the one where Thunderbird is running, 
 can delegate all crypto operations, such as encryption/decryption and signing to
 another, more trusted, network-isolated, domain. This way the compromise of your
