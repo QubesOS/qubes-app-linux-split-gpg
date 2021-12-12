@@ -1,3 +1,34 @@
+qubes-gpg-split (2.0.55-1) unstable; urgency=medium
+
+  [ deeplow ]
+  * tests: tb add PGP key to acct via user.js
+  * tests: remove deprecated enigmail HACK & tb restart
+
+  [ Demi Marie Obenour ]
+  * Fix quoting bug
+  * Trivial client cleanup
+  * Add trailing newline in error message
+  * Remove ‘--rfc1991’
+  * Fix some bugs in the wrapper script
+  * Remove options already ignored in wrapper script
+  * Do not allow remote qube to control argv[0] of gpg
+  * Better error message if GPG tries to read a password
+  * Fix short option handling in wrapper script
+  * Reject abbreviated long options
+  * Server: reduce getopt_long(3)’s attack surface
+  * Never permute arguments and options
+  * Require arguments to be printable UTF-8
+  * Fix some bugs in the wrapper script
+  * Convert --detach into --detach-sign
+  * Use bash's [[ consistently
+  * Consolidate redundant case branches
+  * Avoid mishandling empty strings
+
+  [ Marek Marczykowski-Górecki ]
+  * Do not use fancy unicode quotes
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sun, 12 Dec 2021 19:45:54 +0100
+
 qubes-gpg-split (2.0.54-1) unstable; urgency=medium
 
   [ Alyssa Ross ]
