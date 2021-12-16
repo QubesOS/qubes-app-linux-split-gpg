@@ -447,7 +447,16 @@ class TC_10_Thunderbird(SplitGPGBase):
         self.frontend.run(
             'echo "mail_location=mbox:~/Mail:INBOX=/var/mail/%u" |\
                 sudo tee /etc/dovecot/conf.d/100-mail.conf', wait=True)
-        self.frontend.run('sudo systemctl restart dovecot', wait=True)
+        p = self.frontend.run("sudo systemctl is-active dovecot",
+                              passio_popen=True)
+        p.communicate()
+        if p.returncode != 0:
+            self.frontend.run('sudo systemctl start dovecot', wait=True)
+        else:
+            # use doveadm to reload configs instead of systemctl since
+            # restarting it in sys-whonix was making the process aware of time
+            # changes caused by sdwdate, thus making it sleep for the time delta
+            self.frontend.run('sudo doveadm reload', wait=True)
         self.frontend.run( # set a user password because IMAP needs one for auth
             'sudo usermod -p `echo "{}" | openssl passwd --stdin` user'\
                 .format(self.imap_pw),
