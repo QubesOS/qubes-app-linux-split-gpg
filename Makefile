@@ -25,7 +25,7 @@ build:
 	$(MAKE) -C src
 	$(MAKE) -C doc manpages
 
-install-vm:
+install-vm-common:
 	install -d $(DESTDIR)$(LIBDIR)/qubes-gpg-split
 	install -t $(DESTDIR)$(LIBDIR)/qubes-gpg-split src/pipe-cat src/gpg-server
 	install -D src/gpg-client $(DESTDIR)/usr/bin/qubes-gpg-client
@@ -38,6 +38,11 @@ install-vm:
 	install -D qubes-gpg-split.tmpfiles $(DESTDIR)/etc/tmpfiles.d/qubes-gpg-split.conf
 	make -C tests install-vm
 	make -C doc install
+
+install-vm-deb: install-vm-common
+	make -C tests install-vm-deb
+
+install-vm-fedora: install-vm-common
 
 clean:
 	$(MAKE) -C src clean

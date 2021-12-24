@@ -37,3 +37,9 @@ install-dom0-py3:
 install-vm:
 	install -d $(DESTDIR)/usr/lib/qubes-gpg-split
 	install test_*.py $(DESTDIR)/usr/lib/qubes-gpg-split/
+
+install-vm-deb: install-whonix-systemd-dropins
+
+install-whonix-systemd-dropins:
+	install -d $(DESTDIR)/lib/systemd/system/bootclockrandomization.service.d/
+	install whonix-clock-override.conf $(DESTDIR)/lib/systemd/system/bootclockrandomization.service.d/override.conf
