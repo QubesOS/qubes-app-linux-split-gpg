@@ -334,6 +334,8 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
                 button('Protect subject').doActionNamed('press')
     except tree.SearchError:
         pass
+    finally:
+        config.searchCutoffCount = defaultCutoffCount
 
     # Fail if something like a dialog box prevented the compose window to be
     # closed. Means no email was actually sent.
