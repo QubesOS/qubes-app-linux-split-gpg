@@ -66,6 +66,8 @@ found about their functionality in the gpg2 manpage.
 
 --clearsign
 
+--clear-sign
+
 --command-fd
 
 --comment
