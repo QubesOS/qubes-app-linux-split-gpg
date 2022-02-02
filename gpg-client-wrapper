@@ -101,7 +101,7 @@ while (( $# )); do
             -q|--quiet|--yes)
                 shift
                 ;;
-            --detach)
+            --detach|--detach-sig)
                 options+=( --detach-sign )
                 shift
                 ;;
