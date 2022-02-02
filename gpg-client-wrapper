@@ -73,6 +73,17 @@ while (( $# )); do
                 fi
                 shift 2
                 ;;
+            # Used by Mailpile, see https://github.com/QubesOS/qubes-issues/issues/3485
+            --expert|--pinentry-mode=*|--passphrase-fd=*|--no-use-agent)
+                shift
+                ;;
+            --pinentry-mode|--passphrase-fd)
+                if [[ "$#" -lt 2 ]]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
+                fi
+                shift 2
+                ;;
             # ignore tty/display related options - those are meaningless in another VM
             --ttyname=*|--display=*|--ttytype=*|--lc-messages=*|--lc-ctype=*|--no-tty|--xauthority=*)
                 shift
