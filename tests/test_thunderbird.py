@@ -80,7 +80,7 @@ class Thunderbird:
         self.app = self._get_app()
 
     def _get_app(self):
-        config.searchCutoffCount = 50
+        config.searchCutoffCount = 70
         tb = tree.root.application('Thunderbird|Icedove')
         config.searchCutoffCount = defaultCutoffCount
         return tb
