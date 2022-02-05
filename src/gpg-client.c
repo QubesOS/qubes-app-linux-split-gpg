@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -11,24 +12,6 @@
 #include "multiplex.h"
 
 #define QREXEC_CLIENT_PATH "/usr/lib/qubes/qrexec-client-vm"
-#define PIPE_CAT_PATH "/usr/lib/qubes-gpg-split/pipe-cat"
-
-static char *client_tempdir;
-static int fifo_in_created = 0, fifo_out_created = 0;
-
-void unlink_temps(void)
-{
-    char tmpnam[50];
-    if (fifo_in_created) {
-        snprintf(tmpnam, sizeof(tmpnam), "%s/input", client_tempdir);
-        unlink(tmpnam);
-    }
-    if (fifo_out_created) {
-        snprintf(tmpnam, sizeof(tmpnam), "%s/output", client_tempdir);
-        unlink(tmpnam);
-    }
-    rmdir(client_tempdir);
-}
 
 int main(int argc, char *argv[])
 {
@@ -36,12 +19,9 @@ int main(int argc, char *argv[])
     int len, last_opt, i, add_dash_opt;
     int input_fds[MAX_FDS], output_fds[MAX_FDS];
     int input_fds_count, output_fds_count;
-    char tempdir[50] = "/tmp/qubes-gpg-split.XXXXXX";
-    char fifo_in[50], fifo_out[50];
-    int devnull;
-    int input_pipe, output_pipe;
     char *qrexec_client_path = QREXEC_CLIENT_PATH, *qcp;
     char *remote_domain;
+    int pipe_in[2], pipe_out[2];
     pid_t pid;
 
     remote_domain = getenv("QUBES_GPG_DOMAIN");
@@ -93,77 +73,34 @@ int main(int argc, char *argv[])
 
     hdr.len = len ? len - 1 : 0;
 
-    atexit(unlink_temps);
-#ifndef DEBUG
-    // setup fifos and run qrexec client
-    if ((client_tempdir = mkdtemp(tempdir)) == NULL) {
-        perror("mkdtemp");
+    if (pipe2(pipe_in, O_CLOEXEC) || pipe2(pipe_out, O_CLOEXEC)) {
+        perror("pipe2");
         exit(1);
     }
-#else
-    client_tempdir = tempdir;
-    mkdir(tempdir, 0700);
-#endif
-    snprintf(fifo_in, sizeof fifo_in, "%s/input", client_tempdir);
-    if (mkfifo(fifo_in, 0600) < 0) {
-        perror("mkfifo");
-        exit(1);
-    }
-    fifo_in_created = 1;
-    snprintf(fifo_out, sizeof fifo_out, "%s/output", client_tempdir);
-    if (mkfifo(fifo_out, 0600) < 0) {
-        perror("mkfifo");
-        exit(1);
-    }
-    fifo_out_created = 1;
 
     switch (pid = fork()) {
         case -1:
             perror("fork");
             exit(1);
         case 0:
-            devnull = open("/dev/null", O_RDONLY);
-            if (devnull < 0) {
-                perror("open /dev/null");
-                exit(1);
+            if (dup2(pipe_in[0], 0) != 0 || dup2(pipe_out[1], 1) != 1) {
+                perror("dup2()");
+                _exit(1);
             }
-            dup2(devnull, 0);
-            close(devnull);
-            devnull = open("/dev/null", O_WRONLY);
-            if (devnull < 0) {
-                perror("open /dev/null");
-                exit(1);
-            }
-            dup2(devnull, 1);
-            close(devnull);
-
             qcp = getenv("QREXEC_CLIENT_PATH");
             if (qcp)
                 qrexec_client_path = qcp;
-            execl(qrexec_client_path, "qrexec_client_vm",
-                    remote_domain, "qubes.Gpg", PIPE_CAT_PATH, fifo_in,
-                    fifo_out, (char *) NULL);
+            execl(qrexec_client_path, "qrexec-client-vm",
+                  remote_domain, "qubes.Gpg", (char *) NULL);
             perror("exec");
-            exit(1);
+            _exit(1);
     }
     // parent
-
-#ifdef DEBUG
-    fprintf(stderr, "in: %s out: %s\n", fifo_in, fifo_out);
-#endif
-
-    input_pipe = open(fifo_in, O_RDONLY);
-    if (input_pipe < 0) {
-        perror("open");
+    if (close(pipe_in[0]) || close(pipe_out[1])) {
+        perror("close");
         exit(1);
     }
-    output_pipe = open(fifo_out, O_WRONLY);
-    if (output_pipe < 0) {
-        perror("open");
-        exit(1);
-    }
-
-    len = write(output_pipe, &hdr, sizeof(hdr));
+    len = write(pipe_in[1], &hdr, sizeof(hdr));
     if (len != sizeof(hdr)) {
         perror("write header");
         exit(1);
@@ -173,6 +110,6 @@ int main(int argc, char *argv[])
             input_fds_count);
     fprintf(stderr, "input_pipe: %d\n", input_pipe);
 #endif
-    return process_io(input_pipe, output_pipe, input_fds,
+    return process_io(pipe_out[0], pipe_in[1], input_fds,
             input_fds_count, output_fds, output_fds_count);
 }

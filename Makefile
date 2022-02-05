@@ -27,7 +27,7 @@ build:
 
 install-vm-common:
 	install -d $(DESTDIR)$(LIBDIR)/qubes-gpg-split
-	install -t $(DESTDIR)$(LIBDIR)/qubes-gpg-split src/pipe-cat src/gpg-server
+	install -t $(DESTDIR)$(LIBDIR)/qubes-gpg-split src/gpg-server
 	install -D src/gpg-client $(DESTDIR)/usr/bin/qubes-gpg-client
 	install -D gpg-client-wrapper $(DESTDIR)/usr/bin/qubes-gpg-client-wrapper
 	install -D gpg-import-key $(DESTDIR)/usr/bin/qubes-gpg-import-key

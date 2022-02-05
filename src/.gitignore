@@ -1,4 +1,3 @@
 *.o
 gpg-server
 gpg-client
-pipe-cat

@@ -78,7 +78,6 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %dir /usr/lib/qubes-gpg-split
 /usr/lib/qubes-gpg-split/gpg-server
-/usr/lib/qubes-gpg-split/pipe-cat
 /usr/bin/qubes-gpg-client
 /usr/bin/qubes-gpg-client-wrapper
 /usr/bin/qubes-gpg-import-key
