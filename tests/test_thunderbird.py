@@ -337,6 +337,28 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
     finally:
         config.searchCutoffCount = defaultCutoffCount
 
+    # Fail if something like a dialog box prevented the compose window to be
+    # closed. Means no email was actually sent.
+    config.searchCutoffCount = 1
+    timeout = 40 # the "showing" state usually updates after 7 ~ 25 seconds
+    failed_sending = False
+    error_message="unknown"
+    while compose.showing:
+        timeout -= 1
+        if timeout <= 0:
+            failed_sending = True
+        try:
+            dialog = tb.app.dialog('.*')
+            error_message = dialog.child(roleName='label').text
+            failed_sending = True
+        except tree.SearchError:
+            pass
+        if failed_sending:
+            raise Exception("Failed to send message with error '{}'"\
+                    .format(error_message))
+        time.sleep(1)
+    config.searchCutoffCount = defaultCutoffCount
+
 
 def receive_message(tb, signed=False, encrypted=False, attachment=None):
     get_messages(tb)
