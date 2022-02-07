@@ -43,6 +43,7 @@ install-vm-deb: install-vm-common
 	make -C tests install-vm-deb
 
 install-vm-fedora: install-vm-common
+install-vm: install-vm-common
 
 clean:
 	$(MAKE) -C src clean
