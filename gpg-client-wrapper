@@ -213,15 +213,14 @@ while (( $# )); do
                     options+=("$1" "$2")
                     shift 2
                 elif [[ "$1" =~ ^(-[bacdekKnqst]*)o(.*)$ ]]; then
-                    output=1
                     if (( ${#BASH_REMATCH[1]} > 1 )); then
                         options+=("${BASH_REMATCH[1]}")
                     fi
                     if (( ${#BASH_REMATCH[2]} > 0 )); then
-                        target=${BASH_REMATCH[2]}
+                        set_output "${BASH_REMATCH[2]}"
                         shift
                     elif (( $# >= 2 )); then
-                        target="$2"
+                        set_output "$2"
                         shift 2
                     else
                         printf 'Missing argument to -o\n' >&2
