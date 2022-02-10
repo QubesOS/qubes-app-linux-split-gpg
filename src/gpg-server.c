@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
     int i;
     int remote_argc, parsed_argc;
     char *(untrusted_remote_argv[COMMAND_MAX_LEN+1]);	// far too big should not harm
-    char *(remote_argv[COMMAND_MAX_LEN+3]);	// far too big should not harm
+    char *(remote_argv[COMMAND_MAX_LEN+4]);	// far too big should not harm
     int input_fds[MAX_FDS], output_fds[MAX_FDS];
     int input_fds_count, output_fds_count;
 
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    memcpy(remote_argv + 3, untrusted_remote_argv + 1,
+    memcpy(remote_argv + 4, untrusted_remote_argv + 1,
            sizeof(untrusted_remote_argv) - sizeof(untrusted_remote_argv[0]));
     /* now options are verified and we get here only when all are allowed */
     remote_argv[0] = argv[1];
@@ -80,8 +80,10 @@ int main(int argc, char *argv[])
     remote_argv[1] = "--no-tty";
     // disable use of dirmngr, which makes no sense in a backend qube
     remote_argv[2] = "--disable-dirmngr";
+    // prevent a photo viewer from being launched
+    remote_argv[3] = "--photo-viewer=/bin/true";
     // Add NULL terminator to argv list
-    remote_argv[remote_argc+2] = NULL;
+    remote_argv[remote_argc+3] = NULL;
 
     return prepare_pipes_and_run(argv[1], remote_argv, input_fds,
             input_fds_count, output_fds,
