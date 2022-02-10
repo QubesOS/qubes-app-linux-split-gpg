@@ -442,10 +442,15 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
     return optind;
 }
 
-void move_fds(int *dest_fds, int count, int (*pipes)[2], int pipe_end)
+void move_fds(const int *const dest_fds, int const count, int (*const pipes)[2],
+              int const pipe_end)
 {
     int remap_fds[MAX_FD_VALUE * 2];
     int i;
+
+    _Static_assert(MAX_FDS > 0 && MAX_FDS < MAX_FD_VALUE, "bad constants");
+    assert(count >= 0 && count <= MAX_FDS);
+    assert(pipe_end == 0 || pipe_end == 1);
 
     for (i = 0; i < MAX_FD_VALUE * 2; i++)
         remap_fds[i] = -1;
@@ -456,23 +461,36 @@ void move_fds(int *dest_fds, int count, int (*pipes)[2], int pipe_end)
 
     // move pipes to correct fds
     for (i = 0; i < count; i++) {
+        const int dest_fd = dest_fds[i];
+#define PIPE (pipes[i][pipe_end])
+        if (dest_fd < 0 || dest_fd > MAX_FD_VALUE)
+            abort();
+        if (PIPE < 0 || PIPE >= MAX_FD_VALUE * 2)
+            _exit(1);
         // if it is currently used - move to other fd and save new position in
         // remap_fds table
-        if (fcntl(dest_fds[i], F_GETFD) >= 0) {
-            remap_fds[dest_fds[i]] = dup(dest_fds[i]);
-            if (remap_fds[dest_fds[i]] < 0) {
+        if (fcntl(dest_fd, F_GETFD) >= 0) {
+            remap_fds[dest_fd] = dup(dest_fd);
+            if (remap_fds[dest_fd] < 0 ||
+                remap_fds[dest_fd] >= MAX_FD_VALUE * 2) {
                 // no message - stderr closed
-                exit(1);
+                _exit(1);
             }
         }
         // find pipe end - possibly remapped
-        while (remap_fds[pipes[i][pipe_end]] >= 0)
-            pipes[i][pipe_end] = remap_fds[pipes[i][pipe_end]];
-        if (dest_fds[i] != pipes[i][pipe_end]) {
-            // move fd to destination position
-            dup2(pipes[i][pipe_end], dest_fds[i]);
-            close(pipes[i][pipe_end]);
+        while (remap_fds[PIPE] >= 0) {
+            PIPE = remap_fds[PIPE];
+            if (PIPE >= MAX_FD_VALUE * 2)
+                abort();
         }
+        if (dest_fd != PIPE) {
+            // move fd to destination position
+            if (dup2(PIPE, dest_fd) != dest_fd)
+                _exit(1);
+            if (close(PIPE))
+                _exit(1);
+        }
+#undef PIPE
     }
 }
 
