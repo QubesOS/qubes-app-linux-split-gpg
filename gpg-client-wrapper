@@ -74,10 +74,10 @@ while (( $# )); do
                 shift 2
                 ;;
             # ignore tty/display related options - those are meaningless in another VM
-            --ttyname=*|--display=*|--ttytype=*|--no-tty)
+            --ttyname=*|--display=*|--ttytype=*|--lc-messages=*|--lc-ctype=*|--no-tty|--xauthority=*)
                 shift
                 ;;
-            --ttyname|--ttytype|--display)
+            --ttyname|--ttytype|--display|--lc-messages|--lc-ctype|--xauthority)
                 if [[ "$#" -lt 2 ]]; then
                     printf 'Missing argument to %s\n' "$1" >&2
                     exit 1
