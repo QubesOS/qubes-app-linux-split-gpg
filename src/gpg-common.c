@@ -463,7 +463,7 @@ void move_fds(const int *const dest_fds, int const count, int (*const pipes)[2],
     for (i = 0; i < count; i++) {
         const int dest_fd = dest_fds[i];
 #define PIPE (pipes[i][pipe_end])
-        if (dest_fd < 0 || dest_fd > MAX_FD_VALUE)
+        if (dest_fd < 0 || dest_fd >= MAX_FD_VALUE)
             abort();
         if (PIPE < 0 || PIPE >= MAX_FD_VALUE * 2)
             _exit(1);
