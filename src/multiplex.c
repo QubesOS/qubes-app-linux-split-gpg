@@ -106,6 +106,7 @@ void *process_in(struct thread_args *args) {
         if (hdr.len == 0) {
             // EOF received at the other side
             close(write_fds[hdr.fd_num]);
+            write_fds[hdr.fd_num] = -1;
         } else {
             /* data block can be sent in more than one chunk via vchan
              * (because of vchan buffer size) */
@@ -177,6 +178,8 @@ void *process_out(struct thread_args *args) {
         FD_ZERO(&read_set);
         for (i = 0; i < read_fds_len; i++) {
             if (!closed_fds[read_fds[i]]) {
+                assert(read_fds[i] < FD_SETSIZE);
+                assert(read_fds[i] >= 0);
                 FD_SET(read_fds[i], &read_set);
                 if (read_fds[i] > max_fd)
                     max_fd = read_fds[i];
