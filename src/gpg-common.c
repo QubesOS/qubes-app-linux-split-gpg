@@ -29,59 +29,70 @@
 #include <assert.h>
 #include <string.h>
 #include <err.h>
+#include <errno.h>
 
 
 #include "gpg-common.h"
 #include "multiplex.h"
+
+static int validate_fd_argument(const char *const untrusted_fd_arg) {
+    if (untrusted_fd_arg == NULL || !untrusted_fd_arg[0])
+        goto fail;
+    const char *untrusted_p = untrusted_fd_arg;
+    for (; *untrusted_p; untrusted_p++)
+        if (*untrusted_p < '0' || *untrusted_p > '9')
+            goto fail;
+    if (untrusted_fd_arg[0] <= '0' && untrusted_fd_arg[1]) {
+        fprintf(stderr, "Leading zeroes in FD argument %s not allowed\n", untrusted_fd_arg);
+        exit(1);
+    }
+    if (untrusted_p - untrusted_fd_arg > 4)
+        goto too_big;
+    errno = 0;
+    char *endptr = NULL;
+    long const untrusted_fd = strtol(untrusted_fd_arg, &endptr, 10);
+    if (untrusted_fd < 0 || untrusted_fd > 9999 || errno || !endptr || *endptr)
+        abort(); // should have been caught earlier
+    if (untrusted_fd >= MAX_FD_VALUE) {
+too_big:
+        fprintf(stderr, "FD value too big (%s > %d)\n",
+                untrusted_fd_arg, MAX_FD_VALUE - 1);
+        exit(1);
+    }
+    return (int)untrusted_fd;
+fail:
+    fprintf(stderr, "Invalid fd argument.  Only decimal numbers are supported.\n");
+    exit(1);
+}
 
 /* Add current argument (optarg) to given list
  * Check for its correctness
  */
 void add_arg_to_fd_list(int *list, int *list_count)
 {
-    int i;
-    char *endptr;
-    int cur_fd;
-    long untrusted_cur_fd;
+    int i, cur_fd, untrusted_cur_fd;
 
     if (*list_count >= MAX_FDS - 1) {
         fprintf(stderr, "Too many FDs specified\n");
         exit(1);
     }
-    /* optarg is untrusted! */
-    if (optarg == NULL || optarg[0] < '0' || optarg[0] > '9')
-        goto fail;
-    untrusted_cur_fd = strtol(optarg, &endptr, 0);
-    if (untrusted_cur_fd < 0)
-        abort(); // should have been caught by the optarg[0] checks
-    if (endptr != NULL && endptr[0] == 0) {
-        // limit fd value
-        if (untrusted_cur_fd > MAX_FD_VALUE) {
-            fprintf(stderr, "FD value too big (%ld > %d)\n",
-                    untrusted_cur_fd, MAX_FD_VALUE);
-            exit(1);
-        }
-        // check if not already in list
-        for (i = 0; i < *list_count; i++) {
-            if (list[i] == (int)untrusted_cur_fd)
-                break;
-        }
-        cur_fd = (int)untrusted_cur_fd;
-        /* FD sanitization end */
-        if (i == *list_count)
-            list[(*list_count)++] = cur_fd;
-    } else {
-fail:
-        fprintf(stderr, "Invalid fd argument\n");
-        exit(1);
+    untrusted_cur_fd = validate_fd_argument(optarg);
+    // check if not already in list
+    for (i = 0; i < *list_count; i++) {
+        if (list[i] == (int)untrusted_cur_fd)
+            break;
     }
+    cur_fd = untrusted_cur_fd;
+    /* FD sanitization end */
+    if (i == *list_count)
+        list[(*list_count)++] = cur_fd;
 }
 
 void handle_opt_verify(char *untrusted_sig_path, int *list, int *list_count, int is_client)
 {
     int i;
     char *sig_path;
-    int cur_fd, untrusted_cur_fd;
+    int cur_fd;
     int untrusted_sig_path_len;
     int fd_path_len;
 
@@ -93,19 +104,8 @@ void handle_opt_verify(char *untrusted_sig_path, int *list, int *list_count, int
         fprintf(stderr, "Invalid fd argument\n");
         exit(1);
     }
-    if (sscanf(untrusted_sig_path, "/dev/fd/%d", &untrusted_cur_fd) > 0) {
-        if (untrusted_cur_fd < 0) {
-            fprintf(stderr, "Invalid fd argument\n");
-            exit(1);
-        }
-        // limit fd value
-        if (untrusted_cur_fd > MAX_FD_VALUE) {
-            fprintf(stderr, "FD value too big (%d > %d)\n",
-                    untrusted_cur_fd, MAX_FD_VALUE);
-            exit(1);
-        }
-        cur_fd = untrusted_cur_fd;
-        /* FD sanitization end */
+    if (!strncmp(untrusted_sig_path, "/dev/fd/", 8)) {
+        cur_fd = validate_fd_argument(untrusted_sig_path + 8);
     } else {
         if (!is_client) {
             fprintf(stderr, "--verify with filename allowed only on the client side\n");
