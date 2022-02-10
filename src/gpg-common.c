@@ -113,7 +113,7 @@ void handle_opt_verify(char *untrusted_sig_path, int *list, int *list_count, int
         }
         /* arguments on client side are trusted */
         sig_path = untrusted_sig_path;
-        cur_fd = open(sig_path, O_RDONLY);
+        cur_fd = open(sig_path, O_RDONLY|O_CLOEXEC|O_NOCTTY);
         if (cur_fd < 0) {
             perror("open sig");
             exit(1);
