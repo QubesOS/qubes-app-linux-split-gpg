@@ -334,6 +334,10 @@ Expire-Date: 0
         stderr = stderr.decode()
         self.assertNotEquals(p.returncode, 0,
             cmd + ' should have failed: ' + stderr)
+        if option == '--list-options' and 'qubes' in prog:
+             self.assertEquals(stderr,
+                 "qubes-gpg-client: Unknown list option '--garbage-1'\n")
+             return True
         for message_fmt in message_fmts:
             if message_fmt.format('--garbage-1') in stderr:
                 return False

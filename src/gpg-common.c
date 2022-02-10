@@ -28,6 +28,7 @@
 #include <sys/wait.h>
 #include <assert.h>
 #include <string.h>
+#include <err.h>
 
 
 #include "gpg-common.h"
@@ -253,6 +254,25 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
     int i, ok;
     bool userid_args = false, mode_verify = false;
     char *lastarg = NULL;
+    struct listopt {
+        const char *const name;
+        bool const allowed;
+        bool seen;
+    } *p, allowed_list_options[] = {
+        { "help", false, false },
+        { "show-keyring", false, false },
+        { "show-keyserver-urls", true, false },
+        { "show-notations", true, false },
+        { "show-photos", false, false },
+        { "show-policy-urls", true, false },
+        { "show-sig-expire", true, false },
+        { "show-std-notations", true, false },
+        { "show-uid-validity", true, false },
+        { "show-unusable-uids", true, false },
+        { "show-usage", true, false },
+        { "show-user-notations", true, false },
+        { NULL, false, false },
+    };
 
     *input_fds_count = 0;
     *output_fds_count = 0;
@@ -361,6 +381,36 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
             if (strcmp(optarg, "-") != 0) {
                 fprintf(stderr, "Only '-' argument supported for --output option\n");
                 exit(1);
+            }
+        } else if (opt == opt_list_options) {
+            assert(optarg);
+            char const *untrusted_next_opt = optarg, *untrusted_list_opt;
+            while ((untrusted_list_opt = untrusted_next_opt)) {
+                size_t optlen;
+                {
+                    char const *const comma = strchr(untrusted_list_opt, ',');
+                    if (comma) {
+                        assert(comma >= untrusted_list_opt && *comma == ',');
+                        untrusted_next_opt = comma + 1;
+                        optlen = (size_t)(comma - untrusted_list_opt);
+                    } else {
+                        untrusted_next_opt = NULL;
+                        optlen = strlen(untrusted_list_opt);
+                    }
+                    assert(optlen < COMMAND_MAX_LEN);
+                }
+                for (p = allowed_list_options; p->name; ++p) {
+                    if (!strncmp(untrusted_list_opt, p->name, optlen) && p->name[optlen] == '\0') {
+                        if (p->seen)
+                            errx(1, "Duplicate list option %s", p->name);
+                        if (!p->allowed)
+                            errx(1, "Forbidden list option %s", p->name);
+                        p->seen = true;
+                        break;
+                    }
+                }
+                if (!p->name)
+                    errx(1, "Unknown list option '%.*s'", (int)optlen, untrusted_list_opt);
             }
         }
 
