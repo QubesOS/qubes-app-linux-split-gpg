@@ -260,8 +260,9 @@ fi
 . /etc/profile.d/qubes-gpg.sh
 # 63 is $fd_for_stdout but bash seems to reject variables here
 
-if  ! ((output)) || [[ "$target" = "-" ]] ; then
-    exec qubes-gpg-client "${options[@]}" 63>&1
+if ((output)); then
+    if [[ "$target" != '-' ]]; then exec > "$target"; fi
+    exec qubes-gpg-client --output=- "${options[@]}" 63>&1
 else
-    exec qubes-gpg-client "${options[@]}" 63>&1 >"$target"
+    exec qubes-gpg-client "${options[@]}" 63>&1
 fi
