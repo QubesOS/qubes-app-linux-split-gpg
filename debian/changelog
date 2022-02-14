@@ -1,3 +1,33 @@
+qubes-gpg-split (2.0.56-1) unstable; urgency=medium
+
+  [ deeplow ]
+  * tests: increase search attempts for thunderbird start
+  * tests: earlier detection of failed message sending
+  * print failed to send error
+  * merge timeout approaches
+  * undo removal of resetting dogtail search count
+  * tests: reduce whonix boot clock rand during testing
+
+  [ Demi Marie Obenour ]
+  * Translate ‘--detach-sig’ to ‘--detach-sign’
+  * Allow '--clear-sign' as well as '--clearsign'
+  * Fix the Arch build
+  * Forcibly disable dirmngr
+  * Ignore several options used by kmail
+  * Allow --with-secret
+  * More robust file descriptor handling
+  * Ditch pipecat and fix hangs
+  * Ignore various options used by Mailpile
+  * Allow `--utf8-strings`
+  * Reject non-UTF-8 compatible display charsets
+  * Recognize -o in addition to --output
+  * Use set_output for -o as well as --output
+  * `--output` is more than just stdout redirection
+  * Prevent GPG from launching a photo viewer
+  * Sanitize arguments to --list-options
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 14 Feb 2022 21:08:45 +0100
+
 qubes-gpg-split (2.0.55-1) unstable; urgency=medium
 
   [ deeplow ]
