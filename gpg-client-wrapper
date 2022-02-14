@@ -244,15 +244,14 @@ while (( $# )); do
                     options+=("$1" "$2")
                     shift 2
                 elif [[ "$1" =~ ^(-[bacdekKnqst]*)o(.*)$ ]]; then
-                    output=1
                     if (( ${#BASH_REMATCH[1]} > 1 )); then
                         options+=("${BASH_REMATCH[1]}")
                     fi
                     if (( ${#BASH_REMATCH[2]} > 0 )); then
-                        target=${BASH_REMATCH[2]}
+                        set_output "${BASH_REMATCH[2]}"
                         shift
                     elif (( $# >= 2 )); then
-                        target="$2"
+                        set_output "$2"
                         shift 2
                     else
                         printf 'Missing argument to -o\n' >&2
@@ -292,8 +291,9 @@ fi
 . /etc/profile.d/qubes-gpg.sh
 # 63 is $fd_for_stdout but bash seems to reject variables here
 
-if  ! ((output)) || [[ "$target" = "-" ]] ; then
-    exec qubes-gpg-client "${options[@]}" 63>&1
+if ((output)); then
+    if [[ "$target" != '-' ]]; then exec > "$target"; fi
+    exec qubes-gpg-client --output=- "${options[@]}" 63>&1
 else
-    exec qubes-gpg-client "${options[@]}" 63>&1 >"$target"
+    exec qubes-gpg-client "${options[@]}" 63>&1
 fi
