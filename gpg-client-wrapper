@@ -18,6 +18,13 @@ set_output () {
     output=1 target=$1
 }
 
+check_charset () {
+    if ! [[ "$1" =~ ^[uU][tT][fF]-?8$ ]]; then
+        printf 'Unsupported character set %q\n' "$1"
+        exit 1
+    fi
+}
+
 while (( $# )); do
     if ! ((eoo)); then
         case "$1" in
@@ -67,6 +74,17 @@ while (( $# )); do
                 shift
                 ;;
             --photo-viewer)
+                if [[ "$#" -lt 2 ]]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
+                fi
+                shift 2
+                ;;
+            # Used by Mailpile, see https://github.com/QubesOS/qubes-issues/issues/3485
+            --expert|--pinentry-mode=*|--passphrase-fd=*|--no-use-agent)
+                shift
+                ;;
+            --pinentry-mode|--passphrase-fd)
                 if [[ "$#" -lt 2 ]]; then
                     printf 'Missing argument to %s\n' "$1" >&2
                     exit 1
@@ -164,9 +182,24 @@ while (( $# )); do
                 options+=( "--logger-fd" "$fd_for_logfile" )
                 shift 2
                 ;;
+            --display-charset=*)
+                check_charset "${1:18}"
+                shift
+                ;;
+            --charset=*)
+                check_charset "${1:10}"
+                shift
+                ;;
+            --charset|--display-charset)
+                if [[ "$#" -lt 2 ]]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
+                fi
+                check_charset "$2"
+                shift 2
+                ;;
             --cert-digest-algo|\
             --cert-notation|\
-            --charset|\
             --cipher-algo|\
             --command-fd|\
             --comment|\
@@ -175,8 +208,6 @@ while (( $# )); do
             --digest-algo|\
             --disable-cipher-algo|\
             --disable-pubkey-algo|\
-            --display|\
-            --display-charset|\
             --encrypt-to|\
             --hidden-encrypt-to|\
             --hidden-recipient|\
