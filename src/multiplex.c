@@ -35,7 +35,8 @@
 
 #define BUF_SIZE 4096
 
-int child_status = -1;
+static volatile int child_status = -1;
+static bool is_client;
 
 struct thread_args{
     int multi_fd;
@@ -43,21 +44,24 @@ struct thread_args{
     int fds_count;
 };
 
-void sigchld_handler(int arg __attribute__((__unused__)))
+static void sigchld_handler(int arg __attribute__((__unused__)))
 {
     int stat_loc;
     wait(&stat_loc);
     if (WIFEXITED(stat_loc))
         child_status = WEXITSTATUS(stat_loc);
+    else if (WIFSIGNALED(stat_loc))
+        child_status = 128 + WTERMSIG(stat_loc);
 }
 
 static void sigpipe_handler(int arg __attribute__((__unused__))) {}
 
-void setup_sigchld(void)
+void setup_sigchld(bool arg)
 {
     struct sigaction sa;
     memset(&sa, 0, sizeof sa);
 
+    is_client = arg;
     sa.sa_handler = sigchld_handler;
     sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask);
@@ -73,7 +77,7 @@ void setup_sigchld(void)
     }
 }
 
-void *process_in(struct thread_args *args) {
+_Noreturn static void *process_in(struct thread_args *args) {
     int fd_input = args->multi_fd;
     int *write_fds = args->fds;
     int write_fds_len = args->fds_count;
@@ -91,7 +95,7 @@ void *process_in(struct thread_args *args) {
             switch (read_len) {
                 case 0:
                     fprintf(stderr, "EOF\n");
-                    exit(EXIT_SUCCESS);
+                    exit(is_client ? EXIT_FAILURE : EXIT_SUCCESS);
                 case -1:
                     perror("read(hdr)");
                     exit(EXIT_FAILURE);
@@ -144,17 +148,19 @@ void *process_in(struct thread_args *args) {
                 write_len = write(write_fds[hdr.fd_num],
                         buf+total_write_len,
                         total_read_len-total_write_len);
-                if (write_len < 0) {
-                    perror("write");
-
+                if (write_len == -1) {
                     switch (errno) {
                         case EPIPE:
+                            close(write_fds[hdr.fd_num]);
+                            write_fds[hdr.fd_num] = -1;
+                            __attribute__((fallthrough));
                         case EBADF:
                             /* broken pipes are not fatal,
                              * just discard all data */
                             total_write_len = total_read_len - write_len;
                             break;
                         default:
+                            perror("write");
                             exit(EXIT_FAILURE);
                     }
                 }
@@ -164,7 +170,7 @@ void *process_in(struct thread_args *args) {
     }
 }
 
-void *process_out(struct thread_args *args) {
+static _Noreturn void *process_out(struct thread_args *args) {
     int fd_output = args->multi_fd;
     int *read_fds = args->fds;
     int read_fds_len = args->fds_count;
@@ -202,7 +208,7 @@ void *process_out(struct thread_args *args) {
                 exit(EXIT_FAILURE);
             } else {
                 //EINTR
-                if (closed_fds_count == read_fds_len) {
+                if (closed_fds_count == read_fds_len && !is_client) {
                     //if child status saved - send it to the other side
                     if (child_status >= 0) {
                         hdr.fd_num = -(child_status + 1);
@@ -213,11 +219,9 @@ void *process_out(struct thread_args *args) {
                         }
                     }
                     exit(EXIT_SUCCESS);
-                } else if (max_fd >= 0) {
+                } else {
                     // read remaining data and then exit
                     continue;
-                } else {
-                    abort();
                 }
             }
         }
@@ -243,7 +247,7 @@ void *process_out(struct thread_args *args) {
                     closed_fds[i] = 1;
                     closed_fds_count++;
                     // if it was the last one - send child exit status
-                    if (closed_fds_count == read_fds_len && child_status >= 0)
+                    if (closed_fds_count == read_fds_len && child_status >= 0 && !is_client)
                     {
                         hdr.fd_num = -(child_status + 1);
                         hdr.len = 0;
@@ -254,7 +258,7 @@ void *process_out(struct thread_args *args) {
                         exit(EXIT_SUCCESS);
                     }
                 } else {
-                    // can blocks, but not a problem
+                    // can block, but not a problem
                     if (write(fd_output, buf, read_len) < 0) {
                         perror("write");
                         exit(EXIT_FAILURE);
@@ -265,10 +269,10 @@ void *process_out(struct thread_args *args) {
     }
 }
 
-int process_io(int fd_input, int fd_output, int *read_fds,
+_Noreturn int process_io(int fd_input, int fd_output, int *read_fds,
         int read_fds_len, int *write_fds, int write_fds_len)
 {
-    pthread_t thread_in, thread_out;
+    pthread_t thread_in;
     struct thread_args thread_in_args, thread_out_args;
     sigset_t chld_set;
     int i;
@@ -292,11 +296,5 @@ int process_io(int fd_input, int fd_output, int *read_fds,
         perror("pthread_create(thread_in)");
         exit(EXIT_FAILURE);
     }
-    if (pthread_create(&thread_out, NULL, (void * (*)(void *))process_out, (void*)&thread_out_args) != 0) {
-        perror("pthread_create(thread_out)");
-        exit(EXIT_FAILURE);
-    }
-    pthread_join(thread_out, NULL);
-    pthread_join(thread_in, NULL);
-    exit(EXIT_SUCCESS);
+    process_out(&thread_out_args);
 }

@@ -110,6 +110,7 @@ int main(int argc, char *argv[])
             input_fds_count);
     fprintf(stderr, "input_pipe: %d\n", input_pipe);
 #endif
+    setup_sigchld(true);
     return process_io(pipe_out[0], pipe_in[1], input_fds,
             input_fds_count, output_fds, output_fds_count);
 }

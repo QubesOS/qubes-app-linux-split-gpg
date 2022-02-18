@@ -22,6 +22,7 @@
  *
  */
 
+#include <stdbool.h>
 
 struct header {
     int fd_num;
@@ -31,8 +32,7 @@ struct header {
 int process_io(int fd_input, int fd_output, int *read_fds,
         int read_fds_len, int *write_fds, int write_fds_len);
 
-void sigchld_handler(int arg);
-void setup_sigchld(void);
+void setup_sigchld(bool arg);
 
 
 #endif				/* _MULTIPLEX_H */

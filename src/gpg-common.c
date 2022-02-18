@@ -517,7 +517,7 @@ int prepare_pipes_and_run(const char *run_file, char **run_argv, int *input_fds,
         pipes_out_for_multiplexer[i] = pipes_out[i][0];
     }
 
-    setup_sigchld();
+    setup_sigchld(false);
 
     switch (pid = fork()) {
         case -1:
