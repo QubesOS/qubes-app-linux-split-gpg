@@ -176,16 +176,13 @@ void *process_out(struct thread_args *args) {
     fd_set read_set;
     struct header hdr;
     sigset_t empty_set;
-    sigset_t chld_set;
 
     memset(closed_fds, 0, sizeof(closed_fds));
 
     sigemptyset(&empty_set);
-    sigemptyset(&chld_set);
-    sigaddset(&chld_set, SIGCHLD);
 
     while (1) {
-        max_fd = 0;
+        max_fd = -1;
         /* prepare fd_set for select */
         FD_ZERO(&read_set);
         for (i = 0; i < read_fds_len; i++) {
@@ -201,7 +198,7 @@ void *process_out(struct thread_args *args) {
         if (pselect(max_fd + 1, &read_set, 0, 0, 0, &empty_set) <
                 0) {
             if (errno != EINTR) {
-                perror("select");
+                perror("pselect");
                 exit(EXIT_FAILURE);
             } else {
                 //EINTR
@@ -216,9 +213,12 @@ void *process_out(struct thread_args *args) {
                         }
                     }
                     exit(EXIT_SUCCESS);
-                } else
+                } else if (max_fd >= 0) {
                     // read remaining data and then exit
                     continue;
+                } else {
+                    abort();
+                }
             }
         }
         for (i = 0; i < read_fds_len; i++) {
