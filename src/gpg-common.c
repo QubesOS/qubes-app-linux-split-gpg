@@ -20,6 +20,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  */
+#define _GNU_SOURCE
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -445,22 +446,16 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
 void move_fds(const int *const dest_fds, int const count, int (*const pipes)[2],
               int const pipe_end)
 {
-    int i;
-
     _Static_assert(MAX_FDS > 0 && MAX_FDS < MAX_FD_VALUE, "bad constants");
     assert(count >= 0 && count <= MAX_FDS);
     assert(pipe_end == 0 || pipe_end == 1);
 
-    // close the other ends of pipes
-    for (i = 0; i < count; i++)
-        close(pipes[i][!pipe_end]);
 
     // move pipes to correct fds
-    for (i = 0; i < count; i++) {
+    for (int i = 0; i < count; i++)
         if (dup2(pipes[i][pipe_end], dest_fds[i]) != dest_fds[i])
             _exit(1);
-        close(pipes[i][pipe_end]);
-    }
+    // no need to close the pipe fds as they are CLOEXEC and we exec later
 }
 
 static void dup_over_fd(int const fallback_fd, int const fd) {
@@ -507,7 +502,7 @@ int prepare_pipes_and_run(const char *run_file, char **run_argv, int *input_fds,
     }
 
     for (i = 0; i < input_fds_count; i++) {
-        if (pipe(pipes_in[i]) < 0) {
+        if (pipe2(pipes_in[i], O_CLOEXEC) < 0) {
             perror("pipe");
             exit(1);
         }
@@ -515,7 +510,7 @@ int prepare_pipes_and_run(const char *run_file, char **run_argv, int *input_fds,
         pipes_in_for_multiplexer[i] = pipes_in[i][1];
     }
     for (i = 0; i < output_fds_count; i++) {
-        if (pipe(pipes_out[i]) < 0) {
+        if (pipe2(pipes_out[i], O_CLOEXEC) < 0) {
             perror("pipe");
             exit(1);
         }
