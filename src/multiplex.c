@@ -270,6 +270,8 @@ int process_io(int fd_input, int fd_output, int *read_fds,
 {
     pthread_t thread_in, thread_out;
     struct thread_args thread_in_args, thread_out_args;
+    sigset_t chld_set;
+    int i;
 
     thread_in_args.multi_fd = fd_input;
     thread_in_args.fds = write_fds;
@@ -279,6 +281,13 @@ int process_io(int fd_input, int fd_output, int *read_fds,
     thread_out_args.fds = read_fds;
     thread_out_args.fds_count = read_fds_len;
 
+    sigemptyset(&chld_set);
+    sigaddset(&chld_set, SIGCHLD);
+    if ((i = pthread_sigmask(SIG_BLOCK, &chld_set, NULL))) {
+        errno = i;
+        perror("pthread_sigmask");
+        exit(EXIT_FAILURE);
+    }
     if (pthread_create(&thread_in, NULL, (void * (*)(void *))process_in, (void*)&thread_in_args) != 0) {
         perror("pthread_create(thread_in)");
         exit(EXIT_FAILURE);
