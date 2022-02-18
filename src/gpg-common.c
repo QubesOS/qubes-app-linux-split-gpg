@@ -445,15 +445,11 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
 void move_fds(const int *const dest_fds, int const count, int (*const pipes)[2],
               int const pipe_end)
 {
-    int remap_fds[MAX_FD_VALUE * 2];
     int i;
 
     _Static_assert(MAX_FDS > 0 && MAX_FDS < MAX_FD_VALUE, "bad constants");
     assert(count >= 0 && count <= MAX_FDS);
     assert(pipe_end == 0 || pipe_end == 1);
-
-    for (i = 0; i < MAX_FD_VALUE * 2; i++)
-        remap_fds[i] = -1;
 
     // close the other ends of pipes
     for (i = 0; i < count; i++)
@@ -461,36 +457,23 @@ void move_fds(const int *const dest_fds, int const count, int (*const pipes)[2],
 
     // move pipes to correct fds
     for (i = 0; i < count; i++) {
-        const int dest_fd = dest_fds[i];
-#define PIPE (pipes[i][pipe_end])
-        if (dest_fd < 0 || dest_fd >= MAX_FD_VALUE)
-            abort();
-        if (PIPE < 0 || PIPE >= MAX_FD_VALUE * 2)
+        if (dup2(pipes[i][pipe_end], dest_fds[i]) != dest_fds[i])
             _exit(1);
-        // if it is currently used - move to other fd and save new position in
-        // remap_fds table
-        if (fcntl(dest_fd, F_GETFD) >= 0) {
-            remap_fds[dest_fd] = dup(dest_fd);
-            if (remap_fds[dest_fd] < 0 ||
-                remap_fds[dest_fd] >= MAX_FD_VALUE * 2) {
-                // no message - stderr closed
-                _exit(1);
-            }
+        close(pipes[i][pipe_end]);
+    }
+}
+
+static void dup_over_fd(int const fallback_fd, int const fd) {
+    if (fallback_fd < 0 || fd < 0)
+        abort();
+    if (fcntl(fd, F_GETFD) == -1) {
+        assert(errno == EBADF);
+        int const new_fd = fcntl(fallback_fd, F_DUPFD_CLOEXEC, fd);
+        if (new_fd != fd) {
+            assert(new_fd == -1 && "F_DUPFD_CLOEXEC set file descriptor to bad value?");
+            perror("dup2");
+            exit(1);
         }
-        // find pipe end - possibly remapped
-        while (remap_fds[PIPE] >= 0) {
-            PIPE = remap_fds[PIPE];
-            if (PIPE >= MAX_FD_VALUE * 2)
-                abort();
-        }
-        if (dest_fd != PIPE) {
-            // move fd to destination position
-            if (dup2(PIPE, dest_fd) != dest_fd)
-                _exit(1);
-            if (close(PIPE))
-                _exit(1);
-        }
-#undef PIPE
     }
 }
 
@@ -508,7 +491,20 @@ int prepare_pipes_and_run(const char *run_file, char **run_argv, int *input_fds,
 
     sigemptyset(&chld_set);
     sigaddset(&chld_set, SIGCHLD);
-
+    if (input_fds_count > MAX_FDS || output_fds_count > MAX_FDS)
+        abort();
+    else {
+        int const null_fd = open("/dev/null", O_RDONLY | O_NOCTTY | O_CLOEXEC | O_NOFOLLOW);
+        if (null_fd == -1) {
+            perror("open /dev/null");
+            exit(1);
+        }
+        for (i = 0; i < input_fds_count; ++i)
+            dup_over_fd(null_fd, input_fds[i]);
+        for (i = 0; i < output_fds_count; ++i)
+            dup_over_fd(null_fd, output_fds[i]);
+        close(null_fd);
+    }
 
     for (i = 0; i < input_fds_count; i++) {
         if (pipe(pipes_in[i]) < 0) {
@@ -535,9 +531,6 @@ int prepare_pipes_and_run(const char *run_file, char **run_argv, int *input_fds,
             exit(1);
         case 0:
             // child
-            close(0);
-            close(1);
-            close(2);
             move_fds(input_fds, input_fds_count, pipes_in, 0);
             move_fds(output_fds, output_fds_count, pipes_out, 1);
             execv(run_file, run_argv);
