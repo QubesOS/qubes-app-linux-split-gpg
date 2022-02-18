@@ -51,14 +51,26 @@ void sigchld_handler(int arg __attribute__((__unused__)))
         child_status = WEXITSTATUS(stat_loc);
 }
 
+static void sigpipe_handler(int arg __attribute__((__unused__))) {}
+
 void setup_sigchld(void)
 {
     struct sigaction sa;
+    memset(&sa, 0, sizeof sa);
 
     sa.sa_handler = sigchld_handler;
     sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask);
-    sigaction(SIGCHLD, &sa, NULL);
+    if (sigaction(SIGCHLD, &sa, NULL) != 0) {
+        perror("sigaction");
+        exit(1);
+    }
+
+    sa.sa_handler = sigpipe_handler;
+    if (sigaction(SIGPIPE, &sa, NULL) != 0) {
+        perror("sigaction");
+        exit(1);
+    }
 }
 
 void *process_in(struct thread_args *args) {
