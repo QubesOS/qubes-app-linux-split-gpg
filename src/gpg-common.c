@@ -444,11 +444,10 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
 }
 
 void move_fds(const int *const dest_fds, int const count, int (*const pipes)[2],
-              int const pipe_end)
+              _Bool pipe_end)
 {
     _Static_assert(MAX_FDS > 0 && MAX_FDS < MAX_FD_VALUE, "bad constants");
     assert(count >= 0 && count <= MAX_FDS);
-    assert(pipe_end == 0 || pipe_end == 1);
 
 
     // move pipes to correct fds
