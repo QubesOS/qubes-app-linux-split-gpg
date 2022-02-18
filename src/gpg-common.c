@@ -528,8 +528,7 @@ int prepare_pipes_and_run(const char *run_file, char **run_argv, int *input_fds,
             move_fds(input_fds, input_fds_count, pipes_in, 0);
             move_fds(output_fds, output_fds_count, pipes_out, 1);
             execv(run_file, run_argv);
-            //error message already printed by getopt
-            exit(1);
+            _exit(1);
         default:
             // close unneded end of pipes
             for (i = 0; i < input_fds_count; i++)
