@@ -198,6 +198,21 @@ while (( $# )); do
                 check_charset "$2"
                 shift 2
                 ;;
+            # alias '--sign-with' to '-u' (short for '--local-user')
+            # https://github.com/QubesOS/qubes-issues/issues/3325#issuecomment-1039877769
+            --sign-with=*)
+                options+=("-u" "${1:12}")
+                shift
+                ;;
+            --sign-with)
+                if (( $# >= 2 )); then
+                    options+=("-u" "$2")
+                    shift 2
+                else # let qubes-gpg-client error out
+                    options+=("-u")
+                    shift
+                fi
+                ;;
             --cert-digest-algo|\
             --cert-notation|\
             --cipher-algo|\
