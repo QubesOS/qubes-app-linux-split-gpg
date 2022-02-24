@@ -133,6 +133,7 @@ static const int gpg_allowed_options[] = {
     'u',
     'v',
     opt_always_trust,
+    opt_attribute_fd,
     opt_batch,
     opt_cert_notation,
     opt_clearsign,
@@ -249,6 +250,7 @@ static const char gpg_short_options[] = "+bacdekKnN:o:qr:R:stu:";
 static const struct option gpg_long_options[] = {
     {"always-trust", 0, 0, opt_always_trust},
     {"armor", 0, 0, 'a'},
+    {"attribute-fd", 1, 0, opt_attribute_fd},
     {"batch", 0, 0, opt_batch},
     {"cert-digest-algo", 1, 0, opt_cert_digest_algo},
     {"cert-notation", 1, 0, opt_cert_notation},
