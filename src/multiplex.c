@@ -177,7 +177,8 @@ void *process_out(struct thread_args *args) {
         /* prepare fd_set for select */
         FD_ZERO(&read_set);
         for (i = 0; i < read_fds_len; i++) {
-            if (!closed_fds[read_fds[i]]) {
+            assert(i >= 0 && i < MAX_FDS);
+            if (!closed_fds[i]) {
                 assert(read_fds[i] < FD_SETSIZE);
                 assert(read_fds[i] >= 0);
                 FD_SET(read_fds[i], &read_set);
@@ -226,7 +227,8 @@ void *process_out(struct thread_args *args) {
                 }
                 if (read_len == 0) {
                     // closed pipe
-                    closed_fds[read_fds[i]] = 1;
+                    assert(i >= 0 && i < MAX_FDS);
+                    closed_fds[i] = 1;
                     closed_fds_count++;
                     // if it was the last one - send child exit status
                     if (closed_fds_count == read_fds_len && child_status >= 0)
