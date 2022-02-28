@@ -1,3 +1,27 @@
+qubes-gpg-split (2.0.57-1) unstable; urgency=medium
+
+  [ Demi Marie Obenour ]
+  * Harden move_fds against bad file descriptor values
+  * Avoid out of bounds access to closed_fds
+  * Properly validate file descriptor arguments
+  * Open signature file with O_CLOEXEC and O_NOCTTY
+  * Fix assertion for new file descriptor limit
+  * Avoid closing a needed file descriptor
+  * Use pipe2(O_CLOEXEC) instead of closing fds
+  * Use _Bool for a type that must always be 0 or 1
+  * Use _exit(), not exit(), in the child after fork()
+  * Set empty handler for SIGPIPE
+  * process_out(): treat an empty FD_SET properly
+  * process_io(): block SIGCHLD
+  * Fix remaining hangs
+  * Allow --attribute-fd
+
+  [ Patrick Schleizer ]
+  * add alias `--sign-with` to `-u`
+  * Update gpg-client-wrapper
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 28 Feb 2022 21:53:38 +0100
+
 qubes-gpg-split (2.0.56-1) unstable; urgency=medium
 
   [ deeplow ]
