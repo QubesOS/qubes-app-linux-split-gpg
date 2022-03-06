@@ -350,7 +350,8 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
         try:
             dialog = tb.app.dialog('.*')
             error_message = dialog.child(roleName='label').text
-            failed_sending = True
+            if error_message != 'Status:':
+                failed_sending = True
         except tree.SearchError:
             pass
         if failed_sending:
