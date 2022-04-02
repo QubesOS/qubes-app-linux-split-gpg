@@ -1,3 +1,15 @@
+qubes-gpg-split (2.0.58-1) unstable; urgency=medium
+
+  [ Marek Marczykowski-Górecki ]
+  * test: avoid false negative from sending status dialog
+
+  [ Demi Marie Obenour ]
+  * Reject options ignored by the wrapper script
+  * Drop --pgp2
+  * Fix list and verify option processing
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sat, 02 Apr 2022 02:51:22 +0200
+
 qubes-gpg-split (2.0.57-1) unstable; urgency=medium
 
   [ Demi Marie Obenour ]
