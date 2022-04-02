@@ -245,6 +245,36 @@ static void sanitize_string_from_vm(unsigned char *untrusted_s)
         exit(1);
     }
 }
+struct listopt {
+    const char *const name;
+    bool const allowed, allowed_negated;
+};
+
+/* Validated that the list or verify options are valid */
+static void sanitize_list_or_verify_options(const struct listopt *const allowed_list_options, const char *const msg)
+{
+    const char *const delim = " ,";
+    char *untrusted_option = strdup(optarg), *saveptr = NULL, *untrusted_opt;
+    if (!untrusted_option)
+        err(1, "Out of memory");
+    for (untrusted_opt = strtok_r(untrusted_option, delim, &saveptr); untrusted_opt;
+         untrusted_opt = strtok_r(NULL, delim, &saveptr)) {
+        bool negated = !strncmp(untrusted_opt, "no-", 3);
+        const char *const untrusted_non_negated_opt =
+            negated ? untrusted_opt + 3 : untrusted_opt;
+        const struct listopt *p = allowed_list_options;
+        for (p = allowed_list_options; p->name; ++p) {
+            if (!strcmp(untrusted_non_negated_opt, p->name)) {
+                if (!(negated ? p->allowed_negated : p->allowed))
+                    errx(1, "Forbidden %s option %s", msg, untrusted_opt);
+                break;
+            }
+        }
+        if (!p->name)
+            errx(1, "Unknown %s option '%s'", msg, untrusted_opt);
+    }
+    free(untrusted_option);
+}
 
 int parse_options(int argc, char *untrusted_argv[], int *input_fds,
         int *input_fds_count, int *output_fds,
@@ -255,23 +285,38 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
     int i, ok;
     bool userid_args = false, mode_verify = false;
     char *lastarg = NULL;
-    struct listopt {
-        const char *const name;
-        bool const allowed;
-        bool seen;
-    } *p, allowed_list_options[] = {
-        { "help", false, false },
-        { "show-keyring", false, false },
-        { "show-keyserver-urls", true, false },
-        { "show-notations", true, false },
-        { "show-photos", false, false },
-        { "show-policy-urls", true, false },
-        { "show-sig-expire", true, false },
-        { "show-std-notations", true, false },
-        { "show-uid-validity", true, false },
-        { "show-unusable-uids", true, false },
-        { "show-usage", true, false },
-        { "show-user-notations", true, false },
+    static struct listopt const allowed_list_options[] = {
+        { "show-keyring", false, true },
+        { "show-keyserver-urls", true, true },
+        { "show-notations", true, true },
+        { "show-photos", false, true },
+        { "show-policy-urls", true, true },
+        { "show-sig-expire", true, true },
+        { "show-std-notations", true, true },
+        { "show-standard-notations", true, true },
+        { "show-uid-validity", true, true },
+        { "show-unusable-uids", true, true },
+        { "show-unusable-subkeys", true, true },
+        { "show-usage", true, true },
+        { "show-user-notations", true, true },
+        // takes an argument with unclear semantics
+        { "show-sig-subpackets", false, true },
+        { "show-only-fpr-mbox", true, true },
+        // unclear why someone would want --list-options no-sort-sigs
+        { "sort-sigs", true, false },
+        { NULL, false, false },
+    };
+    static struct listopt const allowed_verify_options[] = {
+        { "show-keyserver-urls", true, true },
+        { "show-notations", true, true },
+        { "show-photos", false, true },
+        { "show-policy-urls", true, true },
+        { "show-std-notations", true, true },
+        { "show-standard-notations", true, true },
+        { "show-uid-validity", true, true },
+        { "show-unusable-uids", true, true },
+        { "show-user-notations", true, true },
+        { "show-primary-key-only", true, true },
         { NULL, false, false },
     };
 
@@ -384,37 +429,10 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
                 exit(1);
             }
         } else if (opt == opt_list_options) {
-            assert(optarg);
-            char const *untrusted_next_opt = optarg, *untrusted_list_opt;
-            while ((untrusted_list_opt = untrusted_next_opt)) {
-                size_t optlen;
-                {
-                    char const *const comma = strchr(untrusted_list_opt, ',');
-                    if (comma) {
-                        assert(comma >= untrusted_list_opt && *comma == ',');
-                        untrusted_next_opt = comma + 1;
-                        optlen = (size_t)(comma - untrusted_list_opt);
-                    } else {
-                        untrusted_next_opt = NULL;
-                        optlen = strlen(untrusted_list_opt);
-                    }
-                    assert(optlen < COMMAND_MAX_LEN);
-                }
-                for (p = allowed_list_options; p->name; ++p) {
-                    if (!strncmp(untrusted_list_opt, p->name, optlen) && p->name[optlen] == '\0') {
-                        if (p->seen)
-                            errx(1, "Duplicate list option %s", p->name);
-                        if (!p->allowed)
-                            errx(1, "Forbidden list option %s", p->name);
-                        p->seen = true;
-                        break;
-                    }
-                }
-                if (!p->name)
-                    errx(1, "Unknown list option '%.*s'", (int)optlen, untrusted_list_opt);
-            }
+            sanitize_list_or_verify_options(allowed_list_options, "list");
+        } else if (opt == opt_verify_options) {
+            sanitize_list_or_verify_options(allowed_verify_options, "verify");
         }
-
     }
     // Only allow key IDs to begin with '-' if the options list was terminated by '--',
     // or if the argument is a literal "-" (which is never considered an option)
