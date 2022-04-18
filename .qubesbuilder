@@ -1,0 +1,14 @@
+host:
+  rpm:
+    spec:
+    - rpm_spec/gpg-split-dom0.spec
+vm:
+  rpm:
+    spec:
+    - rpm_spec/gpg-split.spec
+  deb:
+    build:
+    - debian
+  archlinux:
+    build:
+    - archlinux
