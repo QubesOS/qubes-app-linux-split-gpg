@@ -52,14 +52,7 @@ def open_preferences(app):
 def open_accounts(app):
     open_preferences(app)
     settings = app.window('Evolution Preferences')
-    accounts_tab = settings.child(roleName='page tab list').children[1]
-    config.searchCutoffCount = 3
-    try:
-        accounts_tab.child('Open Online Accounts')
-    except tree.SearchError:
-        accounts_tab = settings.child(roleName='page tab list').children[0]
-    finally:
-        config.searchCutoffCount = 10
+    accounts_tab = settings.child('Account Name').parent.parent
     return settings, accounts_tab
 
 def get_sibling_offset(node, offset):
