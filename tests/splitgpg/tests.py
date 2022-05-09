@@ -661,7 +661,7 @@ class TC_20_Evolution(SplitGPGBase):
     def test_010_send_receive_signed_only(self):
         p = self.frontend.run(
             'PYTHONPATH=$HOME/dogtail python3 {} send_receive '
-            '--encrypted --signed 2>&1'.format(
+            '--signed 2>&1'.format(
                 self.scriptpath),
             passio_popen=True)
         (stdout, _) = p.communicate()
