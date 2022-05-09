@@ -1,10 +1,10 @@
 host:
   rpm:
-    spec:
+    build:
     - rpm_spec/gpg-split-dom0.spec
 vm:
   rpm:
-    spec:
+    build:
     - rpm_spec/gpg-split.spec
   deb:
     build:
