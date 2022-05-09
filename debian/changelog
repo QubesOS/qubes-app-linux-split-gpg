@@ -1,3 +1,23 @@
+qubes-gpg-split (2.0.59-1) unstable; urgency=medium
+
+  [ Frédéric Pierret (fepitre) ]
+  * Drop Travis CI
+
+  [ Demi Marie Obenour ]
+  * Allow show-photos as a list or verify option
+
+  [ Marek Marczykowski-Górecki ]
+  * tests: update Evolution test for newer settings dialog layout
+  * tests: close Evolution settings via xdotool
+  * tests: adjust message view in Evolution
+  * tests: really just sign in test_010_send_receive_signed_only
+
+  [ Frédéric Pierret (fepitre) ]
+  * Add Qubes Builder v2 integration
+  * .qubesbuilder: replace 'spec' by 'build'
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 09 May 2022 17:15:16 +0200
+
 qubes-gpg-split (2.0.58-1) unstable; urgency=medium
 
   [ Marek Marczykowski-Górecki ]
