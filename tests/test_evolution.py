@@ -122,7 +122,9 @@ def add_local_account(app):
     key_id.text = 'user@localhost'
     account.button('OK').doActionNamed('click')
 
-    settings.button('Close').doActionNamed('click')
+    # "modern" dialogs lack 'Close' button, and dogtail seems to not support
+    # sending window close action; use xdotool as a workaround
+    subprocess.call(['xdotool', 'search', settings.name, 'windowclose'])
 
 
 def attach(app, compose_window, path):
