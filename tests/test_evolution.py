@@ -52,14 +52,7 @@ def open_preferences(app):
 def open_accounts(app):
     open_preferences(app)
     settings = app.window('Evolution Preferences')
-    accounts_tab = settings.child(roleName='page tab list').children[1]
-    config.searchCutoffCount = 3
-    try:
-        accounts_tab.child('Open Online Accounts')
-    except tree.SearchError:
-        accounts_tab = settings.child(roleName='page tab list').children[0]
-    finally:
-        config.searchCutoffCount = 10
+    accounts_tab = settings.child('Account Name').parent.parent
     return settings, accounts_tab
 
 def get_sibling_offset(node, offset):
@@ -129,7 +122,9 @@ def add_local_account(app):
     key_id.text = 'user@localhost'
     account.button('OK').doActionNamed('click')
 
-    settings.button('Close').doActionNamed('click')
+    # "modern" dialogs lack 'Close' button, and dogtail seems to not support
+    # sending window close action; use xdotool as a workaround
+    subprocess.call(['xdotool', 'search', settings.name, 'windowclose'])
 
 
 def attach(app, compose_window, path):
@@ -175,9 +170,15 @@ def receive_message(app, signed=False, encrypted=False, attachment=None):
     print('Message body: "{}"'.format(msg_body))
     assert msg_body.strip() == 'This is test message'
 
-    # From, To, Subject, Date, Security
-    gpg_info = message.findChildren(
-        predicate.GenericPredicate(roleName='table cell'))[4].text
+    try:
+        gpg_header = message.findChildren(lambda cell:
+            cell.roleName == 'row header' and 'Security' in cell.text)[0]
+        gpg_info = gpg_header.parent[gpg_header.indexInParent+1].text
+    except (tree.SearchError, IndexError):
+        # From, To, Subject, Date, Security
+        gpg_info = message.findChildren(
+            predicate.GenericPredicate(roleName='table cell'))[4].text
+    print('GPG info: {}'.format(gpg_info))
 
     if signed:
         assert 'signed' in gpg_info
