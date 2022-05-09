@@ -170,9 +170,15 @@ def receive_message(app, signed=False, encrypted=False, attachment=None):
     print('Message body: "{}"'.format(msg_body))
     assert msg_body.strip() == 'This is test message'
 
-    # From, To, Subject, Date, Security
-    gpg_info = message.findChildren(
-        predicate.GenericPredicate(roleName='table cell'))[4].text
+    try:
+        gpg_header = message.findChildren(lambda cell:
+            cell.roleName == 'row header' and 'Security' in cell.text)[0]
+        gpg_info = gpg_header.parent[gpg_header.indexInParent+1].text
+    except (tree.SearchError, IndexError):
+        # From, To, Subject, Date, Security
+        gpg_info = message.findChildren(
+            predicate.GenericPredicate(roleName='table cell'))[4].text
+    print('GPG info: {}'.format(gpg_info))
 
     if signed:
         assert 'signed' in gpg_info
