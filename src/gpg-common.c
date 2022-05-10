@@ -29,7 +29,6 @@
 #include <sys/wait.h>
 #include <assert.h>
 #include <string.h>
-#include <err.h>
 #include <errno.h>
 
 
@@ -245,36 +244,6 @@ static void sanitize_string_from_vm(unsigned char *untrusted_s)
         exit(1);
     }
 }
-struct listopt {
-    const char *const name;
-    bool const allowed, allowed_negated;
-};
-
-/* Validated that the list or verify options are valid */
-static void sanitize_list_or_verify_options(const struct listopt *const allowed_list_options, const char *const msg)
-{
-    const char *const delim = " ,";
-    char *untrusted_option = strdup(optarg), *saveptr = NULL, *untrusted_opt;
-    if (!untrusted_option)
-        err(1, "Out of memory");
-    for (untrusted_opt = strtok_r(untrusted_option, delim, &saveptr); untrusted_opt;
-         untrusted_opt = strtok_r(NULL, delim, &saveptr)) {
-        bool negated = !strncmp(untrusted_opt, "no-", 3);
-        const char *const untrusted_non_negated_opt =
-            negated ? untrusted_opt + 3 : untrusted_opt;
-        const struct listopt *p = allowed_list_options;
-        for (p = allowed_list_options; p->name; ++p) {
-            if (!strcmp(untrusted_non_negated_opt, p->name)) {
-                if (!(negated ? p->allowed_negated : p->allowed))
-                    errx(1, "Forbidden %s option %s", msg, untrusted_opt);
-                break;
-            }
-        }
-        if (!p->name)
-            errx(1, "Unknown %s option '%s'", msg, untrusted_opt);
-    }
-    free(untrusted_option);
-}
 
 int parse_options(int argc, char *untrusted_argv[], int *input_fds,
         int *input_fds_count, int *output_fds,
@@ -286,38 +255,37 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
     bool userid_args = false, mode_verify = false;
     char *lastarg = NULL;
     static struct listopt const allowed_list_options[] = {
-        { "show-keyring", false, true },
-        { "show-keyserver-urls", true, true },
-        { "show-notations", true, true },
-        { "show-photos", true, true },
-        { "show-policy-urls", true, true },
-        { "show-sig-expire", true, true },
-        { "show-std-notations", true, true },
-        { "show-standard-notations", true, true },
-        { "show-uid-validity", true, true },
-        { "show-unusable-uids", true, true },
-        { "show-unusable-subkeys", true, true },
-        { "show-usage", true, true },
-        { "show-user-notations", true, true },
-        // takes an argument with unclear semantics
-        { "show-sig-subpackets", false, true },
-        { "show-only-fpr-mbox", true, true },
-        // unclear why someone would want --list-options no-sort-sigs
-        { "sort-sigs", true, false },
-        { NULL, false, false },
+        // potential information leak
+        { "show-keyring", false, true, false },
+        { "show-keyserver-urls", true, true, false },
+        { "show-notations", true, true, false },
+        { "show-photos", true, true, false },
+        { "show-policy-urls", true, true, false },
+        { "show-sig-expire", true, true, false },
+        { "show-std-notations", true, true, false },
+        { "show-standard-notations", true, true, false },
+        { "show-uid-validity", true, true, false },
+        { "show-unusable-uids", true, true, false },
+        { "show-unusable-subkeys", true, true, false },
+        { "show-usage", true, true, false },
+        { "show-user-notations", true, true, false },
+        { "show-sig-subpackets", true, true, true },
+        { "show-only-fpr-mbox", true, true, false },
+        { "sort-sigs", true, true, false },
+        { NULL, false, false, false },
     };
     static struct listopt const allowed_verify_options[] = {
-        { "show-keyserver-urls", true, true },
-        { "show-notations", true, true },
-        { "show-photos", true, true },
-        { "show-policy-urls", true, true },
-        { "show-std-notations", true, true },
-        { "show-standard-notations", true, true },
-        { "show-uid-validity", true, true },
-        { "show-unusable-uids", true, true },
-        { "show-user-notations", true, true },
-        { "show-primary-key-only", true, true },
-        { NULL, false, false },
+        { "show-keyserver-urls", true, true, false },
+        { "show-notations", true, true, false },
+        { "show-photos", true, true, false },
+        { "show-policy-urls", true, true, false },
+        { "show-std-notations", true, true, false },
+        { "show-standard-notations", true, true, false },
+        { "show-uid-validity", true, true, false },
+        { "show-unusable-uids", true, true, false },
+        { "show-user-notations", true, true, false },
+        { "show-primary-key-only", true, true, false },
+        { NULL, false, false, false },
     };
 
     *input_fds_count = 0;

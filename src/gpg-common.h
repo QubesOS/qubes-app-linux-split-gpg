@@ -3,7 +3,9 @@
 
 #include <stdint.h>
 #include <getopt.h>
+#include <stddef.h>
 #include <stdbool.h>
+#include <err.h>
 
 #define COMMAND_MAX_LEN 1024
 
@@ -346,5 +348,12 @@ static const struct option gpg_long_options[] = {
     {"with-secret", 0, 0, opt_with_secret},
     {0, 0, 0, 0}
 };
+
+struct listopt {
+    const char *const name;
+    bool const allowed, allowed_negated, has_argument;
+};
+
+void sanitize_list_or_verify_options(const struct listopt *p, const char *msg);
 
 #endif				/* _GPG_H */
