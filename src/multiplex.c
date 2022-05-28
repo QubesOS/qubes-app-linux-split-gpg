@@ -2,6 +2,7 @@
  * The Qubes OS Project, http://www.qubes-os.org
  *
  * Copyright (C) 2011  Marek Marczykowski <marmarek@invisiblethingslab.com>
+ * Copyright (C) 2022  Demi Marie Obenour <demi@invisiblethingslab.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
