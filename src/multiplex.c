@@ -21,12 +21,14 @@
 
 #include <sys/select.h>
 #include <sys/wait.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
 #include <pthread.h>
+#include <err.h>
 
 
 #include <assert.h>
@@ -183,6 +185,25 @@ static _Noreturn void *process_out(struct thread_args *args) {
     struct header hdr;
     sigset_t empty_set;
 
+    assert(read_fds_len <= MAX_FDS);
+    /*
+     * We must not block reading from file descriptors in this function
+     * because if we do, a deadlock is possible.  For instance, gpg
+     * could have written a few bytes to this file descriptor, and now
+     * be waiting for us to read a large number of bytes from another
+     * file descriptor.  If we try to read more bytes than are available,
+     * and the file descriptor is in blocking mode, deadlock can result.
+     *
+     * Flip all pipe read ends to nonblocking mode to avoid this problem.
+     * FIONBIO is non-standard but basically every *nix I (Demi) know of
+     * has it.
+     */
+    for (i = 0; i < read_fds_len; i++) {
+        int one = 1;
+        if (ioctl(read_fds[i], FIONBIO, &one))
+            errx(1, "ioctl(FIONBIO, %d) on fd %d", one, read_fds[i]);
+    }
+
     memset(closed_fds, 0, sizeof(closed_fds));
 
     sigemptyset(&empty_set);
@@ -227,16 +248,17 @@ static _Noreturn void *process_out(struct thread_args *args) {
         }
         for (i = 0; i < read_fds_len; i++) {
             if (FD_ISSET(read_fds[i], &read_set)) {
-                // just one block
                 read_len = read(read_fds[i], buf, BUF_SIZE);
                 /* we are not validating data passed to/from gpg */
                 if (read_len < 0) {
+                    if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
+                        continue; // these are not fatal
                     perror("read");
                     exit(EXIT_FAILURE);
                 }
                 hdr.fd_num = i;
                 hdr.len = read_len;
-                // can blocks, but not a problem
+                // can block, but not a problem
                 if (write(fd_output, &hdr, sizeof(hdr)) < 0) {
                     perror("write");
                     exit(EXIT_FAILURE);
