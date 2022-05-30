@@ -1,3 +1,10 @@
+qubes-gpg-split (2.0.60-1) unstable; urgency=medium
+
+  [ Demi Marie Obenour ]
+  * Allow --list-options show-sig-subpackets
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 30 May 2022 03:01:37 +0200
+
 qubes-gpg-split (2.0.59-1) unstable; urgency=medium
 
   [ Frédéric Pierret (fepitre) ]
