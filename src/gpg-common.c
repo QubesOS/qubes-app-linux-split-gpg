@@ -461,7 +461,7 @@ int prepare_pipes_and_run(const char *run_file, char **run_argv, int *input_fds,
         int input_fds_count, int *output_fds,
         int output_fds_count)
 {
-    int i;
+    int i, null_fd;
     pid_t pid;
     int pipes_in[MAX_FDS][2];
     int pipes_out[MAX_FDS][2];
@@ -473,19 +473,15 @@ int prepare_pipes_and_run(const char *run_file, char **run_argv, int *input_fds,
     sigaddset(&chld_set, SIGCHLD);
     if (input_fds_count > MAX_FDS || output_fds_count > MAX_FDS)
         abort();
-    else {
-        int const null_fd = open("/dev/null", O_RDONLY | O_NOCTTY | O_CLOEXEC | O_NOFOLLOW);
-        if (null_fd == -1) {
-            perror("open /dev/null");
-            exit(1);
-        }
-        for (i = 0; i < input_fds_count; ++i)
-            dup_over_fd(null_fd, input_fds[i]);
-        for (i = 0; i < output_fds_count; ++i)
-            dup_over_fd(null_fd, output_fds[i]);
-        close(null_fd);
-    }
-
+    null_fd = open("/dev/null", O_RDONLY | O_NOCTTY | O_CLOEXEC | O_NOFOLLOW);
+    if (null_fd < 0)
+        err(1, "open /dev/null");
+    for (i = 0; i < input_fds_count; ++i)
+        dup_over_fd(null_fd, input_fds[i]);
+    for (i = 0; i < output_fds_count; ++i)
+        dup_over_fd(null_fd, output_fds[i]);
+    // do not close null_fd yet; it could be one of the file descriptors
+    // to pass to GnuPG
     for (i = 0; i < input_fds_count; i++) {
         if (pipe2(pipes_in[i], O_CLOEXEC) < 0) {
             perror("pipe");
@@ -502,6 +498,8 @@ int prepare_pipes_and_run(const char *run_file, char **run_argv, int *input_fds,
         // multiplexer reads from gpg through this fd
         pipes_out_for_multiplexer[i] = pipes_out[i][0];
     }
+    // now that the pipes are created, null_fd can be closed safely
+    close(null_fd);
 
     setup_sigchld(false);
 
