@@ -451,8 +451,7 @@ static void dup_over_fd(int const fallback_fd, int const fd) {
         int const new_fd = fcntl(fallback_fd, F_DUPFD_CLOEXEC, fd);
         if (new_fd != fd) {
             assert(new_fd == -1 && "F_DUPFD_CLOEXEC set file descriptor to bad value?");
-            perror("dup2");
-            exit(1);
+            err(1, "fcntl(%d, F_DUPFD_CLOEXEC, %d)", fallback_fd, fd);
         }
     }
 }
