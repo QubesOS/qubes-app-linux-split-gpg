@@ -4,8 +4,6 @@ options=()  # the buffer array for the parameters
 eoo=0       # end of options reached
 output=0    # do we try to write to file
 target=''   # where do we try to write to
-readonly fd_for_logfile=62 # some (hopefuly) unused FD, later redirected to logfile
-readonly fd_for_stdout=63 # some (hopefuly) unused FD, later redirected to stdout
 special_filenames=0 # --enable-special-filenames was given
 localgpg=0 #use local gpg (for ex --gen-rand etc.)
 origargs=( "$@" )
@@ -144,6 +142,7 @@ while (( $# )); do
                 elif [[ "$2" =~ ^(0x)?0*1$ ]]; then
                     # don't use stdout for status fd, since it might be later
                     # redirected to a file with --output
+                    exec {fd_for_stdout}>&1
                     options+=( "$1" "$fd_for_stdout" )
                 else
                     options+=( "$1" "$2" )
@@ -156,6 +155,7 @@ while (( $# )); do
                 if [[ $1 =~ ^([^=]*=)(0x)?0*1$ ]]; then
                     # don't use stdout for status fd, since it might be later
                     # redirected to a file with --output
+                    exec {fd_for_stdout}>&1
                     options+=( "${BASH_REMATCH[1]}$fd_for_stdout" )
                 else
                     options+=( "$1" )
@@ -165,8 +165,7 @@ while (( $# )); do
             --log-file=*)
                 # rejected by split-gpg to not allow a write to arbitrary file
                 # on the backend side; emulate using --logger-fd
-                # 62 is $fd_for_logfile but bash seems to reject variables here
-                exec 62>"${1:11}"
+                exec {fd_for_logfile}>"${1:11}"
                 options+=( "--logger-fd" "$fd_for_logfile" )
                 shift
                 ;;
@@ -177,8 +176,7 @@ while (( $# )); do
                 fi
                 # rejected by split-gpg to not allow a write to arbitrary file
                 # on the backend side; emulate using --logger-fd
-                # 62 is $fd_for_logfile but bash seems to reject variables here
-                exec 62>"$2"
+                exec {fd_for_logfile}>"$2"
                 options+=( "--logger-fd" "$fd_for_logfile" )
                 shift 2
                 ;;
@@ -304,11 +302,10 @@ then
 fi
 
 . /etc/profile.d/qubes-gpg.sh
-# 63 is $fd_for_stdout but bash seems to reject variables here
 
 if ((output)); then
     if [[ "$target" != '-' ]]; then exec > "$target"; fi
-    exec qubes-gpg-client --output=- "${options[@]}" 63>&1
+    exec qubes-gpg-client -o- "${options[@]}"
 else
-    exec qubes-gpg-client "${options[@]}" 63>&1
+    exec qubes-gpg-client "${options[@]}"
 fi
