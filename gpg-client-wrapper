@@ -34,11 +34,18 @@ while (( $# )); do
             #    localgpg=1
             #    break
             #;;
-            --gen-rand|--gen-prime|--enarmor|--dearmor|--print-md|--help|-h)
+            --gen-rand|--gen-prime|--enarmor|--enarmour|\
+            --dearmor|--dearmour|\
+            --print-md|--print-mds|\
+            -h|--help|\
+            --store|\
+            --warranty|\
+            --dump-options|--dump-option-table|--list-packets|\
+            --show-key|--show-keys)
                 localgpg=1
                 break
                 ;;
-            --no-default-keyring)
+            --no-default-keyring|--no-keyring|--keyring|--keyring=*|--primary-keyring|--primary-keyring=*|--homedir|--homedir=*)
                 # this is not possible with split gpg right?
                 localgpg=1
                 break
