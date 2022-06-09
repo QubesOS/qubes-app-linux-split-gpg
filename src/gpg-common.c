@@ -65,18 +65,14 @@ fail:
     exit(1);
 }
 
-/* Add current argument (optarg) to given list
- * Check for its correctness
- */
-void add_arg_to_fd_list(int *list, int *list_count)
+static void add_fd_to_list(int const untrusted_cur_fd,
+                           int *const list, int *const list_count)
 {
-    int i, cur_fd, untrusted_cur_fd;
+    int i, cur_fd;
 
-    if (*list_count >= MAX_FDS - 1) {
-        fprintf(stderr, "Too many FDs specified\n");
-        exit(1);
-    }
-    untrusted_cur_fd = validate_fd_argument(optarg);
+    if (*list_count >= MAX_FDS - 1)
+        errx(1, "Too many FDs specified (found %d, limit %d)",
+             *list_count, MAX_FDS - 1);
     // check if not already in list
     for (i = 0; i < *list_count; i++) {
         if (list[i] == (int)untrusted_cur_fd)
@@ -88,55 +84,34 @@ void add_arg_to_fd_list(int *list, int *list_count)
         list[(*list_count)++] = cur_fd;
 }
 
-void handle_opt_verify(char *untrusted_sig_path, int *list, int *list_count, int is_client)
+/* Add current argument (optarg) to given list
+ * Check for its correctness
+ */
+static void add_arg_to_fd_list(int *list, int *list_count)
 {
-    int i;
-    char *sig_path;
+    int untrusted_cur_fd = validate_fd_argument(optarg);
+    add_fd_to_list(untrusted_cur_fd, list, list_count);
+}
+
+static void handle_opt_verify(char **untrusted_sig_path_ptr, int *input_list,
+                              int *input_list_count, bool is_client)
+{
     int cur_fd;
-    int untrusted_sig_path_len;
-    int fd_path_len;
 
-    if (*list_count >= MAX_FDS - 1) {
-        fprintf(stderr, "Too many FDs used\n");
-        exit(1);
-    }
-    if (untrusted_sig_path[0] == 0) {
-        fprintf(stderr, "Invalid fd argument\n");
-        exit(1);
-    }
-    if (!strncmp(untrusted_sig_path, "/dev/fd/", 8)) {
-        cur_fd = validate_fd_argument(untrusted_sig_path + 8);
-    } else {
-        if (!is_client) {
-            fprintf(stderr, "--verify with filename allowed only on the client side\n");
-            exit(1);
-        }
+    if (is_client) {
         /* arguments on client side are trusted */
-        sig_path = untrusted_sig_path;
-        cur_fd = open(sig_path, O_RDONLY|O_CLOEXEC|O_NOCTTY);
-        if (cur_fd < 0) {
-            perror("open sig");
-            exit(1);
-        }
-        /* HACK: override original file path with FD virtual path, hope it will
-         * fit; use /dev/fd instead of /proc/self/fd because is is shorter and
-         * space is critical here (for thunderbird it must fit in place of "/tmp/data.sig") */
-        untrusted_sig_path_len = strlen(untrusted_sig_path);
-        fd_path_len = snprintf(untrusted_sig_path, untrusted_sig_path_len + 1, "/dev/fd/%d", cur_fd);
-        if (fd_path_len < 0 || fd_path_len > untrusted_sig_path_len) {
-            fprintf(stderr, "Failed to fit /dev/fd/%d in place of signature path\n", cur_fd);
-            exit(1);
-        }
-        /* leak FD intentionally - process_io will read from it */
+        char *sig_path = *untrusted_sig_path_ptr;
+        if ((cur_fd = open(sig_path, O_RDONLY|O_CLOEXEC|O_NOCTTY)) < 0)
+            err(1, "open sig file %s", sig_path);
+        if (asprintf(untrusted_sig_path_ptr, "/dev/fd/%d", cur_fd) < 0)
+            err(1, "asprintf");
+    } else {
+        if (strncmp((*untrusted_sig_path_ptr), "/dev/fd/", 8))
+            errx(1, "--verify with filename allowed only on the client side");
+        if ((cur_fd = validate_fd_argument((*untrusted_sig_path_ptr) + 8)) < 3)
+            errx(1, "--verify signature file descriptor must be 3 or more");
     }
-    // check if not already in list
-    for (i = 0; i < *list_count; i++) {
-        if (list[i] == cur_fd)
-            break;
-    }
-
-    if (i == *list_count)
-        list[(*list_count)++] = cur_fd;
+    add_fd_to_list(cur_fd, input_list, input_list_count);
 }
 
 /* This code is taken from the GUI daemon */
@@ -421,7 +396,8 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
         optind = argc;
     }
     if (mode_verify && optind < argc) {
-        handle_opt_verify(untrusted_argv[optind], input_fds, input_fds_count, is_client);
+        handle_opt_verify(untrusted_argv + optind, input_fds,
+                          input_fds_count, is_client);
         /* the first path already processed */
         optind++;
     }
