@@ -66,13 +66,31 @@ fail:
 }
 
 static void add_fd_to_list(int const untrusted_cur_fd,
-                           int *const list, int *const list_count)
+                           int *const list, int *const list_count,
+                           const int *const other_list, const int *const other_list_count)
 {
     int i, cur_fd;
 
     if (*list_count >= MAX_FDS - 1)
         errx(1, "Too many FDs specified (found %d, limit %d)",
              *list_count, MAX_FDS - 1);
+    // check if already used for I/O in the other direction
+    for (i = 0; i < *other_list_count; i++) {
+        if (other_list[i] == untrusted_cur_fd) {
+            switch (untrusted_cur_fd) {
+            case 0:
+                errx(1, "Cannot write to stdin");
+            case 1:
+                errx(1, "Cannot read from stdout");
+            case 2:
+                errx(1, "Cannot read from stderr");
+            default:
+                errx(1,
+                     "Cannot use fd %d for both reading and writing",
+                     untrusted_cur_fd);
+            }
+        }
+    }
     // check if not already in list
     for (i = 0; i < *list_count; i++) {
         if (list[i] == (int)untrusted_cur_fd)
@@ -87,14 +105,15 @@ static void add_fd_to_list(int const untrusted_cur_fd,
 /* Add current argument (optarg) to given list
  * Check for its correctness
  */
-static void add_arg_to_fd_list(int *list, int *list_count)
+static void add_arg_to_fd_list(int *list, int *list_count,
+                        const int *other_list, const int *other_list_count)
 {
     int untrusted_cur_fd = validate_fd_argument(optarg);
-    add_fd_to_list(untrusted_cur_fd, list, list_count);
+    add_fd_to_list(untrusted_cur_fd, list, list_count, other_list, other_list_count);
 }
 
-static void handle_opt_verify(char **untrusted_sig_path_ptr, int *input_list,
-                              int *input_list_count, bool is_client)
+static void handle_opt_verify(char **untrusted_sig_path_ptr, int *input_list, int *input_list_count,
+                              const int *output_list, const int *output_list_count, bool is_client)
 {
     int cur_fd;
 
@@ -111,7 +130,7 @@ static void handle_opt_verify(char **untrusted_sig_path_ptr, int *input_list,
         if ((cur_fd = validate_fd_argument((*untrusted_sig_path_ptr) + 8)) < 3)
             errx(1, "--verify signature file descriptor must be 3 or more");
     }
-    add_fd_to_list(cur_fd, input_list, input_list_count);
+    add_fd_to_list(cur_fd, input_list, input_list_count, output_list, output_list_count);
 }
 
 /* This code is taken from the GUI daemon */
@@ -352,18 +371,18 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
             i++;
         }
         if (opt == opt_status_fd) {
-            add_arg_to_fd_list(output_fds, output_fds_count);
+            add_arg_to_fd_list(output_fds, output_fds_count, input_fds, input_fds_count);
         } else if (opt == opt_logger_fd) {
-            add_arg_to_fd_list(output_fds, output_fds_count);
+            add_arg_to_fd_list(output_fds, output_fds_count, input_fds, input_fds_count);
         } else if (opt == opt_attribute_fd) {
-            add_arg_to_fd_list(output_fds, output_fds_count);
+            add_arg_to_fd_list(output_fds, output_fds_count, input_fds, input_fds_count);
 #if 0
         } else if (opt == opt_passphrase_fd) {
             // this is senseless to enter password for private key in the source vm
-            add_arg_to_fd_list(input_fds, input_fds_count);
+            add_arg_to_fd_list(input_fds, input_fds_count, output_fds, output_fds_count);
 #endif
         } else if (opt == opt_command_fd) {
-            add_arg_to_fd_list(input_fds, input_fds_count);
+            add_arg_to_fd_list(input_fds, input_fds_count, output_fds, output_fds_count);
         } else if (opt == opt_verify) {
             mode_verify = 1;
         } else if (opt == 'o') {
@@ -396,8 +415,10 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
         optind = argc;
     }
     if (mode_verify && optind < argc) {
-        handle_opt_verify(untrusted_argv + optind, input_fds,
-                          input_fds_count, is_client);
+        handle_opt_verify(untrusted_argv + optind,
+                          input_fds, input_fds_count,
+                          output_fds, output_fds_count,
+                          is_client);
         /* the first path already processed */
         optind++;
     }
