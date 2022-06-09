@@ -141,7 +141,6 @@ static const int gpg_allowed_options[] = {
     opt_cert_notation,
     opt_clearsign,
     opt_clear_sign,
-    opt_command_fd,
     opt_comment,
     opt_compress_algo,
     opt_default_recipient_self,

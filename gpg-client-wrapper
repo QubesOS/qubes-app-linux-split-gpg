@@ -85,6 +85,19 @@ while (( $# )); do
                 fi
                 shift 2
                 ;;
+            # --command-fd is used by reprepro, and looks safe.
+            # However, it turns out that GnuPG trusts the data it
+            # receives on this FD, so the backend has to reject it.
+            --command-fd=*)
+                shift
+                ;;
+            --command-fd)
+                if [[ "$#" -lt 2 ]]; then
+                    printf 'Missing argument to %s\n' "$1" >&2
+                    exit 1
+                fi
+                shift 2
+                ;;
             # Used by Mailpile, see https://github.com/QubesOS/qubes-issues/issues/3485
             --expert|--pinentry-mode=*|--passphrase-fd=*|--no-use-agent)
                 shift

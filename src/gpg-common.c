@@ -403,13 +403,6 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
             add_arg_to_fd_list(output_fds, output_fds_count, input_fds, input_fds_count);
         } else if (opt == opt_attribute_fd) {
             add_arg_to_fd_list(output_fds, output_fds_count, input_fds, input_fds_count);
-#if 0
-        } else if (opt == opt_passphrase_fd) {
-            // this is senseless to enter password for private key in the source vm
-            add_arg_to_fd_list(input_fds, input_fds_count, output_fds, output_fds_count);
-#endif
-        } else if (opt == opt_command_fd) {
-            add_arg_to_fd_list(input_fds, input_fds_count, output_fds, output_fds_count);
         } else if (opt == opt_verify) {
             mode_verify = 1;
         } else if (opt == 'o') {
