@@ -255,6 +255,7 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
     int longindex;
     int i, ok;
     bool userid_args = false, mode_verify = false;
+    bool seen_status_fd = false, seen_logger_fd = false, seen_attribute_fd = false;
     char *lastarg = NULL;
     static struct listopt const allowed_list_options[] = {
         // potential information leak
@@ -398,10 +399,19 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
             i++;
         }
         if (opt == opt_status_fd) {
+            if (seen_status_fd)
+                errx(1, "--status-fd can only be specified once");
+            seen_status_fd = true;
             add_arg_to_fd_list(output_fds, output_fds_count, input_fds, input_fds_count);
         } else if (opt == opt_logger_fd) {
+            if (seen_logger_fd)
+                errx(1, "--logger-fd can only be specified once");
+            seen_logger_fd = true;
             add_arg_to_fd_list(output_fds, output_fds_count, input_fds, input_fds_count);
         } else if (opt == opt_attribute_fd) {
+            if (seen_attribute_fd)
+                errx(1, "--attribute-fd can only be specified once");
+            seen_attribute_fd = true;
             add_arg_to_fd_list(output_fds, output_fds_count, input_fds, input_fds_count);
         } else if (opt == opt_verify) {
             mode_verify = 1;
