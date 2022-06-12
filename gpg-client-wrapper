@@ -116,7 +116,7 @@ while (( $# )); do
                 shift
                 ;;
             # Ignored options
-            -q|--quiet|--yes)
+            --yes)
                 shift
                 ;;
             --detach|--detach-sig)
