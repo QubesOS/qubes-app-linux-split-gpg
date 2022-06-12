@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/ioctl.h>
 #include <assert.h>
 #include <string.h>
 #include <errno.h>
@@ -98,8 +99,11 @@ static void add_fd_to_list(int const untrusted_cur_fd,
     }
     cur_fd = untrusted_cur_fd;
     /* FD sanitization end */
-    if (i == *list_count)
+    if (i == *list_count) {
+        if (is_client && cur_fd > 2 && ioctl(cur_fd, FIOCLEX))
+            err(1, "Cannot make file descriptor %d close-on-exec", cur_fd);
         list[(*list_count)++] = cur_fd;
+    }
 }
 
 /* Add current argument (optarg) to given list
