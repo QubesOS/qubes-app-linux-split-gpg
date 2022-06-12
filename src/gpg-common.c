@@ -299,6 +299,9 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
     input_fds[(*input_fds_count)++] = 0;	//stdin
     output_fds[(*output_fds_count)++] = 1;	//stdout
     output_fds[(*output_fds_count)++] = 2;	//stderr
+    if (ioctl(2, is_client ? FIONCLEX : FIOCLEX) ||
+        ioctl(0, FIOCLEX) || ioctl(1, FIOCLEX))
+        errx(1, "File descriptor 0, 1, or 2 is bad");
 
     for (int i = 0; i < argc; ++i) {
         if (!untrusted_argv[i])
