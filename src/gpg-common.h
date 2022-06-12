@@ -318,6 +318,7 @@ static const struct option gpg_long_options[] = {
     {"pgp6", 0, 0, opt_pgp6},
     {"pgp7", 0, 0, opt_pgp7},
     {"pgp8", 0, 0, opt_pgp8},
+    {"quiet", 0, 0, 'q'},
     {"recipient", 1, 0, 'r'},
     {"rfc2440", 0, 0, opt_rfc2440},
     {"rfc4880", 0, 0, opt_rfc4880},
