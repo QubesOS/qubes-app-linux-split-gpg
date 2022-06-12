@@ -18,8 +18,8 @@ int main(int argc, char *argv[])
     int len;
     int i;
     int remote_argc, parsed_argc;
-    char *(untrusted_remote_argv[COMMAND_MAX_LEN+1]);	// far too big should not harm
-    char *(remote_argv[COMMAND_MAX_LEN+4]);	// far too big should not harm
+    static char *(untrusted_remote_argv[COMMAND_MAX_LEN+1]);	// far too big should not harm
+    static char *(remote_argv[COMMAND_MAX_LEN+4]);	// far too big should not harm
     int input_fds[MAX_FDS], output_fds[MAX_FDS];
     int input_fds_count, output_fds_count;
 
@@ -82,8 +82,7 @@ int main(int argc, char *argv[])
     remote_argv[2] = "--disable-dirmngr";
     // prevent a photo viewer from being launched
     remote_argv[3] = "--photo-viewer=/bin/true";
-    // Add NULL terminator to argv list
-    remote_argv[remote_argc+3] = NULL;
+    // Already NULL terminated as arrays are static, thus 0-initialized
 
     return prepare_pipes_and_run(argv[1], remote_argv, input_fds,
             input_fds_count, output_fds,
