@@ -109,7 +109,7 @@ enum {
 
 int parse_options(int argc, char *argv[], int *input_fds,
         int *input_fds_count, int *output_fds,
-        int *output_fds_count, int is_client);
+        int *output_fds_count);
 int prepare_pipes_and_run(const char *run_file, char **run_argv, int *input_fds,
         int input_fds_count, int *output_fds,
         int output_fds_count);
@@ -355,5 +355,7 @@ struct listopt {
 };
 
 void sanitize_list_or_verify_options(const struct listopt *p, const char *msg);
+
+extern const bool is_client;
 
 #endif				/* _GPG_H */

@@ -113,7 +113,7 @@ static void add_arg_to_fd_list(int *list, int *list_count,
 }
 
 static void handle_opt_verify(char **untrusted_sig_path_ptr, int *input_list, int *input_list_count,
-                              const int *output_list, const int *output_list_count, bool is_client)
+                              const int *output_list, const int *output_list_count)
 {
     int cur_fd;
 
@@ -241,7 +241,7 @@ static void sanitize_string_from_vm(unsigned char *untrusted_s)
 
 int parse_options(int argc, char *untrusted_argv[], int *input_fds,
         int *input_fds_count, int *output_fds,
-        int *output_fds_count, int is_client)
+        int *output_fds_count)
 {
     int opt, command = 0;
     int longindex;
@@ -417,8 +417,7 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
     if (mode_verify && optind < argc) {
         handle_opt_verify(untrusted_argv + optind,
                           input_fds, input_fds_count,
-                          output_fds, output_fds_count,
-                          is_client);
+                          output_fds, output_fds_count);
         /* the first path already processed */
         optind++;
     }
@@ -498,7 +497,7 @@ int prepare_pipes_and_run(const char *run_file, char **run_argv, int *input_fds,
     // now that the pipes are created, null_fd can be closed safely
     close(null_fd);
 
-    setup_sigchld(false);
+    setup_sigchld();
 
     switch (pid = fork()) {
         case -1:

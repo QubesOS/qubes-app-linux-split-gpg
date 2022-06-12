@@ -32,7 +32,7 @@ struct header {
 int process_io(int fd_input, int fd_output, int *read_fds,
         int read_fds_len, int *write_fds, int write_fds_len);
 
-void setup_sigchld(bool arg);
+void setup_sigchld(void);
 
 
 #endif				/* _MULTIPLEX_H */
