@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
     // terminates the argv array
     static char *(untrusted_remote_argv[COMMAND_MAX_LEN+1]);
     // same as above, but add 1 for each argument added by the server
-    static char *(remote_argv[COMMAND_MAX_LEN+5]);
+    static char *(remote_argv[COMMAND_MAX_LEN+6]);
     int input_fds[MAX_FDS], output_fds[MAX_FDS];
     int input_fds_count, output_fds_count;
 
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    memcpy(remote_argv + 5, untrusted_remote_argv + 1,
+    memcpy(remote_argv + 6, untrusted_remote_argv + 1,
            sizeof(untrusted_remote_argv) - sizeof(untrusted_remote_argv[0]));
     /* now options are verified and we get here only when all are allowed */
     remote_argv[0] = argv[1];
@@ -85,6 +85,8 @@ int main(int argc, char *argv[])
     remote_argv[3] = "--photo-viewer=/bin/true";
     // force batch mode
     remote_argv[4] = "--batch";
+    // ensure exit on status write error
+    remote_argv[5] = "--exit-on-status-write-error";
     // Already NULL terminated as arrays are static, thus 0-initialized
 
     return prepare_pipes_and_run(argv[1], remote_argv, input_fds,
