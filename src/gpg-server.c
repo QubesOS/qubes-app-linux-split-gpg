@@ -18,8 +18,13 @@ int main(int argc, char *argv[])
     int len;
     int i;
     int remote_argc, parsed_argc;
-    static char *(untrusted_remote_argv[COMMAND_MAX_LEN+1]);	// far too big should not harm
-    static char *(remote_argv[COMMAND_MAX_LEN+4]);	// far too big should not harm
+    // use static both to reduce stack space and ensure NULL-termination
+    // client can pass up to COMMAND_MAX_LEN-1 arguments, but argument 0
+    // is another argument and there is also the NULL pointer that
+    // terminates the argv array
+    static char *(untrusted_remote_argv[COMMAND_MAX_LEN+1]);
+    // same as above, but add 1 for each argument added by the server
+    static char *(remote_argv[COMMAND_MAX_LEN+4]);
     int input_fds[MAX_FDS], output_fds[MAX_FDS];
     int input_fds_count, output_fds_count;
 
