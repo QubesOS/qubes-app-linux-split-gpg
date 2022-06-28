@@ -12,9 +12,7 @@
 
 int main(int argc, char *argv[])
 {
-    // make space for terminating NUL character
-    char untrusted_hdr_buf[sizeof(struct command_hdr)+1];
-    struct command_hdr *untrusted_hdr = (struct command_hdr*)untrusted_hdr_buf;
+    struct command_hdr untrusted_hdr;
     int len;
     int i;
     int remote_argc, parsed_argc;
@@ -35,28 +33,28 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    len = read(0, untrusted_hdr, sizeof(*untrusted_hdr));
+    len = read(0, &untrusted_hdr, sizeof(untrusted_hdr));
     if (len < 0) {
         perror("read header");
         exit(1);
-    } else if (len != sizeof(*untrusted_hdr)) {
+    } else if (len != sizeof(untrusted_hdr)) {
         fprintf(stderr, "ERROR: Invalid header size: %d\n", len);
         exit(1);
     }
-    if (untrusted_hdr->len >= COMMAND_MAX_LEN) {
+    if (untrusted_hdr.len >= COMMAND_MAX_LEN) {
         fprintf(stderr, "ERROR: Command too long\n");
         exit(1);
     }
-    len = untrusted_hdr->len;
+    len = untrusted_hdr.len;
     // Check that the sender NUL-terminated their command
-    if (untrusted_hdr->command[len])
+    if (untrusted_hdr.command[len])
         errx(1, "ERROR: command not NUL-terminated");
     // split command line into argv
     remote_argc = 0;
     untrusted_remote_argv[remote_argc++] = argv[1];
     for (i = 0; i < len-1; i++) {
-        if (untrusted_hdr->command[i] == 0) {
-            untrusted_remote_argv[remote_argc++] = &untrusted_hdr->command[i + 1];
+        if (untrusted_hdr.command[i] == 0) {
+            untrusted_remote_argv[remote_argc++] = &untrusted_hdr.command[i + 1];
         }
     }
 
