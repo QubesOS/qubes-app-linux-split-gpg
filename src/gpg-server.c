@@ -53,13 +53,10 @@ int main(int argc, char *argv[])
         errx(1, "ERROR: command not NUL-terminated");
     // split command line into argv
     remote_argc = 0;
-    untrusted_remote_argv[remote_argc] = argv[1];
-    if (len) {
-        remote_argc++;
-        for (i = 0; i < len-1; i++) {
-            if (untrusted_hdr->command[i] == 0) {
-                untrusted_remote_argv[remote_argc++] = &untrusted_hdr->command[i + 1];
-            }
+    untrusted_remote_argv[remote_argc++] = argv[1];
+    for (i = 0; i < len-1; i++) {
+        if (untrusted_hdr->command[i] == 0) {
+            untrusted_remote_argv[remote_argc++] = &untrusted_hdr->command[i + 1];
         }
     }
 

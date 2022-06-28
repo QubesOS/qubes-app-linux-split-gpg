@@ -7,6 +7,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <string.h>
+#include <err.h>
 
 #include "gpg-common.h"
 #include "multiplex.h"
@@ -30,6 +31,8 @@ int main(int argc, char *argv[])
                 "ERROR: Destination domain not defined! Set it with QUBES_GPG_DOMAIN env variable.\n");
         exit(1);
     }
+    if (!argc)
+        errx(1, "ERROR: argc is 0");
     add_dash_opt = 0;
     last_opt = parse_options(argc, argv, input_fds, &input_fds_count,
             output_fds, &output_fds_count, 1);
