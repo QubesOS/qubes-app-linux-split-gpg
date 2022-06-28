@@ -43,11 +43,14 @@ int main(int argc, char *argv[])
         fprintf(stderr, "ERROR: Invalid header size: %d\n", len);
         exit(1);
     }
-    if (untrusted_hdr->len > COMMAND_MAX_LEN) {
+    if (untrusted_hdr->len >= COMMAND_MAX_LEN) {
         fprintf(stderr, "ERROR: Command too long\n");
         exit(1);
     }
     len = untrusted_hdr->len;
+    // Check that the sender NUL-terminated their command
+    if (untrusted_hdr->command[len])
+        errx(1, "ERROR: command not NUL-terminated");
     // split command line into argv
     remote_argc = 0;
     untrusted_remote_argv[remote_argc] = argv[1];
@@ -58,10 +61,6 @@ int main(int argc, char *argv[])
                 untrusted_remote_argv[remote_argc++] = &untrusted_hdr->command[i + 1];
             }
         }
-        // don't read off the end of the buffer if sender does not NUL terminate;
-        // note that we've allocated one extra byte after the struct to make
-        // sure it will fit
-        untrusted_hdr->command[len] = 0;
     }
 
     // parse arguments and do not allow any non-option argument
