@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
     // split command line into argv
     remote_argc = 0;
     untrusted_remote_argv[remote_argc++] = argv[1];
-    for (i = 0; i < len-1; i++) {
+    for (i = 0; i < len; i++) {
         if (untrusted_hdr.command[i] == 0) {
             untrusted_remote_argv[remote_argc++] = &untrusted_hdr.command[i + 1];
         }
