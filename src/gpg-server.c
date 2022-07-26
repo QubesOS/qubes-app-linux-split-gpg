@@ -12,14 +12,17 @@
 
 int main(int argc, char *argv[])
 {
-    // make space for terminating NUL character
-    char untrusted_hdr_buf[sizeof(struct command_hdr)+1];
-    struct command_hdr *untrusted_hdr = (struct command_hdr*)untrusted_hdr_buf;
+    struct command_hdr untrusted_hdr;
     int len;
     int i;
     int remote_argc, parsed_argc;
-    char *(untrusted_remote_argv[COMMAND_MAX_LEN+1]);	// far too big should not harm
-    char *(remote_argv[COMMAND_MAX_LEN+4]);	// far too big should not harm
+    // use static both to reduce stack space and ensure NULL-termination
+    // client can pass up to COMMAND_MAX_LEN-1 arguments, but argument 0
+    // is another argument and there is also the NULL pointer that
+    // terminates the argv array
+    static char *(untrusted_remote_argv[COMMAND_MAX_LEN+1]);
+    // same as above, but add 1 for each argument added by the server
+    static char *(remote_argv[COMMAND_MAX_LEN+4]);
     int input_fds[MAX_FDS], output_fds[MAX_FDS];
     int input_fds_count, output_fds_count;
 
@@ -30,33 +33,29 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    len = read(0, untrusted_hdr, sizeof(*untrusted_hdr));
+    len = read(0, &untrusted_hdr, sizeof(untrusted_hdr));
     if (len < 0) {
         perror("read header");
         exit(1);
-    } else if (len != sizeof(*untrusted_hdr)) {
+    } else if (len != sizeof(untrusted_hdr)) {
         fprintf(stderr, "ERROR: Invalid header size: %d\n", len);
         exit(1);
     }
-    if (untrusted_hdr->len > COMMAND_MAX_LEN) {
+    if (untrusted_hdr.len >= COMMAND_MAX_LEN) {
         fprintf(stderr, "ERROR: Command too long\n");
         exit(1);
     }
-    len = untrusted_hdr->len;
+    len = untrusted_hdr.len;
+    // Check that the sender NUL-terminated their command
+    if (untrusted_hdr.command[len])
+        errx(1, "ERROR: command not NUL-terminated");
     // split command line into argv
     remote_argc = 0;
-    untrusted_remote_argv[remote_argc] = argv[1];
-    if (len) {
-        remote_argc++;
-        for (i = 0; i < len-1; i++) {
-            if (untrusted_hdr->command[i] == 0) {
-                untrusted_remote_argv[remote_argc++] = &untrusted_hdr->command[i + 1];
-            }
+    untrusted_remote_argv[remote_argc++] = argv[1];
+    for (i = 0; i < len; i++) {
+        if (untrusted_hdr.command[i] == 0) {
+            untrusted_remote_argv[remote_argc++] = &untrusted_hdr.command[i + 1];
         }
-        // don't read off the end of the buffer if sender does not NUL terminate;
-        // note that we've allocated one extra byte after the struct to make
-        // sure it will fit
-        untrusted_hdr->command[len] = 0;
     }
 
     // parse arguments and do not allow any non-option argument
@@ -82,8 +81,7 @@ int main(int argc, char *argv[])
     remote_argv[2] = "--disable-dirmngr";
     // prevent a photo viewer from being launched
     remote_argv[3] = "--photo-viewer=/bin/true";
-    // Add NULL terminator to argv list
-    remote_argv[remote_argc+3] = NULL;
+    // Already NULL terminated as arrays are static, thus 0-initialized
 
     return prepare_pipes_and_run(argv[1], remote_argv, input_fds,
             input_fds_count, output_fds,

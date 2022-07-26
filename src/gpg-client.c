@@ -7,6 +7,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <string.h>
+#include <err.h>
 
 #include "gpg-common.h"
 #include "multiplex.h"
@@ -30,6 +31,8 @@ int main(int argc, char *argv[])
                 "ERROR: Destination domain not defined! Set it with QUBES_GPG_DOMAIN env variable.\n");
         exit(1);
     }
+    if (!argc)
+        errx(1, "ERROR: argc is 0");
     add_dash_opt = 0;
     last_opt = parse_options(argc, argv, input_fds, &input_fds_count,
             output_fds, &output_fds_count, 1);
@@ -49,9 +52,9 @@ int main(int argc, char *argv[])
         }
         add_dash_opt = 1;
     }
-    len = 0;
+    len = 1;
     memset(hdr.command, 0, sizeof hdr.command);
-    for (i = 0; i < last_opt; i++) {
+    for (i = 1; i < last_opt; i++) {
         const size_t the_len = strlen(argv[i]) + 1;
         if ((size_t)COMMAND_MAX_LEN - (size_t)len < the_len) {
             fprintf(stderr, "ERROR: Command line too long\n");
