@@ -1,3 +1,29 @@
+qubes-gpg-split (2.0.61-1) unstable; urgency=medium
+
+  [ Demi Marie Obenour ]
+  * Do not ignore -q and --quiet
+  * Properly NULL-terminate argument list
+  * Fix misleading comments
+  * Avoid UBSAN splat on max-length input
+  * Ensure that argc is never 0
+  * Fix cast to a potentially-misaligned pointer
+  * Do not send argv[0] to server
+  * Avoid dropping a trailing empty string
+  * Allow --export-ownertrust
+  * Allow exporting public keyring backups
+  * Allow --show-session-key
+  * gpg-client: check for too many file names
+  * Avoid hang due to premature file descriptor close
+  * Have bash choose an unused file descriptor
+  * Use common code for file descriptor lists
+  * Refuse to use the same FD for both reading and writing
+  * Make is_client a const global variable
+  * Mark received file descriptors CLOEXEC
+  * Check that standard streams are open
+  * Allow "qubes-gpg-client --verify - a.sig"
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Wed, 27 Jul 2022 04:09:20 +0200
+
 qubes-gpg-split (2.0.60-1) unstable; urgency=medium
 
   [ Demi Marie Obenour ]
