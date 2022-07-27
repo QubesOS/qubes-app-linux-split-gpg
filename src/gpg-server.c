@@ -10,6 +10,8 @@
 #include "gpg-common.h"
 #include "multiplex.h"
 
+const bool is_client = false;
+
 int main(int argc, char *argv[])
 {
     struct command_hdr untrusted_hdr;
@@ -61,7 +63,7 @@ int main(int argc, char *argv[])
     // parse arguments and do not allow any non-option argument
     if ((parsed_argc=parse_options
                 (remote_argc, untrusted_remote_argv, input_fds, &input_fds_count,
-                 output_fds, &output_fds_count, 0)) < remote_argc) {
+                 output_fds, &output_fds_count)) < remote_argc) {
         /* allow single "-" argument */
         if (parsed_argc+1 < remote_argc ||
                 strcmp(untrusted_remote_argv[parsed_argc], "-") != 0) {

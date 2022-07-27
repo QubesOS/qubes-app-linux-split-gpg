@@ -14,6 +14,8 @@
 
 #define QREXEC_CLIENT_PATH "/usr/lib/qubes/qrexec-client-vm"
 
+const bool is_client = true;
+
 int main(int argc, char *argv[])
 {
     struct command_hdr hdr;
@@ -35,7 +37,7 @@ int main(int argc, char *argv[])
         errx(1, "ERROR: argc is 0");
     add_dash_opt = 0;
     last_opt = parse_options(argc, argv, input_fds, &input_fds_count,
-            output_fds, &output_fds_count, 1);
+            output_fds, &output_fds_count);
     if (last_opt < argc) {
         // open the first non-option argument as stdin
         int input_file;
@@ -115,7 +117,7 @@ int main(int argc, char *argv[])
             input_fds_count);
     fprintf(stderr, "input_pipe: %d\n", input_pipe);
 #endif
-    setup_sigchld(true);
+    setup_sigchld();
     return process_io(pipe_out[0], pipe_in[1], input_fds,
             input_fds_count, output_fds, output_fds_count);
 }

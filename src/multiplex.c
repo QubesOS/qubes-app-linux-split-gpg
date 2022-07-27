@@ -36,7 +36,6 @@
 #define BUF_SIZE 4096
 
 static volatile int child_status = -1;
-static bool is_client;
 
 struct thread_args{
     int multi_fd;
@@ -56,12 +55,10 @@ static void sigchld_handler(int arg __attribute__((__unused__)))
 
 static void sigpipe_handler(int arg __attribute__((__unused__))) {}
 
-void setup_sigchld(bool arg)
+void setup_sigchld(void)
 {
     struct sigaction sa;
     memset(&sa, 0, sizeof sa);
-
-    is_client = arg;
     sa.sa_handler = sigchld_handler;
     sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask);
