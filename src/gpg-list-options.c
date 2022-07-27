@@ -87,7 +87,7 @@ static const struct listopt *find_option(const uint8_t *const untrusted_option,
     return options;
 }
 
-void sanitize_list_or_verify_options(const struct listopt *allowed_list_options, const char *const msg)
+void sanitize_option_list(const struct listopt *allowed_list_options, const char *const msg)
 {
     if (!strcmp(optarg, "help"))
         return; // allow --list-options=help

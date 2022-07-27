@@ -342,6 +342,10 @@ Expire-Date: 0
              self.assertEquals(stderr,
                  "qubes-gpg-client: Unknown verify option --garbage-1\n")
              return True
+        if option == '--export-options' and 'qubes' in prog:
+             self.assertEquals(stderr,
+                 "qubes-gpg-client: Unknown export option --garbage-1\n")
+             return True
         for message_fmt in message_fmts:
             if message_fmt.format('--garbage-1') in stderr:
                 return False

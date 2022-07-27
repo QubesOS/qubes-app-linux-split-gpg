@@ -287,6 +287,22 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
         { "show-primary-key-only", true, true, false },
         { NULL, false, false, false },
     };
+    static struct listopt const allowed_export_options[] = {
+        { "export-local-sigs", true, true, false },
+        { "export-attributes", true, true, false },
+        { "export-sensitive-revkeys", true, true, false },
+        { "export-clean", true, true, false },
+        { "export-minimal", true, true, false },
+        { "export-dane", false, true, false },
+        { "backup", true, true, false },
+        { "include-local-sigs", true, true, false },
+        { "include-attributes", true, true, false },
+        { "include-sensitive-revkeys", true, true, false },
+        { "export-unusable-sigs", true, true, false },
+        { "export-clean-sigs", true, true, false },
+        { "export-clean-uids", true, true, false },
+        { NULL, false, false, false },
+    };
 
     *input_fds_count = 0;
     *output_fds_count = 0;
@@ -397,9 +413,11 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
                 exit(1);
             }
         } else if (opt == opt_list_options) {
-            sanitize_list_or_verify_options(allowed_list_options, "list");
+            sanitize_option_list(allowed_list_options, "list");
         } else if (opt == opt_verify_options) {
-            sanitize_list_or_verify_options(allowed_verify_options, "verify");
+            sanitize_option_list(allowed_verify_options, "verify");
+        } else if (opt == opt_export_options) {
+            sanitize_option_list(allowed_export_options, "export");
         }
     }
     // Only allow key IDs to begin with '-' if the options list was terminated by '--',

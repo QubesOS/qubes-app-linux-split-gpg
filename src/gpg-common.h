@@ -42,6 +42,8 @@ enum {
     opt_encrypt_to,
     opt_exit_on_status_write_error,
     opt_export,
+    opt_export_options,
+    opt_export_ownertrust,
     opt_export_ssh,
     opt_fingerprint,
     opt_fixed_list_mode,
@@ -148,6 +150,8 @@ static const int gpg_allowed_options[] = {
     opt_encrypt_to,
     opt_exit_on_status_write_error,
     opt_export,
+    opt_export_options,
+    opt_export_ownertrust,
     opt_export_ssh,
     opt_fingerprint,
     opt_fixed_list_mode,
@@ -228,6 +232,7 @@ static const struct gpg_command_opt gpg_commands[] = {
     {opt_clear_sign, false},
     {opt_export, true},
     {opt_export_ssh, true},
+    {opt_export_ownertrust, false},
     {opt_fingerprint, true},
     {opt_list_config, false},
     {opt_list_sigs, true},
@@ -270,6 +275,8 @@ static const struct option gpg_long_options[] = {
     {"exit-on-status-write-error", 0, 0, opt_exit_on_status_write_error},
     {"export", 0, 0, opt_export},
     {"export-ssh-key", 0, 0, opt_export_ssh},
+    {"export-options", 1, 0, opt_export_options},
+    {"export-ownertrust", 0, 0, opt_export_ownertrust},
     {"fingerprint", 0, 0, opt_fingerprint},
     {"fixed-list-mode", 0, 0, opt_fixed_list_mode},
     {"force-mdc", 0, 0, opt_force_mdc},
@@ -355,6 +362,6 @@ struct listopt {
     bool const allowed, allowed_negated, has_argument;
 };
 
-void sanitize_list_or_verify_options(const struct listopt *p, const char *msg);
+void sanitize_option_list(const struct listopt *p, const char *msg);
 
 #endif				/* _GPG_H */
