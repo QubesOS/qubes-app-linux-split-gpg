@@ -124,7 +124,11 @@ static void handle_opt_verify(char **untrusted_sig_path_ptr, int *input_list, in
     if (is_client) {
         /* arguments on client side are trusted */
         char *sig_path = *untrusted_sig_path_ptr;
-        if ((cur_fd = open(sig_path, O_RDONLY|O_CLOEXEC|O_NOCTTY)) < 0)
+        if (!strcmp(sig_path, "-"))
+            cur_fd = fcntl(0, F_DUPFD_CLOEXEC, 3);
+        else
+            cur_fd = open(sig_path, O_RDONLY|O_CLOEXEC|O_NOCTTY);
+        if (cur_fd < 0)
             err(1, "open sig file %s", sig_path);
         if (asprintf(untrusted_sig_path_ptr, "/dev/fd/%d", cur_fd) < 0)
             err(1, "asprintf");
