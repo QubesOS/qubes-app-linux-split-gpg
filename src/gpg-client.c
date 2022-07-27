@@ -40,6 +40,8 @@ int main(int argc, char *argv[])
         // open the first non-option argument as stdin
         int input_file;
 
+        if (argc - last_opt > 1)
+            errx(1, "Too many filename arguments");
         if (strcmp(argv[last_opt], "-") != 0) {
             /* open only when not already pointing at stdin */
             input_file = open(argv[last_opt], O_RDONLY);
