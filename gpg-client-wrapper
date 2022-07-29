@@ -52,6 +52,13 @@ while (( $# )); do
             --keyserver-options=*)
                 shift
                 ;;
+            # --quiet is safe and is accepted by the current server, but
+            # old versions rejected it.  Use -q instead, which is
+            # accepted in all versions.
+            --quiet)
+                options+=(-q)
+                shift
+                ;;
             --keyserver-options)
                 if [[ "$#" -lt 2 ]]; then
                     printf 'Missing argument to %s\n' "$1" >&2
