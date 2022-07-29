@@ -1,3 +1,10 @@
+qubes-gpg-split (2.0.62-1) unstable; urgency=medium
+
+  [ Demi Marie Obenour ]
+  * Emulate --quiet in terms of -q
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Fri, 29 Jul 2022 17:38:52 +0200
+
 qubes-gpg-split (2.0.61-1) unstable; urgency=medium
 
   [ Demi Marie Obenour ]
