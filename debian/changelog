@@ -1,3 +1,13 @@
+qubes-gpg-split (2.0.63-1) unstable; urgency=medium
+
+  [ Demi Marie Obenour ]
+  * Disallow --command-fd
+  * Force batch mode
+  * Prevent GnuPG from using a closed file descriptor
+  * Force --exit-on-status-write-error
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sat, 06 Aug 2022 17:54:31 +0200
+
 qubes-gpg-split (2.0.62-1) unstable; urgency=medium
 
   [ Demi Marie Obenour ]
