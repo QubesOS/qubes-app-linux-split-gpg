@@ -19,7 +19,8 @@
  *
  */
 
-#include <sys/select.h>
+#define _GNU_SOURCE
+#include <poll.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -172,36 +173,24 @@ static _Noreturn void *process_out(struct thread_args *args) {
     int *read_fds = args->fds;
     int read_fds_len = args->fds_count;
     char buf[BUF_SIZE];
-    int closed_fds[MAX_FDS];
+    struct pollfd fds[MAX_FDS];
     int closed_fds_count = 0;
-    int max_fd;
     int i, read_len;
-    fd_set read_set;
     struct header hdr;
     sigset_t empty_set;
 
-    memset(closed_fds, 0, sizeof(closed_fds));
+    memset(fds, 0, sizeof(fds));
+    assert(read_fds_len < MAX_FDS);
 
     sigemptyset(&empty_set);
 
+    for (i = 0; i < read_fds_len; i++)
+        fds[i] = (struct pollfd) { .fd = read_fds[i], .events = POLLIN | POLLHUP, .revents = 0 };
+
     while (1) {
-        max_fd = -1;
-        /* prepare fd_set for select */
-        FD_ZERO(&read_set);
-        for (i = 0; i < read_fds_len; i++) {
-            assert(i >= 0 && i < MAX_FDS);
-            if (!closed_fds[i]) {
-                assert(read_fds[i] < FD_SETSIZE);
-                assert(read_fds[i] >= 0);
-                FD_SET(read_fds[i], &read_set);
-                if (read_fds[i] > max_fd)
-                    max_fd = read_fds[i];
-            }
-        }
-        if (pselect(max_fd + 1, &read_set, 0, 0, 0, &empty_set) <
-                0) {
+        if (ppoll(fds, read_fds_len, NULL, &empty_set) < 0) {
             if (errno != EINTR) {
-                perror("pselect");
+                perror("ppoll");
                 exit(EXIT_FAILURE);
             } else {
                 //EINTR
@@ -223,7 +212,8 @@ static _Noreturn void *process_out(struct thread_args *args) {
             }
         }
         for (i = 0; i < read_fds_len; i++) {
-            if (FD_ISSET(read_fds[i], &read_set)) {
+            assert(i >= 0 && i < MAX_FDS);
+            if (fds[i].revents) {
                 // just one block
                 read_len = read(read_fds[i], buf, BUF_SIZE);
                 /* we are not validating data passed to/from gpg */
@@ -233,15 +223,15 @@ static _Noreturn void *process_out(struct thread_args *args) {
                 }
                 hdr.fd_num = i;
                 hdr.len = read_len;
-                // can blocks, but not a problem
+                // can block, but not a problem
                 if (write(fd_output, &hdr, sizeof(hdr)) < 0) {
                     perror("write");
                     exit(EXIT_FAILURE);
                 }
                 if (read_len == 0) {
                     // closed pipe
-                    assert(i >= 0 && i < MAX_FDS);
-                    closed_fds[i] = 1;
+                    close(fds[i].fd);
+                    fds[i].fd = -1;
                     closed_fds_count++;
                     // if it was the last one - send child exit status
                     if (closed_fds_count == read_fds_len && child_status >= 0 && !is_client)
