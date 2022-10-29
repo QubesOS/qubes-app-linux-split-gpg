@@ -119,7 +119,7 @@ def retry_if_failed(max_tries):
                     func(*args, **kwargs)
                     break # if successful
                 except Exception as e:
-                    if retry == max_tries:
+                    if retry == max_tries-1:
                         raise e
                     else:
                         print("failed during setup in {}.\n Retrying".format(
