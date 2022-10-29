@@ -237,8 +237,14 @@ def configure_openpgp_account(tb):
     accept_dialog = tb.app.findChild(orPredicate(
         GenericPredicate(name='.*(%s).*' % keyid),
         GenericPredicate(name='.[0-9A-F]*%s' % keyid),
+        GenericPredicate(name='ID: 0x%s' % keyid),
         )).parent
-    accept_dialog.childNamed('OK').doActionNamed('press')
+    try:
+        accept_dialog.childNamed("Accepted.*").doActionNamed("select")
+    except tree.SearchError:
+        # old TB
+        pass
+    accept_dialog.childNamed('OK|Import').doActionNamed('press')
     tb.app.childNamed('Success! Keys imported.*').childNamed('OK').doActionNamed(
         'press')
     doubleClick(*key_manager.findChild(
@@ -316,10 +322,10 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
         compose.child(
             roleName='document frame').text = 'This is test message'
     security = compose.findChild(
-        GenericPredicate(name='Security', roleName='push button'))
+        GenericPredicate(name='Security|OpenPGP', roleName='push button'))
     security.doActionNamed('press')
-    sign_button = security.childNamed('Digitally Sign This Message')
-    encrypt_button = security.childNamed('Require Encryption')
+    sign_button = security.childNamed('Digitally Sign.*')
+    encrypt_button = security.childNamed('Require Encryption|Encrypt')
     if sign_button.checked != sign:
         sign_button.doActionNamed('click')
     if encrypt_button.checked != encrypt:
