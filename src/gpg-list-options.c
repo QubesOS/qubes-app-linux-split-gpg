@@ -36,8 +36,18 @@ static void consume_subpacket_number(struct lexbuf *const buf)
     if ((const uint8_t *)endptr == buf->untrusted_cursor)
         errx(1, "Invalid character in subpacket number list");
     if (untrusted_subpacket_number < 1 || untrusted_subpacket_number > 127)
-        errx(1, "Subpacket number not valid (must be between 1 and 127 inclusive, got %ld)", untrusted_subpacket_number);
-    buf->untrusted_cursor = (uint8_t *)endptr;
+        errx(1, "Subpacket number not valid (must be between 1 and 127 inclusive, got %ld)",
+                untrusted_subpacket_number);
+    switch (*endptr) {
+    case '"':
+    case ',':
+    case ' ':
+    case '\0':
+        buf->untrusted_cursor = (uint8_t *)endptr;
+        return;
+    default:
+        errx(1, "Invalid character %c following subpacket number", *endptr);
+    }
 }
 
 static void consume_subpackets_argument(struct lexbuf *const buf)

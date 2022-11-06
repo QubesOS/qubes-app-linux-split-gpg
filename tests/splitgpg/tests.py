@@ -394,6 +394,19 @@ Expire-Date: 0
         # TODO: Test if gpg agrees with split-gpg, whether positional
         #  argument(s) are a path or user id. Somehow...
 
+    def test_081_subpacket_options(self):
+        """Check if split-gpg agrees with gpg about subpacket options parsing"""
+        p = self.frontend.run('QUBES_GPG_DOMAIN=bogus qubes-gpg-client '
+                              '--list-options show-sig-subpackets=1+1',
+                              passio_popen=True, passio_stderr=True)
+        (stdout, stderr) = p.communicate()
+        self.assertEqual(stdout, b'', 'nothing should appear on stdout')
+        self.assertEqual(stderr,
+                         b'qubes-gpg-client: Invalid character + following '
+                         b'subpacket number\n',
+                         'bad subpacket number not rejected properly')
+        assert p.wait() == 1, 'wrong exit code'
+
     # TODO:
     #  - encrypt/decrypt
     #  - large file (bigger than pipe/qrexec buffers)
