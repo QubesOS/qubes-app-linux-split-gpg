@@ -1,3 +1,10 @@
+qubes-gpg-split (2.0.64-1) unstable; urgency=medium
+
+  * tests: Fix retry_if_failed decorator
+  * tests: update for Thunderbird 102
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Tue, 15 Nov 2022 04:26:36 +0100
+
 qubes-gpg-split (2.0.63-1) unstable; urgency=medium
 
   [ Demi Marie Obenour ]
