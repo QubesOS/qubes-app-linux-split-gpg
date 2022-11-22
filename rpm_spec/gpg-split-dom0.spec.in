@@ -19,42 +19,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-#
-#
-
-# enable python3 by default
-%bcond_without python3
-
-# python2 is not available on RHEL > 7 and not needed on Fedora > 28
-%if 0%{?rhel} > 7 || 0%{?fedora} > 28
-# disable python2 by default
-%bcond_with python2
-%else
-%bcond_without python2
-%endif
-
 
 Name:		qubes-gpg-split-dom0
 Version:	@VERSION@
 Release:	1%{dist}
-Summary:    Qubes policy for gpg split
+Summary:	Qubes policy for gpg split
 
 Group:		Qubes
 Vendor:		Invisible Things Lab
 License:	GPL
-URL:		http://www.qubes-os.org
+URL:		https://www.qubes-os.org
 
 BuildRequires: make
-%if %{with python2}
-BuildRequires: python-setuptools
-BuildRequires: python2-rpm-macros
-%endif
-%if %{with python3}
 BuildRequires: python3-rpm-macros
 BuildRequires: python3-setuptools
 BuildRequires: python3-devel
-%endif
-Requires:	gpg
+Requires:      gpg
 
 Source0: qubes-gpg-split-%{version}.tar.gz
 
@@ -67,8 +47,7 @@ Source0: qubes-gpg-split-%{version}.tar.gz
 rm -rf $RPM_BUILD_ROOT
 install -m 0664 -D qubes.Gpg.policy $RPM_BUILD_ROOT/etc/qubes-rpc/policy/qubes.Gpg
 install -m 0664 -D qubes.GpgImportKey.policy $RPM_BUILD_ROOT/etc/qubes-rpc/policy/qubes.GpgImportKey
-%{?with_python2:make -C tests install-dom0-py2 DESTDIR=$RPM_BUILD_ROOT PYTHON2=%{__python2}}
-%{?with_python3:make -C tests install-dom0-py3 DESTDIR=$RPM_BUILD_ROOT PYTHON2=%{__python3}}
+make -C tests install-dom0-py3 DESTDIR=$RPM_BUILD_ROOT PYTHON2=%{__python3}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -76,16 +55,9 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %config(noreplace) %attr(0664,root,qubes) /etc/qubes-rpc/policy/qubes.Gpg
 %config(noreplace) %attr(0664,root,qubes) /etc/qubes-rpc/policy/qubes.GpgImportKey
-%if %{with python2}
-%dir %{python2_sitelib}/splitgpg-*.egg-info
-%{python2_sitelib}/splitgpg-*.egg-info/*
-%{python2_sitelib}/splitgpg
-%endif
-%if %{with python3}
 %dir %{python3_sitelib}/splitgpg-*.egg-info
 %{python3_sitelib}/splitgpg-*.egg-info/*
 %{python3_sitelib}/splitgpg
-%endif
 
 %changelog
 @CHANGELOG@
