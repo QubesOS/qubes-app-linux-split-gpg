@@ -36,6 +36,7 @@ URL:		http://www.qubes-os.org
 BuildRequires: make
 BuildRequires: gcc
 BuildRequires: pandoc
+BuildRequires: python3-setuptools
 
 Requires:	gnupg2
 Requires:   zenity
