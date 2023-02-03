@@ -23,7 +23,7 @@
 Name:		qubes-gpg-split-dom0
 Version:	@VERSION@
 Release:	1%{dist}
-Summary:	Qubes policy for gpg split
+Summary:	Qubes dom0 package for gpg split
 
 Group:		Qubes
 Vendor:		Invisible Things Lab
@@ -39,22 +39,28 @@ Requires:      gpg
 Source0: qubes-gpg-split-%{version}.tar.gz
 
 %description
+This package include integration tests. It used to include default policy, but
+it was removed in Qubes OS 4.2, due to new graphical tool handling that now.
 
 %prep
 %setup -q -n qubes-gpg-split-%{version}
 
 %install
 rm -rf $RPM_BUILD_ROOT
+%if 0%{?fedora} <= 32
 install -m 0664 -D qubes.Gpg.policy $RPM_BUILD_ROOT/etc/qubes-rpc/policy/qubes.Gpg
 install -m 0664 -D qubes.GpgImportKey.policy $RPM_BUILD_ROOT/etc/qubes-rpc/policy/qubes.GpgImportKey
+%endif
 make -C tests install-dom0-py3 DESTDIR=$RPM_BUILD_ROOT PYTHON2=%{__python3}
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
+%if 0%{?fedora} <= 32
 %config(noreplace) %attr(0664,root,qubes) /etc/qubes-rpc/policy/qubes.Gpg
 %config(noreplace) %attr(0664,root,qubes) /etc/qubes-rpc/policy/qubes.GpgImportKey
+%endif
 %dir %{python3_sitelib}/splitgpg-*.egg-info
 %{python3_sitelib}/splitgpg-*.egg-info/*
 %{python3_sitelib}/splitgpg
