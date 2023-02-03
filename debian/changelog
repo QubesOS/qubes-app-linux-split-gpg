@@ -1,3 +1,9 @@
+qubes-gpg-split (2.0.66-1) unstable; urgency=medium
+
+  * Don't install policy on R4.2
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Fri, 03 Feb 2023 19:18:45 +0100
+
 qubes-gpg-split (2.0.65-1) unstable; urgency=medium
 
   [ Demi Marie Obenour ]
