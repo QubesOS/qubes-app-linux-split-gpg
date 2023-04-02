@@ -1,0 +1,33 @@
+# Maintainer: Frédéric Pierret (fepitre) <frederic@invisiblethingslab.com>
+
+pkgname=qubes-gpg-split
+pkgver=@VERSION@
+pkgrel=@REL@
+pkgdesc="The Qubes service for secure gpg separation"
+arch=("x86_64")
+url="http://qubes-os.org/"
+license=('GPL')
+depends=('gnupg' 'zenity')
+makedepends=(pkg-config make gcc pandoc)
+_pkgnvr="${pkgname}-${pkgver}-${pkgrel}"
+source=("${_pkgnvr}.tar.gz")
+sha256sums=(SKIP)
+
+build() {
+    cd "${_pkgnvr}"
+    make
+}
+
+package() {
+    cd "${_pkgnvr}"
+
+    # shellcheck disable=SC2154
+    make install-vm \
+        DESTDIR="$pkgdir" \
+        LIBDIR=/usr/lib \
+        USRLIBDIR=/usr/lib \
+        SYSLIBDIR=/usr/lib
+
+    # Archlinux packaging guidelines: /var/run is a symlink to a tmpfs. Don't create it
+    rm -r "${pkgdir}/var/run"
+}
