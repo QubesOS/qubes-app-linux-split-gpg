@@ -1,3 +1,11 @@
+qubes-gpg-split (2.0.67-1) unstable; urgency=medium
+
+  [ Frédéric Pierret (fepitre) ]
+  * Rework Archlinux packaging
+  * Bare support for new packaging with PKGBUILD.in
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Wed, 26 Apr 2023 05:25:15 +0200
+
 qubes-gpg-split (2.0.66-1) unstable; urgency=medium
 
   * Don't install policy on R4.2
