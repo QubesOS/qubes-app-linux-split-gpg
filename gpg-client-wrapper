@@ -231,6 +231,17 @@ while (( $# )); do
                     shift
                 fi
                 ;;
+            --auto-key-locate)
+                # Generally not safe to use, but allow using with the default
+                # value (and ignore the option in such case as it's no-op)
+                # See https://github.com/QubesOS/qubes-issues/issues/8287
+                if [ "$2" = "local,wkd" ]; then
+                    shift 2
+                else
+                    printf 'Unsupported --auto-key-locate %s (only local,wkd value is allowed)\n' "$2" >&2
+                    exit 1
+                fi
+                ;;
             --cert-digest-algo|\
             --cert-notation|\
             --cipher-algo|\
