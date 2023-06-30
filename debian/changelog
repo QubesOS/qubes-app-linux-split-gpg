@@ -1,3 +1,14 @@
+qubes-gpg-split (2.0.68-1) unstable; urgency=medium
+
+  [ Demi Marie Obenour ]
+  * Do not allow + to separate subpacket numbers
+
+  [ Marek Marczykowski-Górecki ]
+  * tests: fix clicking top buttons in evolution
+  * Ignore --auto-key-locate local,wkd
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Fri, 30 Jun 2023 15:57:28 +0200
+
 qubes-gpg-split (2.0.67-1) unstable; urgency=medium
 
   [ Frédéric Pierret (fepitre) ]
