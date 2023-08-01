@@ -428,27 +428,6 @@ class TC_10_Thunderbird(SplitGPGBase):
             self.tb_name = 'icedove'
         else:
             self.skipTest('Thunderbird not installed')
-        # use dogtail 0.9.10 directly from git, until 0.9.10 gets packaged in
-        # relevant distros; 0.9.9 have problems with handling unicode
-        p = self.frontend.run(
-                'git clone -n https://gitlab.com/dogtail/dogtail.git && '
-                'cd dogtail && '
-                'git checkout 4d7923dcda92c2c44309d2a56b0bb616a1855155',
-                passio_popen=True, passio_stderr=True)
-        stdout, stderr = p.communicate()
-        if p.returncode:
-            self.skipTest(
-                'dogtail installation failed: {}{}'.format(stdout, stderr))
-
-        # fake confirmation again, in case dogtail installation took more
-        # time (on slow network)
-        self.fake_confirmation()
-
-        # if self.frontend.run(
-        #         'python -c \'import dogtail,sys;'
-        #         'sys.exit(dogtail.__version__ < "0.9.0")\'', wait=True) \
-        #         != 0:
-        #     self.skipTest('dogtail >= 0.9.0 testing framework not installed')
 
         p = self.frontend.run('gsettings set org.gnome.desktop.interface '
                               'toolkit-accessibility true', wait=True)
@@ -481,7 +460,7 @@ class TC_10_Thunderbird(SplitGPGBase):
         self.setup_tb_profile(setup_openpgp=True)
 
         p = self.frontend.run(
-            'PYTHONPATH=$HOME/dogtail LC_ALL=C.UTF-8 '
+            'LC_ALL=C.UTF-8 '
             'python3 {} --tbname={} --profile {} --imap_pw {} setup 2>&1'.format(
                 self.scriptpath, self.tb_name, self.profile_dir, self.imap_pw),
             passio_popen=True)
@@ -572,7 +551,7 @@ user_pref("mail.identity.id1.sign_mail", false);
 
     def test_000_send_receive_default(self):
         p = self.frontend.run(
-            'PYTHONPATH=$HOME/dogtail LC_ALL=C.UTF-8 '
+            'LC_ALL=C.UTF-8 '
             'python3 {} --tbname={} --profile {} --imap_pw {} send_receive '
             '--encrypted --signed 2>&1'.format(
                 self.scriptpath, self.tb_name, self.profile_dir, self.imap_pw),
@@ -584,7 +563,7 @@ user_pref("mail.identity.id1.sign_mail", false);
 
     def test_010_send_receive_inline_signed_only(self):
         p = self.frontend.run(
-            'PYTHONPATH=$HOME/dogtail LC_ALL=C.UTF-8 '
+            'LC_ALL=C.UTF-8 '
             'python3 {} --tbname={} --profile {} --imap_pw {} send_receive '
             '--encrypted --signed --inline 2>&1'.format(
                 self.scriptpath, self.tb_name, self.profile_dir, self.imap_pw),
@@ -596,7 +575,7 @@ user_pref("mail.identity.id1.sign_mail", false);
 
     def test_020_send_receive_inline_with_attachment(self):
         p = self.frontend.run(
-            'PYTHONPATH=$HOME/dogtail LC_ALL=C.UTF-8 '
+            'LC_ALL=C.UTF-8 '
             'python3 {} --tbname={} --profile {} --imap_pw {} send_receive '
             '--encrypted --signed --inline --with-attachment 2>&1'.format(
                 self.scriptpath, self.tb_name, self.profile_dir, self.imap_pw),
@@ -619,23 +598,6 @@ class TC_20_Evolution(SplitGPGBase):
             input='user')
         if self.frontend.run('which evolution', wait=True) != 0:
             self.skipTest('Evolution not installed')
-        # use dogtail 0.9.10 directly from git, until 0.9.10 gets packaged in
-        # relevant distros; 0.9.9 have problems with handling unicode
-        p = self.frontend.run(
-                'git clone -n https://gitlab.com/dogtail/dogtail.git && '
-                'cd dogtail && '
-                'git checkout 4d7923dcda92c2c44309d2a56b0bb616a1855155',
-                passio_popen=True, passio_stderr=True)
-        stdout, stderr = p.communicate()
-        if p.returncode:
-            self.skipTest(
-                'dogtail installation failed: {}{}'.format(stdout, stderr))
-
-        # if self.frontend.run(
-        #         'python -c \'import dogtail,sys;'
-        #         'sys.exit(dogtail.__version__ < "0.9.0")\'', wait=True) \
-        #         != 0:
-        #     self.skipTest('dogtail >= 0.9.0 testing framework not installed')
 
         p = self.frontend.run('gsettings set org.gnome.desktop.interface '
                               'toolkit-accessibility true', wait=True)
@@ -653,7 +615,7 @@ class TC_20_Evolution(SplitGPGBase):
             user='root', passio_popen=True)
 
         p = self.frontend.run(
-            'PYTHONPATH=$HOME/dogtail python3 {} setup 2>&1'.format(
+            'python3 {} setup 2>&1'.format(
                 self.scriptpath),
             passio_popen=True)
         (stdout, _) = p.communicate()
@@ -667,7 +629,7 @@ class TC_20_Evolution(SplitGPGBase):
 
     def test_000_send_receive_signed_encrypted(self):
         p = self.frontend.run(
-            'PYTHONPATH=$HOME/dogtail python3 {} send_receive '
+            'python3 {} send_receive '
             '--encrypted --signed 2>&1'.format(
                 self.scriptpath),
             passio_popen=True)
@@ -678,7 +640,7 @@ class TC_20_Evolution(SplitGPGBase):
 
     def test_010_send_receive_signed_only(self):
         p = self.frontend.run(
-            'PYTHONPATH=$HOME/dogtail python3 {} send_receive '
+            'python3 {} send_receive '
             '--signed 2>&1'.format(
                 self.scriptpath),
             passio_popen=True)
@@ -690,7 +652,7 @@ class TC_20_Evolution(SplitGPGBase):
     @unittest.skip('handling attachments not done')
     def test_020_send_receive_with_attachment(self):
         p = self.frontend.run(
-            'PYTHONPATH=$HOME/dogtail python3 {} send_receive '
+            'python3 {} send_receive '
             '--encrypted --signed --with-attachment 2>&1'.format(
                 self.scriptpath),
             passio_popen=True)

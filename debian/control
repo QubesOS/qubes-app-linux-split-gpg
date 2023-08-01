@@ -19,10 +19,10 @@ Description: The Qubes service for secure gpg separation
 Package: qubes-gpg-split-tests
 Section: admin
 Architecture: amd64
-# add python3-dogtail, when packaged for Debian
 Depends:
  qubes-gpg-split,
  python3-pyatspi,
+ python3-dogtail,
  dovecot-imapd,
  xdotool,
  ${misc:Depends}
