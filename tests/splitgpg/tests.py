@@ -504,6 +504,7 @@ user_pref("mail.identity.id1.useremail", "user@localhost");
 user_pref("mail.identity.id1.smtpServer", "smtp1");
 user_pref("mail.identity.id1.compose_html", false);
 user_pref("datareporting.policy.dataSubmissionEnabled", false); // avoid message popups
+user_pref("app.donation.eoy.version.viewed", 100); // avoid message popups
 """
         imap_server = """
 user_pref("mail.server.server1.userName", "user");
