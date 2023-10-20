@@ -151,15 +151,21 @@ def export_pub_key():
 
 @retry_if_failed(max_tries=3)
 def enter_imap_passwd(tb):
-    # check new mail so client can realize IMAP requires entering a password
-    get_messages(tb)
+    try:
+        pass_prompt = tb.app.findChild(orPredicate(
+            GenericPredicate(name='Enter your password for user', roleName='frame'),
+            GenericPredicate(name='Enter your password for user', roleName='dialog')
+        ))
+    except tree.SearchError:
+        # check new mail so client can realize IMAP requires entering a password
+        get_messages(tb)
     # password entry
     pass_prompt = tb.app.findChild(orPredicate(
         GenericPredicate(name='Enter your password for user', roleName='frame'),
         GenericPredicate(name='Enter your password for user', roleName='dialog')
     ))
     pass_textbox = pass_prompt.findChild(GenericPredicate(roleName='password text'))
-    pass_textbox.text = tb.imap_pw
+    pass_textbox.typeText(tb.imap_pw)
     pass_prompt.childNamed("Use Password Manager to remember this password.")\
                .doActionNamed('check')
     pass_prompt.findChild(orPredicate(
@@ -238,7 +244,7 @@ def configure_openpgp_account(tb):
         GenericPredicate(name='.*(%s).*' % keyid),
         GenericPredicate(name='.[0-9A-F]*%s' % keyid),
         GenericPredicate(name='ID: 0x%s' % keyid),
-        )).parent
+        )).parent.parent
     try:
         accept_dialog.childNamed("Accepted.*").doActionNamed("select")
     except tree.SearchError:
@@ -262,12 +268,20 @@ def configure_openpgp_account(tb):
 
 
 def get_messages(tb):
-    tb.app.child(name='user@localhost',
-            roleName='table row').doActionNamed('activate')
-    tb.app.button('Get Messages').doActionNamed('press')
-    tb.app.menuItem('Get All New Messages').doActionNamed('click')
-    tb.app.child(name='Inbox.*', roleName='table row').doActionNamed(
-        'activate')
+    try:
+        # TB < 115
+        tb.app.child(name='user@localhost',
+                roleName='table row').doActionNamed('activate')
+        tb.app.button('Get Messages').doActionNamed('press')
+        tb.app.menuItem('Get All New Messages').doActionNamed('click')
+        tb.app.child(name='Inbox.*', roleName='table row').doActionNamed(
+            'activate')
+    except tree.SearchError:
+        # TB >= 115
+        tb.app.button('Get Messages').doActionNamed('press')
+        tb.app.child(name='Inbox.*', roleName='tree item').doActionNamed(
+            'activate')
+
 
 def attach(tb, compose_window, path):
     compose_window.button('Attach').button('Attach').doActionNamed('press')
@@ -299,18 +313,21 @@ def attach(tb, compose_window, path):
 
 def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
     config.searchCutoffCount = 20
-    write = tb.app.button('Write')
+    try:
+        write = tb.app.button('New Message')
+    except tree.SearchError:
+        write = tb.app.button('Write')
     config.searchCutoffCount = defaultCutoffCount
     write.doActionNamed('press')
     compose = tb.app.child(name='Write: .*', roleName='frame')
     to_entry = compose.findChild(TBEntry(name='To'))
-    to_entry.text = 'user@localhost'
+    to_entry.typeText('user@localhost')
     # lets thunderbird settle down on default values (after filling recipients)
     time.sleep(1)
     subject_entry = compose.findChild(
         orPredicate(GenericPredicate(name='Subject:', roleName='entry'),
                     TBEntry(name='Subject')))
-    subject_entry.text = subject
+    subject_entry.typeText(subject)
     try:
         compose_document = compose.child(roleName='document web')
         try:
@@ -369,16 +386,24 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
 
 def receive_message(tb, signed=False, encrypted=False, attachment=None):
     get_messages(tb)
-    config.searchCutoffCount = 5
+    if encrypted:
+        config.searchCutoffCount = 5
+        try:
+            # TB >= 115
+            tb.app.child(name='user[^,]*, .*, \.\.\..*',
+                     roleName='tree item').doActionNamed('activate')
+        except tree.SearchError:
+            # TB < 115
+            tb.app.child(name='Encrypted Message .*|.*\.\.\. .*',
+                     roleName='table row').doActionNamed('activate')
+        finally:
+            config.searchCutoffCount = defaultCutoffCount
     try:
-        tb.app.child(name='Encrypted Message .*|.*\.\.\. .*',
-                 roleName='table row').doActionNamed('activate')
+        tb.app.child(name='.*{}.*'.format(subject),
+                     roleName='tree item').doActionNamed('activate')
     except tree.SearchError:
-        pass
-    finally:
-        config.searchCutoffCount = defaultCutoffCount
-    tb.app.child(name='.*{}.*'.format(subject),
-             roleName='table row').doActionNamed('activate')
+        tb.app.child(name='.*{}.*'.format(subject),
+                 roleName='table row').doActionNamed('activate')
     # wait a little to TB decrypt/check the message
     time.sleep(2)
     # dogtail always add '$' at the end of regexp; and also "Escape all
