@@ -1,3 +1,10 @@
+qubes-gpg-split (2.0.70-1) unstable; urgency=medium
+
+  * tests: try harder to avoid donation prompt during tests
+  * tests: update for Thunderbird 115
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 26 Oct 2023 04:45:43 +0200
+
 qubes-gpg-split (2.0.69-1) unstable; urgency=medium
 
   * tests: use distribution's dogtail package
