@@ -27,7 +27,4 @@ package() {
         LIBDIR=/usr/lib \
         USRLIBDIR=/usr/lib \
         SYSLIBDIR=/usr/lib
-
-    # Archlinux packaging guidelines: /var/run is a symlink to a tmpfs. Don't create it
-    rm -r "${pkgdir}/var/run"
 }
