@@ -89,7 +89,6 @@ rm -rf $RPM_BUILD_ROOT
 /etc/qubes-rpc/qubes.Gpg
 /etc/qubes-rpc/qubes.GpgImportKey
 /etc/profile.d/qubes-gpg.sh
-%dir %attr(0777,root,root) /var/run/qubes-gpg-split
 /etc/tmpfiles.d/qubes-gpg-split.conf
 %{_mandir}/man1/qubes-gpg-client.1*
 %{_mandir}/man1/qubes-gpg-client-wrapper.1*

@@ -34,7 +34,6 @@ install-vm-common:
 	install -D qubes.Gpg.service $(DESTDIR)/etc/qubes-rpc/qubes.Gpg
 	install -D qubes.GpgImportKey.service $(DESTDIR)/etc/qubes-rpc/qubes.GpgImportKey
 	install -D qubes-gpg.sh $(DESTDIR)/etc/profile.d/qubes-gpg.sh
-	install -d $(DESTDIR)/var/run/qubes-gpg-split
 	install -D qubes-gpg-split.tmpfiles $(DESTDIR)/etc/tmpfiles.d/qubes-gpg-split.conf
 	make -C tests install-vm
 	make -C doc install
