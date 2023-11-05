@@ -5,7 +5,7 @@ usr/bin/qubes-gpg-import-key
 etc/qubes-rpc/qubes.Gpg
 etc/qubes-rpc/qubes.GpgImportKey
 etc/profile.d/qubes-gpg.sh
-etc/tmpfiles.d/qubes-gpg-split.conf
+usr/lib/tmpfiles.d/qubes-gpg-split.conf
 usr/share/man/man1/qubes-gpg-client.1.gz
 usr/share/man/man1/qubes-gpg-client-wrapper.1.gz
 usr/share/man/man1/qubes-gpg-import-key.1.gz
