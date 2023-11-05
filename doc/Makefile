@@ -10,7 +10,7 @@ manpages: $(DOCS)
 
 install: manpages
 	install -d $(DESTDIR)/usr/share/man/man1
-	install -D $(DOCS) $(DESTDIR)/usr/share/man/man1/
+	install -m 0644 -D $(DOCS) $(DESTDIR)/usr/share/man/man1/
 
 %.1: %.rst
 	$(PANDOC) $< > $@
