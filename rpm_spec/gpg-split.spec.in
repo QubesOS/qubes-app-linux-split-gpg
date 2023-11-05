@@ -37,6 +37,10 @@ BuildRequires: make
 BuildRequires: gcc
 BuildRequires: pandoc
 BuildRequires: python3-setuptools
+%if 0%{?is_opensuse}
+# for directory ownership
+BuildRequires: qubes-core-qrexec
+%endif
 
 Requires:	gnupg2
 Requires:   zenity
