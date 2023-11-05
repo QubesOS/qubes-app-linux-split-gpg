@@ -30,7 +30,7 @@ Summary:	The Qubes service for secure gpg separation
 
 Group:		Qubes
 Vendor:		Invisible Things Lab
-License:	GPL
+License:	GPL-2.0-or-later
 URL:		http://www.qubes-os.org
 
 BuildRequires: make
