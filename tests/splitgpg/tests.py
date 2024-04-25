@@ -438,18 +438,18 @@ class TC_10_Thunderbird(SplitGPGBase):
 
         # run as root to not deal with /var/mail permission issues
         self.frontend.run(
-            'touch /var/mail/user; chown user:user /var/mail/user', user='root',
+            'mkdir -p Mail/new Mail/cur Mail/tmp',
             wait=True)
 
         # SMTP configuration
         self.smtp_server = self.frontend.run(
-            'python3 /usr/lib/qubes-gpg-split/test_smtpd.py',
-            user='root', passio_popen=True)
+            'aiosmtpd -n -c aiosmtpd.handlers.Mailbox /home/user/Mail',
+            passio_popen=True)
 
         # IMAP configuration
         self.imap_pw = "pass"
         self.frontend.run(
-            'echo "mail_location=mbox:~/Mail:INBOX=/var/mail/%u" |\
+            'echo "mail_location=maildir:~/Mail" |\
                 sudo tee /etc/dovecot/conf.d/100-mail.conf', wait=True)
         self.frontend.run('sudo systemctl restart dovecot', wait=True)
         self.frontend.run( # set a user password because IMAP needs one for auth
@@ -609,11 +609,11 @@ class TC_20_Evolution(SplitGPGBase):
 
         # run as root to not deal with /var/mail permission issues
         self.frontend.run(
-            'touch /var/mail/user; chown user /var/mail/user', user='root',
+            'mkdir -p Mail/new Mail/cur Mail/tmp',
             wait=True)
         self.smtp_server = self.frontend.run(
-            'python3 /usr/lib/qubes-gpg-split/test_smtpd.py',
-            user='root', passio_popen=True)
+            'aiosmtpd -n -c aiosmtpd.handlers.Mailbox /home/user/Mail',
+            passio_popen=True)
 
         p = self.frontend.run(
             'python3 {} setup 2>&1'.format(

@@ -88,16 +88,16 @@ def add_local_account(app):
     wizard.button('Next').doActionNamed('click')
     # Receiving Email tab
     time.sleep(2)
-    wizard.menuItem('Local delivery').doActionNamed('click')
-    wizard.childLabelled('Local Delivery File:').parent.button('(None)').\
+    wizard.menuItem('Maildir-format mail directories').doActionNamed('click')
+    wizard.childLabelled('Mail Directory:', showingOnly=True).parent.menuItem('Other…').\
         doActionNamed('click')
-    file_chooser = app.child('Choose a local delivery file',
+    file_chooser = app.child('Choose a Maildir mail directory',
         roleName='file chooser')
     file_chooser.child('File System Root').doActionNamed('click')
-    file_chooser.child('var').doActionNamed('activate')
-    file_chooser.child('spool').doActionNamed('activate')
-    file_chooser.child('mail').doActionNamed('activate')
+    file_chooser.child('home').doActionNamed('activate')
     file_chooser.child('user').doActionNamed('activate')
+    file_chooser.child('Mail').doActionNamed('activate')
+    file_chooser.button('Open').doActionNamed('click')
     time.sleep(1)
     wizard.button('Next').doActionNamed('click')
     # Receiving Options tab
@@ -175,7 +175,7 @@ def receive_message(app, signed=False, encrypted=False, attachment=None):
     send_receive = app.button('Send / Receive')
     send_receive = get_sibling_button_maybe(send_receive)
     send_receive.doActionNamed('click')
-    app.child(name='Inbox.*', roleName='table cell').doActionNamed('edit')
+    app.child(name='Inbox .*', roleName='table cell').doActionNamed('edit')
     messages = app.child('Messages', roleName='panel')
     messages.child(subject).grabFocus()
     message = app.child('Evolution Mail Display', roleName='document web')

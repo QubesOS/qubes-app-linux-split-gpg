@@ -23,6 +23,7 @@ Depends:
  qubes-gpg-split,
  python3-pyatspi,
  python3-dogtail,
+ python3-aiosmtpd,
  dovecot-imapd,
  xdotool,
  ${misc:Depends}

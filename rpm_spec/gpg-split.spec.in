@@ -61,6 +61,7 @@ Requires:   python%{python3_pkgversion}-dogtail
 %endif
 Requires:   xdotool
 Requires:   dovecot
+Requires:   python%{python3_pkgversion}-aiosmtpd
 
 %description tests
 Helper scripts for Split GPG tests.
@@ -97,7 +98,6 @@ rm -rf $RPM_BUILD_ROOT
 %files tests
 /usr/lib/qubes-gpg-split/test_evolution.py*
 /usr/lib/qubes-gpg-split/test_thunderbird.py*
-/usr/lib/qubes-gpg-split/test_smtpd.py*
 
 %changelog
 @CHANGELOG@

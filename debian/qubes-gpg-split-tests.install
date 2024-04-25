@@ -1,4 +1,3 @@
-usr/lib/qubes-gpg-split/test_smtpd.py
 usr/lib/qubes-gpg-split/test_thunderbird.py
 usr/lib/qubes-gpg-split/test_evolution.py
 lib/systemd/system/bootclockrandomization.service.d/override.conf
