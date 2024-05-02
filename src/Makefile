@@ -1,5 +1,5 @@
-CFLAGS+=-Wall -Wextra -Werror -O -g -fPIC -D_FORTIFY_SOURCE=2 -pthread
-LDLIBS=-pthread -fPIC -D_FORTIFY_SOURCE=2
+CFLAGS+=-Wall -Wextra -Werror -O -g -fPIC -pthread
+LDLIBS=-pthread -fPIC
 
 all: gpg-client gpg-server
 
