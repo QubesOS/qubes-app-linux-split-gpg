@@ -475,11 +475,14 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
         # for some reasons some Thunderbird versions do not expose 'Attach File'
         # dialog through accessibility API, use xdotool instead
         save_as = tb.app.findChild(
-            GenericPredicate(name='Save All Attachments',
+            GenericPredicate(name='Save All Attachments|Save Attachment',
                                 roleName='file chooser'))
         click(*save_as.childNamed('Home').position)
         click(*save_as.childNamed('Desktop').position)
-        save_as.childNamed('Open').doActionNamed('click')
+        if save_as.name == 'Save Attachment':
+            save_as.childNamed('Save').doActionNamed('click')
+        else:
+            save_as.childNamed('Open').doActionNamed('click')
         # save_as = tb.app.dialog('Save .*Attachment.*')
         # places = save_as.child(roleName='table',
         #    name='Places')
