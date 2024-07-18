@@ -1,3 +1,10 @@
+qubes-gpg-split (2.0.72-1) unstable; urgency=medium
+
+  * Fix build error on redefined _FORTIFY_SOURCE
+  * tests: handle both Save and Save All dialogs
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 18 Jul 2024 04:26:30 +0200
+
 qubes-gpg-split (2.0.71-1) unstable; urgency=medium
 
   * rpm: adjust BR for directory ownership check in openSUSE
