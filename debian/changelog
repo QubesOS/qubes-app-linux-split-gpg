@@ -1,3 +1,9 @@
+qubes-gpg-split (2.0.73-1) unstable; urgency=medium
+
+  * rpm: mark dom0 package as noarch
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 12 Aug 2024 17:39:54 +0200
+
 qubes-gpg-split (2.0.72-1) unstable; urgency=medium
 
   * Fix build error on redefined _FORTIFY_SOURCE
