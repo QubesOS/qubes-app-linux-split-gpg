@@ -1,3 +1,9 @@
+qubes-gpg-split (2.0.74-1) unstable; urgency=medium
+
+  * tests: assertEquals -> assertEqual
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sat, 24 Aug 2024 02:41:41 +0200
+
 qubes-gpg-split (2.0.73-1) unstable; urgency=medium
 
   * rpm: mark dom0 package as noarch
