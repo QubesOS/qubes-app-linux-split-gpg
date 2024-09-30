@@ -389,21 +389,33 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
     if encrypted:
         config.searchCutoffCount = 5
         try:
-            # TB >= 115
+            # TB >= 128
             tb.app.child(name='user[^,]*, .*, \.\.\..*',
-                     roleName='tree item').doActionNamed('activate')
+                     roleName='table row').doActionNamed('clickAncestor')
         except tree.SearchError:
-            # TB < 115
-            tb.app.child(name='Encrypted Message .*|.*\.\.\. .*',
-                     roleName='table row').doActionNamed('activate')
+            try:
+                # TB >= 115
+                tb.app.child(name='user[^,]*, .*, \.\.\..*',
+                         roleName='tree item').doActionNamed('activate')
+            except tree.SearchError:
+                # TB < 115
+                tb.app.child(name='Encrypted Message .*|.*\.\.\. .*',
+                         roleName='table row').doActionNamed('activate')
         finally:
             config.searchCutoffCount = defaultCutoffCount
     try:
+        # TB >= 128
         tb.app.child(name='.*{}.*'.format(subject),
-                     roleName='tree item').doActionNamed('activate')
+                     roleName='table row').doActionNamed('clickAncestor')
     except tree.SearchError:
-        tb.app.child(name='.*{}.*'.format(subject),
-                 roleName='table row').doActionNamed('activate')
+        try:
+            # TB >= 115
+            tb.app.child(name='.*{}.*'.format(subject),
+                         roleName='tree item').doActionNamed('activate')
+        except tree.SearchError:
+            # TB < 115
+            tb.app.child(name='.*{}.*'.format(subject),
+                     roleName='table row').doActionNamed('activate')
     # wait a little to TB decrypt/check the message
     time.sleep(2)
     # dogtail always add '$' at the end of regexp; and also "Escape all
