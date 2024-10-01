@@ -170,7 +170,8 @@ def enter_imap_passwd(tb):
                .doActionNamed('check')
     pass_prompt.findChild(orPredicate(
         GenericPredicate(name='OK', roleName='push button'),       # tb < 91
-        GenericPredicate(name='Sign in', roleName='push button'))  # tb >= 91
+        GenericPredicate(name='Sign in', roleName='push button'),  # tb >= 91, tb < 128
+        GenericPredicate(name='OK', roleName='button'))  # tb >= 128
     ).doActionNamed('press')
 
 def accept_qubes_attachments(tb):
@@ -269,6 +270,16 @@ def configure_openpgp_account(tb):
 
 def get_messages(tb):
     try:
+        # TB >= 115
+        try:
+            # TB >= 128
+            tb.app.child('Get Messages', roleName='button').doActionNamed('press')
+        except tree.SearchError:
+            # TB < 128
+            tb.app.button('Get Messages').doActionNamed('press')
+        tb.app.child(name='Inbox.*', roleName='tree item').doActionNamed(
+            'activate')
+    except tree.SearchError:
         # TB < 115
         tb.app.child(name='user@localhost',
                 roleName='table row').doActionNamed('activate')
@@ -276,16 +287,19 @@ def get_messages(tb):
         tb.app.menuItem('Get All New Messages').doActionNamed('click')
         tb.app.child(name='Inbox.*', roleName='table row').doActionNamed(
             'activate')
-    except tree.SearchError:
-        # TB >= 115
-        tb.app.button('Get Messages').doActionNamed('press')
-        tb.app.child(name='Inbox.*', roleName='tree item').doActionNamed(
-            'activate')
 
 
 def attach(tb, compose_window, path):
-    compose_window.button('Attach').button('Attach').doActionNamed('press')
-    compose_window.button('Attach').menuItem('File.*').doActionNamed('click')
+    try:
+        # TB >= 128
+        compose_window.child('Attach', roleName='button').\
+                       doActionNamed('press')
+        compose_window.child('Attach', roleName='button').\
+                       menuItem('File.*').doActionNamed('click')
+    except tree.SearchError:
+        # TB < 128
+        compose_window.button('Attach').button('Attach').doActionNamed('press')
+        compose_window.button('Attach').menuItem('File.*').doActionNamed('click')
     # for some reason on some thunderbird versions do not expose 'Attach File'
     # dialog through accessibility API, use xdotool instead
     subprocess.check_call(
@@ -314,9 +328,13 @@ def attach(tb, compose_window, path):
 def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
     config.searchCutoffCount = 20
     try:
-        write = tb.app.button('New Message')
+        # TB >= 128
+        write = tb.app.child(name='New Message', roleName='button')
     except tree.SearchError:
-        write = tb.app.button('Write')
+        try:
+            write = tb.app.button('New Message')
+        except tree.SearchError:
+            write = tb.app.button('Write')
     config.searchCutoffCount = defaultCutoffCount
     write.doActionNamed('press')
     compose = tb.app.child(name='Write: .*', roleName='frame')
@@ -338,8 +356,14 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
     except tree.SearchError:
         compose.child(
             roleName='document frame').text = 'This is test message'
-    security = compose.findChild(
-        GenericPredicate(name='Security|OpenPGP', roleName='push button'))
+    try:
+        # TB >= 128
+        security = compose.findChild(
+            GenericPredicate(name='Security|OpenPGP', roleName='button'))
+    except tree.SearchError:
+        # TB < 128
+        security = compose.findChild(
+            GenericPredicate(name='Security|OpenPGP', roleName='push button'))
     security.doActionNamed('press')
     sign_button = security.childNamed('Digitally Sign.*')
     encrypt_button = security.childNamed('Require Encryption|Encrypt')
@@ -349,7 +373,12 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
         encrypt_button.doActionNamed('click')
     if attachment:
         attach(tb, compose, attachment)
-    compose.button('Send').doActionNamed('press')
+    try:
+        # TB >= 128
+        compose.child('Send', roleName='button').doActionNamed('press')
+    except tree.SearchError:
+        # TB < 128
+        compose.button('Send').doActionNamed('press')
     config.searchCutoffCount = 5
     try:
         if encrypt:
@@ -473,8 +502,14 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
         attachment_size = attachment_label.parent.children[
             attachment_label.indexInParent + 1 + offset]
         assert attachment_size.text[0] != '0'
-        attachment_save = attachment_label.parent.children[
-            attachment_label.indexInParent + 2 + offset].button('Save.*')
+        attachment_save_parent = attachment_label.parent.children[
+            attachment_label.indexInParent + 2 + offset]
+        try:
+            # TB >= 128
+            attachment_save = attachment_save_parent.child('Save.*', roleName='button')
+        except tree.SearchError:
+            # TB < 128
+            attachment_save = attachment_save_parent.button('Save.*')
         try:
             # try child button first
             attachment_save.children[1].doActionNamed('press')
