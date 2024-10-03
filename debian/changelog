@@ -1,3 +1,11 @@
+qubes-gpg-split (2.0.75-1) unstable; urgency=medium
+
+  * tests: adjust for Thunderbird 128
+  * ci: drop R4.1, add R4.3
+  * tests: adjust for 'push button' -> 'button' role change
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 03 Oct 2024 04:41:23 +0200
+
 qubes-gpg-split (2.0.74-1) unstable; urgency=medium
 
   * tests: assertEquals -> assertEqual
