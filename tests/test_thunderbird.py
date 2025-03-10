@@ -158,7 +158,7 @@ def enter_imap_passwd(tb):
         ))
     except tree.SearchError:
         # check new mail so client can realize IMAP requires entering a password
-        get_messages(tb)
+        get_messages(tb, button_only=True)
     # password entry
     pass_prompt = tb.app.findChild(orPredicate(
         GenericPredicate(name='Enter your password for user', roleName='frame'),
@@ -268,7 +268,7 @@ def configure_openpgp_account(tb):
         'click')
 
 
-def get_messages(tb):
+def get_messages(tb, button_only=False):
     try:
         # TB >= 115
         try:
@@ -277,6 +277,8 @@ def get_messages(tb):
         except tree.SearchError:
             # TB < 128
             tb.app.button('Get Messages').doActionNamed('press')
+        if button_only:
+            return
         tb.app.child(name='Inbox.*', roleName='tree item').doActionNamed(
             'activate')
     except tree.SearchError:
@@ -285,6 +287,8 @@ def get_messages(tb):
                 roleName='table row').doActionNamed('activate')
         tb.app.button('Get Messages').doActionNamed('press')
         tb.app.menuItem('Get All New Messages').doActionNamed('click')
+        if button_only:
+            return
         tb.app.child(name='Inbox.*', roleName='table row').doActionNamed(
             'activate')
 
