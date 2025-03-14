@@ -1,3 +1,9 @@
+qubes-gpg-split (2.0.76-1) unstable; urgency=medium
+
+  * tests: update for Thunderbird version/config in Whonix 17
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Fri, 14 Mar 2025 22:21:59 +0100
+
 qubes-gpg-split (2.0.75-1) unstable; urgency=medium
 
   * tests: adjust for Thunderbird 128
