@@ -484,8 +484,7 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
         # alternative way of opening 'message security'
         keyCombo('<Control><Alt>s')
         message_security = tb.app.child('Message Security - OpenPGP')
-    finally:
-        message_security = message_security.parent.parent
+    message_security = message_security.parent.parent
     try:
         if signed:
             message_security.child('Good Digital Signature')
