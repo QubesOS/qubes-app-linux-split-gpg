@@ -1,3 +1,10 @@
+qubes-gpg-split (2.0.77-1) unstable; urgency=medium
+
+  * tests: adjust error handling
+  * tests: adjust disabling donation prompt, yet again
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 07 Apr 2025 16:21:50 +0200
+
 qubes-gpg-split (2.0.76-1) unstable; urgency=medium
 
   * tests: update for Thunderbird version/config in Whonix 17
