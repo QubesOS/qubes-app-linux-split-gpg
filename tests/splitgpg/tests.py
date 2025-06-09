@@ -449,13 +449,13 @@ class TC_10_Thunderbird(SplitGPGBase):
         # IMAP configuration
         self.imap_pw = "pass"
         self.frontend.run(
-            'echo "mail_location=maildir:~/Mail" |\
-                sudo tee /etc/dovecot/conf.d/100-mail.conf', wait=True)
-        self.frontend.run('sudo systemctl restart dovecot', wait=True)
-        self.frontend.run( # set a user password because IMAP needs one for auth
-            'sudo usermod -p `echo "{}" | openssl passwd --stdin` user'\
-                .format(self.imap_pw),
-            wait=True)
+            'echo "mail_location=maildir:~/Mail\nuserdb {\n driver = passwd\n}\npassdb {\n driver = static\n args = password=pass\n}" |\
+                tee /etc/dovecot/conf.d/100-mail.conf', wait=True, user="root")
+        self.frontend.run(
+            "sed -i 's/^!include/#\\0/' /etc/dovecot/conf.d/10-auth.conf",
+            wait=True, user="root")
+        self.frontend.run('systemctl restart dovecot',
+            wait=True, user="root")
 
         self.setup_tb_profile(setup_openpgp=True)
 
