@@ -448,9 +448,14 @@ class TC_10_Thunderbird(SplitGPGBase):
 
         # IMAP configuration
         self.imap_pw = "pass"
-        self.frontend.run(
-            'echo "mail_location=maildir:~/Mail\nuserdb {\n driver = passwd\n}\npassdb {\n driver = static\n args = password=pass\n}" |\
-                tee /etc/dovecot/conf.d/100-mail.conf', wait=True, user="root")
+        if self.frontend.run("grep -q mail_driver /etc/dovecot/conf.d/10-mail.conf", wait=True) == 0:
+            self.frontend.run(
+                'echo "mail_driver = maildir\nmail_path = ~/Mail\nmail_inbox_path = ~/Mail\nuserdb static {\n driver = passwd\n}\npassdb static {\n driver = static\n password=pass\n}" |\
+                    tee /etc/dovecot/conf.d/100-mail.conf', wait=True, user="root")
+        else:
+            self.frontend.run(
+                'echo "mail_location=maildir:~/Mail\nuserdb {\n driver = passwd\n}\npassdb $db_name {\n driver = static\n args = password=pass\n}" |\
+                    tee /etc/dovecot/conf.d/100-mail.conf', wait=True, user="root")
         self.frontend.run(
             "sed -i 's/^!include/#\\0/' /etc/dovecot/conf.d/10-auth.conf",
             wait=True, user="root")
