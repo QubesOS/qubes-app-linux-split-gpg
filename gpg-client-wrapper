@@ -222,7 +222,20 @@ while (( $# )); do
                 options+=("-u" "${1:12}")
                 shift
                 ;;
+            --default-key=*)
+                options+=("-u" "${1:12}")
+                shift
+                ;;
             --sign-with)
+                if (( $# >= 2 )); then
+                    options+=("-u" "$2")
+                    shift 2
+                else # let qubes-gpg-client error out
+                    options+=("$1")
+                    shift
+                fi
+                ;;
+            --default-key)
                 if (( $# >= 2 )); then
                     options+=("-u" "$2")
                     shift 2
