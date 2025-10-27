@@ -448,7 +448,7 @@ class TC_10_Thunderbird(SplitGPGBase):
 
         # IMAP configuration
         self.imap_pw = "pass"
-        if self.frontend.run("grep -q mail_driver /etc/dovecot/conf.d/10-mail.conf", wait=True) == 0:
+        if self.frontend.run("grep -rq mail_driver /etc/dovecot/", wait=True) == 0:
             self.frontend.run(
                 'echo "mail_driver = maildir\nmail_path = ~/Mail\nmail_inbox_path = ~/Mail\nuserdb static {\n driver = passwd\n}\npassdb static {\n driver = static\n password=pass\n}" |\
                     tee /etc/dovecot/conf.d/100-mail.conf', wait=True, user="root")
