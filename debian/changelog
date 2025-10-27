@@ -1,3 +1,13 @@
+qubes-gpg-split (2.0.80-1) unstable; urgency=medium
+
+  [ Marek Marczykowski-Górecki ]
+  * tests: adjust dovecot 2.4 detection for F43
+
+  [ Malte ]
+  * add --default-key to allowed options
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 27 Oct 2025 13:44:50 +0100
+
 qubes-gpg-split (2.0.79-1) unstable; urgency=medium
 
   * tests: adjust tests for Dovecot 2.4
