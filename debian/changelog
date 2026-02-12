@@ -1,3 +1,10 @@
+qubes-gpg-split (2.0.82-1) unstable; urgency=medium
+
+  [ Demi Marie Obenour ]
+  * Clean up list options before passing them to GnuPG
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 12 Feb 2026 02:52:39 +0100
+
 qubes-gpg-split (2.0.81-1) unstable; urgency=medium
 
   * tests: update for TB 145
