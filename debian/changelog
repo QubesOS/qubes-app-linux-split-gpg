@@ -1,3 +1,10 @@
+qubes-gpg-split (2.0.85-1) unstable; urgency=medium
+
+  [ Frédéric Pierret (fepitre) ]
+  * qubes-gpg.sh: default QUBES_GPG_DOMAIN to @default when unconfigured
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 16 Jul 2026 02:17:05 +0200
+
 qubes-gpg-split (2.0.84-1) unstable; urgency=medium
 
   * Allow --no-armor option
