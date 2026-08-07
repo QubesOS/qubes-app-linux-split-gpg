@@ -20,6 +20,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
 # USA.
 #
+import time
 import unittest
 
 import qubes.tests.extra
@@ -32,18 +33,21 @@ class SplitGPGBase(qubes.tests.extra.ExtraTestCase):
         self.backend, self.frontend = self.create_vms(["backend", "frontend"])
 
         self.backend.start()
-        if self.backend.run('ls /etc/qubes-rpc/qubes.Gpg', wait=True) != 0:
-            self.skipTest('gpg-split not installed')
+        if self.backend.run("ls /etc/qubes-rpc/qubes.Gpg", wait=True) != 0:
+            self.skipTest("gpg-split not installed")
         # Whonix desynchronize time on purpose, so make sure the key is
         # generated in the past even when the frontend have clock few minutes
         #  into the future - otherwise new key may look as
         # generated in the future and be considered not yet valid
-        if 'whonix' in self.template:
-            self.backend.run("date -s -10min", user="root", wait=True)
-        p = self.backend.run('mkdir -p -m 0700 .gnupg; gpg2 --gen-key --batch',
+        gpg_time_opts = ""
+        if "whonix" in self.template:
+            gpg_time_opts = f"--faked-system-time {int(time.time()) - 600}!"
+        p = self.backend.run(
+            f"mkdir -p -m 0700 .gnupg; gpg2 {gpg_time_opts} --gen-key --batch",
             passio_popen=True,
-            passio_stderr=True)
-        p.communicate('''
+            passio_stderr=True,
+        )
+        p.communicate("""
 Key-Type: RSA
 Key-Length: 1024
 Key-Usage: sign
@@ -55,128 +59,162 @@ Name-Email: user@localhost
 Expire-Date: 0
 %no-protection
 %commit
-        '''.encode())
+        """.encode())
         if p.returncode == 127:
-            self.skipTest('gpg2 not installed')
+            self.skipTest("gpg2 not installed")
         elif p.returncode != 0:
-            self.fail('key generation failed')
-        if 'whonix' in self.template:
-            self.backend.run("date -s +10min", user="root", wait=True)
+            self.fail("key generation failed")
 
         self.fake_confirmation()
 
         self.frontend.start()
-        p = self.frontend.run('tee /rw/config/gpg-split-domain',
-            passio_popen=True, user='root')
+        p = self.frontend.run(
+            "tee /rw/config/gpg-split-domain", passio_popen=True, user="root"
+        )
         p.communicate(self.backend.name.encode())
 
-        self.qrexec_policy('qubes.Gpg', self.frontend.name, self.backend.name)
-        self.qrexec_policy('qubes.GpgImportKey', self.frontend.name,
-            self.backend.name)
+        self.qrexec_policy("qubes.Gpg", self.frontend.name, self.backend.name)
+        self.qrexec_policy(
+            "qubes.GpgImportKey", self.frontend.name, self.backend.name
+        )
 
     def fake_confirmation(self):
         # fake confirmation
         self.backend.run(
-            'touch /var/run/qubes-gpg-split/stat.{}'.format(
-                self.frontend.name), wait=True)
+            "touch /var/run/qubes-gpg-split/stat.{}".format(self.frontend.name),
+            wait=True,
+        )
 
 
 class TC_00_Direct(SplitGPGBase):
     def test_000_version(self):
-        cmd = 'qubes-gpg-client-wrapper --version'
+        cmd = "qubes-gpg-client-wrapper --version"
         p = self.frontend.run(cmd, wait=True)
-        self.assertEqual(p, 0, '{} failed'.format(cmd))
+        self.assertEqual(p, 0, "{} failed".format(cmd))
 
     def test_010_list_keys(self):
-        cmd = 'qubes-gpg-client-wrapper --list-keys'
+        cmd = "qubes-gpg-client-wrapper --list-keys"
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
-        (keys, stderr) = p.communicate()
-        self.assertEqual(p.returncode, 0,
-            '{} failed: {}'.format(cmd, stderr.decode()))
+        keys, stderr = p.communicate()
+        self.assertEqual(
+            p.returncode, 0, "{} failed: {}".format(cmd, stderr.decode())
+        )
         self.assertIn("Qubes test", keys.decode())
 
     def test_020_export_secret_key_deny(self):
         # TODO check if backend really deny such operation, here it is denied
         # by the frontend
-        cmd = 'qubes-gpg-client-wrapper -a --export-secret-keys user@localhost'
+        cmd = "qubes-gpg-client-wrapper -a --export-secret-keys user@localhost"
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
         keys, stderr = p.communicate()
-        self.assertNotEqual(p.returncode, 0,
-            '{} succeeded unexpectedly: {}'.format(cmd, stderr.decode()))
-        self.assertEqual(keys.decode(), '')
+        self.assertNotEqual(
+            p.returncode,
+            0,
+            "{} succeeded unexpectedly: {}".format(cmd, stderr.decode()),
+        )
+        self.assertEqual(keys.decode(), "")
 
     def test_030_sign_verify(self):
         msg = "Test message"
-        cmd = 'qubes-gpg-client-wrapper -a --sign'
+        cmd = "qubes-gpg-client-wrapper -a --sign"
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
-        (signature, stderr) = p.communicate(msg.encode())
-        self.assertEqual(p.returncode, 0,
-            '{} failed: {}'.format(cmd, stderr.decode()))
-        self.assertNotEqual('', signature.decode())
+        signature, stderr = p.communicate(msg.encode())
+        self.assertEqual(
+            p.returncode, 0, "{} failed: {}".format(cmd, stderr.decode())
+        )
+        self.assertNotEqual("", signature.decode())
 
         # verify first through gpg-split
-        cmd = 'qubes-gpg-client-wrapper'
+        cmd = "qubes-gpg-client-wrapper"
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
-        (decoded_msg, verification_result) = p.communicate(signature)
-        self.assertEqual(p.returncode, 0,
-            '{} failed: {}'.format(cmd, verification_result.decode()))
+        decoded_msg, verification_result = p.communicate(signature)
+        self.assertEqual(
+            p.returncode,
+            0,
+            "{} failed: {}".format(cmd, verification_result.decode()),
+        )
         self.assertEqual(decoded_msg.decode(), msg)
-        self.assertIn('\ngpg: Good signature from', verification_result.decode())
+        self.assertIn(
+            "\ngpg: Good signature from", verification_result.decode()
+        )
 
         # verify in frontend directly
-        cmd = 'gpg2 -a --export user@localhost'
+        cmd = "gpg2 -a --export user@localhost"
         p = self.backend.run(cmd, passio_popen=True, passio_stderr=True)
-        (pubkey, stderr) = p.communicate()
-        self.assertEqual(p.returncode, 0,
-            '{} failed: {}'.format(cmd, stderr.decode()))
-        cmd = 'gpg2 --import'
+        pubkey, stderr = p.communicate()
+        self.assertEqual(
+            p.returncode, 0, "{} failed: {}".format(cmd, stderr.decode())
+        )
+        cmd = "gpg2 --import"
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
-        (stdout, stderr) = p.communicate(pubkey)
-        self.assertEqual(p.returncode, 0,
-            '{} failed: {}{}'.format(cmd, stdout.decode(), stderr.decode()))
+        stdout, stderr = p.communicate(pubkey)
+        self.assertEqual(
+            p.returncode,
+            0,
+            "{} failed: {}{}".format(cmd, stdout.decode(), stderr.decode()),
+        )
         cmd = "gpg2"
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
         decoded_msg, verification_result = p.communicate(signature)
-        self.assertEqual(p.returncode, 0,
-            '{} failed: {}'.format(cmd, verification_result.decode()))
+        self.assertEqual(
+            p.returncode,
+            0,
+            "{} failed: {}".format(cmd, verification_result.decode()),
+        )
         self.assertEqual(decoded_msg.decode(), msg)
-        self.assertIn('\ngpg: Good signature from', verification_result.decode())
+        self.assertIn(
+            "\ngpg: Good signature from", verification_result.decode()
+        )
 
     def test_031_sign_verify_detached(self):
         msg = "Test message"
         self.frontend.run('echo "{}" > message'.format(msg), wait=True)
-        cmd = 'qubes-gpg-client-wrapper -a -b --sign message > signature.asc'
+        cmd = "qubes-gpg-client-wrapper -a -b --sign message > signature.asc"
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
         stdout, stderr = p.communicate()
-        self.assertEqual(p.returncode, 0,
-            '{} failed: {}'.format(cmd, stderr.decode()))
+        self.assertEqual(
+            p.returncode, 0, "{} failed: {}".format(cmd, stderr.decode())
+        )
 
         # verify through gpg-split
-        cmd = 'qubes-gpg-client-wrapper --verify signature.asc message'
+        cmd = "qubes-gpg-client-wrapper --verify signature.asc message"
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
         decoded_msg, verification_result = p.communicate()
-        self.assertEqual(p.returncode, 0,
-            '{} failed: {}'.format(cmd, verification_result.decode()))
-        self.assertEqual(decoded_msg.decode(), '')
-        self.assertIn('\ngpg: Good signature from', verification_result.decode())
+        self.assertEqual(
+            p.returncode,
+            0,
+            "{} failed: {}".format(cmd, verification_result.decode()),
+        )
+        self.assertEqual(decoded_msg.decode(), "")
+        self.assertIn(
+            "\ngpg: Good signature from", verification_result.decode()
+        )
 
         # break the message and check again
         self.frontend.run('echo "{}" >> message'.format(msg), wait=True)
-        cmd = 'qubes-gpg-client-wrapper --verify signature.asc message'
+        cmd = "qubes-gpg-client-wrapper --verify signature.asc message"
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
         decoded_msg, verification_result = p.communicate()
-        self.assertNotEqual(p.returncode, 0,
-            '{} unexpecedly succeeded: {}'.format(cmd, verification_result.decode()))
-        self.assertEqual(decoded_msg.decode(), '')
-        self.assertIn('\ngpg: BAD signature from', verification_result.decode())
+        self.assertNotEqual(
+            p.returncode,
+            0,
+            "{} unexpecedly succeeded: {}".format(
+                cmd, verification_result.decode()
+            ),
+        )
+        self.assertEqual(decoded_msg.decode(), "")
+        self.assertIn("\ngpg: BAD signature from", verification_result.decode())
 
     def test_040_import(self):
         # see comment in setUp()
-        if 'whonix' in self.template:
-            self.frontend.run("date -s -10min", user="root", wait=True)
-        p = self.frontend.run('mkdir -p -m 0700 .gnupg; gpg2 --gen-key --batch',
-                passio_popen=True)
-        p.communicate('''
+        gpg_time_opts = ""
+        if "whonix" in self.template:
+            gpg_time_opts = f"--faked-system-time {int(time.time()) - 600}!"
+        p = self.frontend.run(
+            f"mkdir -p -m 0700 .gnupg; gpg2 {gpg_time_opts} --gen-key --batch",
+            passio_popen=True
+        )
+        p.communicate("""
 Key-Type: RSA
 Key-Length: 1024
 Key-Usage: sign
@@ -188,34 +226,43 @@ Name-Email: user2@localhost
 Expire-Date: 0
 %no-protection
 %commit
-        '''.encode())
-        assert p.returncode == 0, 'key generation failed'
-        # see comment in setUp()
-        if 'whonix' in self.template:
-            self.frontend.run("date -s +10min", user="root", wait=True)
+        """.encode())
+        assert p.returncode == 0, "key generation failed"
 
-        p = self.frontend.run('qubes-gpg-client-wrapper --list-keys',
-            passio_popen=True)
-        (key_list, _) = p.communicate()
-        self.assertNotIn('user2@localhost', key_list.decode())
-        p = self.frontend.run('gpg2 -a --export user2@localhost | '
-            'QUBES_GPG_DOMAIN={} qubes-gpg-import-key'.format(self.backend.name),
-            passio_popen=True, passio_stderr=True)
-        (stdout, stderr) = p.communicate()
-        self.assertEqual(p.returncode, 0, "Failed to import key: " +
-                                          stderr.decode())
-        p = self.frontend.run('qubes-gpg-client-wrapper --list-keys',
-            passio_popen=True)
-        (key_list, _) = p.communicate()
-        self.assertIn('user2@localhost', key_list.decode())
+        p = self.frontend.run(
+            "qubes-gpg-client-wrapper --list-keys", passio_popen=True
+        )
+        key_list, _ = p.communicate()
+        self.assertNotIn("user2@localhost", key_list.decode())
+        p = self.frontend.run(
+            "gpg2 -a --export user2@localhost | "
+            "QUBES_GPG_DOMAIN={} qubes-gpg-import-key".format(
+                self.backend.name
+            ),
+            passio_popen=True,
+            passio_stderr=True,
+        )
+        stdout, stderr = p.communicate()
+        self.assertEqual(
+            p.returncode, 0, "Failed to import key: " + stderr.decode()
+        )
+        p = self.frontend.run(
+            "qubes-gpg-client-wrapper --list-keys", passio_popen=True
+        )
+        key_list, _ = p.communicate()
+        self.assertIn("user2@localhost", key_list.decode())
 
     def test_041_import_via_wrapper(self):
         # see comment in setUp()
-        if 'whonix' in self.template:
-            self.frontend.run("date -s -10min", user="root", wait=True)
-        p = self.frontend.run('mkdir -p -m 0700 .gnupg; gpg2 --gen-key --batch',
-                passio_popen=True, passio_stderr=True)
-        stdout, stderr = p.communicate('''
+        gpg_time_opts = ""
+        if "whonix" in self.template:
+            gpg_time_opts = f"--faked-system-time {int(time.time()) - 600}!"
+        p = self.frontend.run(
+            f"mkdir -p -m 0700 .gnupg; gpg2 {gpg_time_opts} --gen-key --batch",
+            passio_popen=True,
+            passio_stderr=True,
+        )
+        stdout, stderr = p.communicate("""
 Key-Type: RSA
 Key-Length: 1024
 Key-Usage: sign
@@ -227,93 +274,124 @@ Name-Email: user2@localhost
 Expire-Date: 0
 %no-protection
 %commit
-        '''.encode())
-        assert p.returncode == 0, 'key generation failed: {}'.format(
-            stderr.decode())
-        # see comment in setUp()
-        if 'whonix' in self.template:
-            self.frontend.run("date -s +10min", user="root", wait=True)
+        """.encode())
+        assert p.returncode == 0, "key generation failed: {}".format(
+            stderr.decode()
+        )
 
-        p = self.frontend.run('qubes-gpg-client-wrapper --list-keys',
-            passio_popen=True)
-        (key_list, _) = p.communicate()
-        self.assertNotIn('user2@localhost', key_list.decode())
-        p = self.frontend.run('gpg2 -a --export user2@localhost | '
-            'QUBES_GPG_DOMAIN={} qubes-gpg-client-wrapper --import'.format(
-                self.backend.name),
-            passio_popen=True, passio_stderr=True)
-        (stdout, stderr) = p.communicate()
-        self.assertEqual(p.returncode, 0, "Failed to import key: " +
-                                          stderr.decode())
-        p = self.frontend.run('qubes-gpg-client-wrapper --list-keys',
-            passio_popen=True)
-        (key_list, _) = p.communicate()
-        self.assertIn('user2@localhost', key_list.decode())
-
+        p = self.frontend.run(
+            "qubes-gpg-client-wrapper --list-keys", passio_popen=True
+        )
+        key_list, _ = p.communicate()
+        self.assertNotIn("user2@localhost", key_list.decode())
+        p = self.frontend.run(
+            "gpg2 -a --export user2@localhost | "
+            "QUBES_GPG_DOMAIN={} qubes-gpg-client-wrapper --import".format(
+                self.backend.name
+            ),
+            passio_popen=True,
+            passio_stderr=True,
+        )
+        stdout, stderr = p.communicate()
+        self.assertEqual(
+            p.returncode, 0, "Failed to import key: " + stderr.decode()
+        )
+        p = self.frontend.run(
+            "qubes-gpg-client-wrapper --list-keys", passio_popen=True
+        )
+        key_list, _ = p.communicate()
+        self.assertIn("user2@localhost", key_list.decode())
 
     def test_050_sign_verify_files(self):
         """Test for --output option"""
         msg = "Test message"
-        cmd = 'qubes-gpg-client-wrapper -a --sign --output /tmp/signed.asc'
+        cmd = "qubes-gpg-client-wrapper -a --sign --output /tmp/signed.asc"
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
         stdout, stderr = p.communicate(msg.encode())
-        self.assertEqual(p.returncode, 0,
-            '{} failed: {}'.format(cmd, stderr.decode()))
+        self.assertEqual(
+            p.returncode, 0, "{} failed: {}".format(cmd, stderr.decode())
+        )
 
         # verify first through gpg-split
-        cmd = 'qubes-gpg-client-wrapper /tmp/signed.asc'
+        cmd = "qubes-gpg-client-wrapper /tmp/signed.asc"
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
         decoded_msg, verification_result = p.communicate()
-        self.assertEqual(p.returncode, 0,
-            '{} failed: {}'.format(cmd, verification_result.decode()))
+        self.assertEqual(
+            p.returncode,
+            0,
+            "{} failed: {}".format(cmd, verification_result.decode()),
+        )
         self.assertEqual(decoded_msg.decode(), msg)
-        self.assertIn('\ngpg: Good signature from', verification_result.decode())
+        self.assertIn(
+            "\ngpg: Good signature from", verification_result.decode()
+        )
 
     def test_060_output_and_status_fd(self):
         """Regression test for #2057"""
         msg = "Test message"
-        cmd = 'qubes-gpg-client-wrapper -a --sign --status-fd 1 --output ' \
-              '/tmp/signed.asc'
+        cmd = (
+            "qubes-gpg-client-wrapper -a --sign --status-fd 1 --output "
+            "/tmp/signed.asc"
+        )
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
-        (stdout, stderr) = p.communicate(msg.encode())
-        self.assertEqual(p.returncode, 0,
-            '{} failed: {}'.format(cmd, stderr.decode()))
-        self.assertTrue(all(x.startswith('[GNUPG:]') for x in
-            stdout.decode().splitlines()), "Non-status output on stdout")
+        stdout, stderr = p.communicate(msg.encode())
+        self.assertEqual(
+            p.returncode, 0, "{} failed: {}".format(cmd, stderr.decode())
+        )
+        self.assertTrue(
+            all(x.startswith("[GNUPG:]") for x in stdout.decode().splitlines()),
+            "Non-status output on stdout",
+        )
 
         # verify first through gpg-split
-        cmd = 'qubes-gpg-client-wrapper /tmp/signed.asc'
+        cmd = "qubes-gpg-client-wrapper /tmp/signed.asc"
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
         decoded_msg, verification_result = p.communicate()
-        self.assertEqual(p.returncode, 0,
-            '{} failed: {}'.format(cmd, verification_result.decode()))
+        self.assertEqual(
+            p.returncode,
+            0,
+            "{} failed: {}".format(cmd, verification_result.decode()),
+        )
         self.assertEqual(decoded_msg.decode(), msg)
-        self.assertIn('\ngpg: Good signature from', verification_result.decode())
+        self.assertIn(
+            "\ngpg: Good signature from", verification_result.decode()
+        )
 
     def test_070_log_file_to_logger_fd(self):
         """Regression test for #3989"""
         msg = "Test message"
-        cmd = 'qubes-gpg-client-wrapper -a --sign --log-file /tmp/gpg.log ' \
-              '--verbose --output /tmp/signed.asc'
+        cmd = (
+            "qubes-gpg-client-wrapper -a --sign --log-file /tmp/gpg.log "
+            "--verbose --output /tmp/signed.asc"
+        )
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
-        (stdout, stderr) = p.communicate(msg.encode())
-        self.assertEqual(p.returncode, 0, '{} failed: {}'.format(cmd,
-            stderr.decode()))
-        self.assertTrue(all(x.startswith('[GNUPG:]') for x in
-            stdout.decode().splitlines()), "Non-status output on stdout")
-        p = self.frontend.run('cat /tmp/gpg.log',
-            passio_popen=True, passio_stderr=True)
-        (stdout, stderr) = p.communicate()
-        self.assertIn('signature from', stdout.decode())
+        stdout, stderr = p.communicate(msg.encode())
+        self.assertEqual(
+            p.returncode, 0, "{} failed: {}".format(cmd, stderr.decode())
+        )
+        self.assertTrue(
+            all(x.startswith("[GNUPG:]") for x in stdout.decode().splitlines()),
+            "Non-status output on stdout",
+        )
+        p = self.frontend.run(
+            "cat /tmp/gpg.log", passio_popen=True, passio_stderr=True
+        )
+        stdout, stderr = p.communicate()
+        self.assertIn("signature from", stdout.decode())
 
         # verify first through gpg-split
-        cmd = 'qubes-gpg-client-wrapper /tmp/signed.asc'
+        cmd = "qubes-gpg-client-wrapper /tmp/signed.asc"
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
         decoded_msg, verification_result = p.communicate()
-        self.assertEqual(p.returncode, 0,
-            '{} failed: {}'.format(cmd, verification_result.decode()))
+        self.assertEqual(
+            p.returncode,
+            0,
+            "{} failed: {}".format(cmd, verification_result.decode()),
+        )
         self.assertEqual(decoded_msg.decode(), msg)
-        self.assertIn('\ngpg: Good signature from', verification_result.decode())
+        self.assertIn(
+            "\ngpg: Good signature from", verification_result.decode()
+        )
 
     def _check_if_options_takes_argument(self, prog, option, message_fmts):
         """Check whether an option expect an argument or not.
@@ -328,67 +406,86 @@ Expire-Date: 0
 
         # check if option requires an argument by seeing if --garbage-1 was
         # interpreted as another option, or an argument
-        cmd = '{} {} --garbage-1 --garbage-2'.format(prog, option)
+        cmd = "{} {} --garbage-1 --garbage-2".format(prog, option)
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
-        (stdout, stderr) = p.communicate()
+        stdout, stderr = p.communicate()
         stderr = stderr.decode()
-        self.assertNotEqual(p.returncode, 0,
-            cmd + ' should have failed: ' + stderr)
-        if option == '--list-options' and 'qubes' in prog:
-             self.assertEqual(stderr,
-                 "qubes-gpg-client: Unknown list option --garbage-1\n")
-             return True
-        if option == '--verify-options' and 'qubes' in prog:
-             self.assertEqual(stderr,
-                 "qubes-gpg-client: Unknown verify option --garbage-1\n")
-             return True
-        if option == '--export-options' and 'qubes' in prog:
-             self.assertEqual(stderr,
-                 "qubes-gpg-client: Unknown export option --garbage-1\n")
-             return True
+        self.assertNotEqual(
+            p.returncode, 0, cmd + " should have failed: " + stderr
+        )
+        if option == "--list-options" and "qubes" in prog:
+            self.assertEqual(
+                stderr, "qubes-gpg-client: Unknown list option --garbage-1\n"
+            )
+            return True
+        if option == "--verify-options" and "qubes" in prog:
+            self.assertEqual(
+                stderr, "qubes-gpg-client: Unknown verify option --garbage-1\n"
+            )
+            return True
+        if option == "--export-options" and "qubes" in prog:
+            self.assertEqual(
+                stderr, "qubes-gpg-client: Unknown export option --garbage-1\n"
+            )
+            return True
         for message_fmt in message_fmts:
-            if message_fmt.format('--garbage-1') in stderr:
+            if message_fmt.format("--garbage-1") in stderr:
                 return False
-            if message_fmt.format('--garbage-2') in stderr:
+            if message_fmt.format("--garbage-2") in stderr:
                 return True
             if message_fmt.format(option) in stderr:
                 return None
         if 'invalid argument for option "{}"'.format(option) in stderr:
             return True
-        if 'Invalid fd argument' in stderr:
+        if "Invalid fd argument" in stderr:
             return True
         self.fail(
-            '{} {} have not complained about --garbage options: {}'.format(
-                'qubes-gpg-client' if 'qubes' in prog else 'gpg2',
-                option, stderr))
+            "{} {} have not complained about --garbage options: {}".format(
+                "qubes-gpg-client" if "qubes" in prog else "gpg2",
+                option,
+                stderr,
+            )
+        )
 
     def test_080_option_parser(self):
         """Check if split-gpg agrees with gpg about options parsing"""
-        cmd = 'gpg --dump-options'
+        cmd = "gpg --dump-options"
         p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
-        (stdout, stderr) = p.communicate()
-        self.assertEqual(p.returncode, 0, '{} failed: {}'.format(cmd,
-            stderr.decode()))
+        stdout, stderr = p.communicate()
+        self.assertEqual(
+            p.returncode, 0, "{} failed: {}".format(cmd, stderr.decode())
+        )
         all_options = stdout.decode().splitlines()
         noarg_options = []
         for opt in all_options:
-            if opt in ('--output', '--logger-fd', '--version'):
+            if opt in ("--output", "--logger-fd", "--version"):
                 # those options are problematic for testing (different error
                 # messages, messes with logging) and are checked manually
                 continue
             splitgpg_needs_arg = self._check_if_options_takes_argument(
-                'QUBES_GPG_DOMAIN={} qubes-gpg-client'.format(self.backend.name),
-                opt, ['unrecognized option \'{}\'',
-                      'option \'{}\' is ambiguous',
-                      'Forbidden option: {}'])
+                "QUBES_GPG_DOMAIN={} qubes-gpg-client".format(
+                    self.backend.name
+                ),
+                opt,
+                [
+                    "unrecognized option '{}'",
+                    "option '{}' is ambiguous",
+                    "Forbidden option: {}",
+                ],
+            )
             if splitgpg_needs_arg is None:
                 # option rejected
                 continue
             gpg_needs_arg = self._check_if_options_takes_argument(
-                'gpg2', opt, ['invalid option "{}"'])
-            self.assertEqual(gpg_needs_arg, splitgpg_needs_arg,
-                'gpg and splitgpg disagrees on {} option: {}, {}'.format(
-                    opt, gpg_needs_arg, splitgpg_needs_arg))
+                "gpg2", opt, ['invalid option "{}"']
+            )
+            self.assertEqual(
+                gpg_needs_arg,
+                splitgpg_needs_arg,
+                "gpg and splitgpg disagrees on {} option: {}, {}".format(
+                    opt, gpg_needs_arg, splitgpg_needs_arg
+                ),
+            )
             if not gpg_needs_arg:
                 noarg_options.append(opt)
         # TODO: Test if gpg agrees with split-gpg, whether positional
@@ -396,16 +493,21 @@ Expire-Date: 0
 
     def test_081_subpacket_options(self):
         """Check if split-gpg agrees with gpg about subpacket options parsing"""
-        p = self.frontend.run('QUBES_GPG_DOMAIN=bogus qubes-gpg-client '
-                              '--list-options show-sig-subpackets=1+1',
-                              passio_popen=True, passio_stderr=True)
-        (stdout, stderr) = p.communicate()
-        self.assertEqual(stdout, b'', 'nothing should appear on stdout')
-        self.assertEqual(stderr,
-                         b'qubes-gpg-client: Invalid character + following '
-                         b'subpacket number\n',
-                         'bad subpacket number not rejected properly')
-        assert p.wait() == 1, 'wrong exit code'
+        p = self.frontend.run(
+            "QUBES_GPG_DOMAIN=bogus qubes-gpg-client "
+            "--list-options show-sig-subpackets=1+1",
+            passio_popen=True,
+            passio_stderr=True,
+        )
+        stdout, stderr = p.communicate()
+        self.assertEqual(stdout, b"", "nothing should appear on stdout")
+        self.assertEqual(
+            stderr,
+            b"qubes-gpg-client: Invalid character + following "
+            b"subpacket number\n",
+            "bad subpacket number not rejected properly",
+        )
+        assert p.wait() == 1, "wrong exit code"
 
     # TODO:
     #  - encrypt/decrypt
@@ -414,64 +516,79 @@ Expire-Date: 0
 
 class TC_10_Thunderbird(SplitGPGBase):
 
-    scriptpath = '/usr/lib/qubes-gpg-split/test_thunderbird.py'
+    scriptpath = "/usr/lib/qubes-gpg-split/test_thunderbird.py"
 
     def setUp(self):
-        if self.template.startswith('whonix-gw'):
-            self.skipTest('whonix-gw template not supported by this test')
+        if self.template.startswith("whonix-gw"):
+            self.skipTest("whonix-gw template not supported by this test")
         super(TC_10_Thunderbird, self).setUp()
-        self.frontend.run_service('qubes.WaitForSession', wait=True,
-            input='user')
-        if self.frontend.run('which thunderbird', wait=True) == 0:
-            self.tb_name = 'thunderbird'
-        elif self.frontend.run('which icedove', wait=True) == 0:
-            self.tb_name = 'icedove'
+        self.frontend.run_service(
+            "qubes.WaitForSession", wait=True, input="user"
+        )
+        if self.frontend.run("which thunderbird", wait=True) == 0:
+            self.tb_name = "thunderbird"
+        elif self.frontend.run("which icedove", wait=True) == 0:
+            self.tb_name = "icedove"
         else:
-            self.skipTest('Thunderbird not installed')
+            self.skipTest("Thunderbird not installed")
 
-        p = self.frontend.run('gsettings set org.gnome.desktop.interface '
-                              'toolkit-accessibility true', wait=True)
-        assert p == 0, 'Failed to enable accessibility toolkit'
-        if self.frontend.run(
-                'ls {}'.format(self.scriptpath), wait=True):
-            self.skipTest('qubes-gpg-split-tests package not installed')
+        p = self.frontend.run(
+            "gsettings set org.gnome.desktop.interface "
+            "toolkit-accessibility true",
+            wait=True,
+        )
+        assert p == 0, "Failed to enable accessibility toolkit"
+        if self.frontend.run("ls {}".format(self.scriptpath), wait=True):
+            self.skipTest("qubes-gpg-split-tests package not installed")
 
         # run as root to not deal with /var/mail permission issues
-        self.frontend.run(
-            'mkdir -p Mail/new Mail/cur Mail/tmp',
-            wait=True)
+        self.frontend.run("mkdir -p Mail/new Mail/cur Mail/tmp", wait=True)
 
         # SMTP configuration
         self.smtp_server = self.frontend.run(
-            'aiosmtpd -n -c aiosmtpd.handlers.Mailbox /home/user/Mail',
-            passio_popen=True)
+            "aiosmtpd -n -c aiosmtpd.handlers.Mailbox /home/user/Mail",
+            passio_popen=True,
+        )
 
         # IMAP configuration
         self.imap_pw = "pass"
-        if self.frontend.run("grep -rq mail_driver /etc/dovecot/", wait=True) == 0:
+        if (
+            self.frontend.run("grep -rq mail_driver /etc/dovecot/", wait=True)
+            == 0
+        ):
             self.frontend.run(
                 'echo "mail_driver = maildir\nmail_path = ~/Mail\nmail_inbox_path = ~/Mail\nuserdb static {\n driver = passwd\n}\npassdb static {\n driver = static\n password=pass\n}" |\
-                    tee /etc/dovecot/conf.d/100-mail.conf', wait=True, user="root")
+                    tee /etc/dovecot/conf.d/100-mail.conf',
+                wait=True,
+                user="root",
+            )
         else:
             self.frontend.run(
                 'echo "mail_location=maildir:~/Mail\nuserdb {\n driver = passwd\n}\npassdb $db_name {\n driver = static\n args = password=pass\n}" |\
-                    tee /etc/dovecot/conf.d/100-mail.conf', wait=True, user="root")
+                    tee /etc/dovecot/conf.d/100-mail.conf',
+                wait=True,
+                user="root",
+            )
         self.frontend.run(
             "sed -i 's/^!include/#\\0/' /etc/dovecot/conf.d/10-auth.conf",
-            wait=True, user="root")
-        self.frontend.run('systemctl restart dovecot',
-            wait=True, user="root")
+            wait=True,
+            user="root",
+        )
+        self.frontend.run("systemctl restart dovecot", wait=True, user="root")
 
         self.setup_tb_profile(setup_openpgp=True)
 
         p = self.frontend.run(
-            'LC_ALL=C.UTF-8 '
-            'python3 {} --tbname={} --profile {} --imap_pw {} setup 2>&1'.format(
-                self.scriptpath, self.tb_name, self.profile_dir, self.imap_pw),
-            passio_popen=True)
-        (stdout, _) = p.communicate()
-        assert p.returncode == 0, 'Thunderbird setup failed: {}'.format(
-            stdout.decode('ascii', 'ignore'))
+            "LC_ALL=C.UTF-8 "
+            "python3 {} --tbname={} --profile {} --imap_pw {} setup 2>&1".format(
+                self.scriptpath, self.tb_name, self.profile_dir, self.imap_pw
+            ),
+            passio_popen=True,
+        )
+        stdout, _ = p.communicate()
+        assert p.returncode == 0, "Thunderbird setup failed: {}".format(
+            stdout.decode("ascii", "ignore")
+        )
 
         # fake confirmation again, to give more time for the actual test
         self.fake_confirmation()
@@ -482,12 +599,12 @@ class TC_10_Thunderbird(SplitGPGBase):
         super(TC_10_Thunderbird, self).tearDown()
 
     def get_key_fpr(self):
-        cmd = '/usr/bin/qubes-gpg-client-wrapper -K --with-colons'
+        cmd = "/usr/bin/qubes-gpg-client-wrapper -K --with-colons"
         p = self.frontend.run(cmd, passio_popen=True)
-        (stdout, _) = p.communicate()
-        self.assertEqual(p.returncode, 0, 'Failed to determin key id')
-        keyid = stdout.decode('utf-8').split('\n')[1]
-        keyid = keyid.split(':')[9]
+        stdout, _ = p.communicate()
+        self.assertEqual(p.returncode, 0, "Failed to determin key id")
+        keyid = stdout.decode("utf-8").split("\n")[1]
+        keyid = keyid.split(":")[9]
         keyid = keyid[-16:]
         return keyid
 
@@ -548,86 +665,111 @@ user_pref("mail.identity.id1.sign_mail", false);
         if setup_openpgp:
             user_js += open_pgp + user_account_pgp
 
-        self.frontend.run('mkdir -p {}'.format(self.profile_dir),
-                          user='user', wait=True)
-        p = self.frontend.run('cat > ' + user_js_path,
-                          user='user', passio_popen=True)
-        (stdout, _) = p.communicate(user_js.encode())
-        assert p.returncode == 0, 'Thunderbird profile configuration failed: {}'\
-            .format(stdout.decode('ascii', 'ignore'))
+        self.frontend.run(
+            "mkdir -p {}".format(self.profile_dir), user="user", wait=True
+        )
+        p = self.frontend.run(
+            "cat > " + user_js_path, user="user", passio_popen=True
+        )
+        stdout, _ = p.communicate(user_js.encode())
+        assert (
+            p.returncode == 0
+        ), "Thunderbird profile configuration failed: {}".format(
+            stdout.decode("ascii", "ignore")
+        )
 
     def test_000_send_receive_default(self):
         p = self.frontend.run(
-            'LC_ALL=C.UTF-8 '
-            'python3 {} --tbname={} --profile {} --imap_pw {} send_receive '
-            '--encrypted --signed 2>&1'.format(
-                self.scriptpath, self.tb_name, self.profile_dir, self.imap_pw),
-            passio_popen=True)
-        (stdout, _) = p.communicate()
-        self.assertEqual(p.returncode, 0,
-            'Thunderbird send/receive failed: {}'.format(
-                stdout.decode('ascii', 'ignore')))
+            "LC_ALL=C.UTF-8 "
+            "python3 {} --tbname={} --profile {} --imap_pw {} send_receive "
+            "--encrypted --signed 2>&1".format(
+                self.scriptpath, self.tb_name, self.profile_dir, self.imap_pw
+            ),
+            passio_popen=True,
+        )
+        stdout, _ = p.communicate()
+        self.assertEqual(
+            p.returncode,
+            0,
+            "Thunderbird send/receive failed: {}".format(
+                stdout.decode("ascii", "ignore")
+            ),
+        )
 
     def test_010_send_receive_inline_signed_only(self):
         p = self.frontend.run(
-            'LC_ALL=C.UTF-8 '
-            'python3 {} --tbname={} --profile {} --imap_pw {} send_receive '
-            '--encrypted --signed --inline 2>&1'.format(
-                self.scriptpath, self.tb_name, self.profile_dir, self.imap_pw),
-            passio_popen=True)
-        (stdout, _) = p.communicate()
-        self.assertEqual(p.returncode, 0,
-            'Thunderbird send/receive failed: {}'.format(
-                stdout.decode('ascii', 'ignore')))
+            "LC_ALL=C.UTF-8 "
+            "python3 {} --tbname={} --profile {} --imap_pw {} send_receive "
+            "--encrypted --signed --inline 2>&1".format(
+                self.scriptpath, self.tb_name, self.profile_dir, self.imap_pw
+            ),
+            passio_popen=True,
+        )
+        stdout, _ = p.communicate()
+        self.assertEqual(
+            p.returncode,
+            0,
+            "Thunderbird send/receive failed: {}".format(
+                stdout.decode("ascii", "ignore")
+            ),
+        )
 
     def test_020_send_receive_inline_with_attachment(self):
         p = self.frontend.run(
-            'LC_ALL=C.UTF-8 '
-            'python3 {} --tbname={} --profile {} --imap_pw {} send_receive '
-            '--encrypted --signed --inline --with-attachment 2>&1'.format(
-                self.scriptpath, self.tb_name, self.profile_dir, self.imap_pw),
-            passio_popen=True)
-        (stdout, _) = p.communicate()
-        self.assertEqual(p.returncode, 0,
-            'Thunderbird send/receive failed: {}'.format(
-                stdout.decode('ascii', 'ignore')))
+            "LC_ALL=C.UTF-8 "
+            "python3 {} --tbname={} --profile {} --imap_pw {} send_receive "
+            "--encrypted --signed --inline --with-attachment 2>&1".format(
+                self.scriptpath, self.tb_name, self.profile_dir, self.imap_pw
+            ),
+            passio_popen=True,
+        )
+        stdout, _ = p.communicate()
+        self.assertEqual(
+            p.returncode,
+            0,
+            "Thunderbird send/receive failed: {}".format(
+                stdout.decode("ascii", "ignore")
+            ),
+        )
 
 
 class TC_20_Evolution(SplitGPGBase):
 
-    scriptpath = '/usr/lib/qubes-gpg-split/test_evolution.py'
+    scriptpath = "/usr/lib/qubes-gpg-split/test_evolution.py"
 
     def setUp(self):
-        if self.template.startswith('whonix-gw'):
-            self.skipTest('whonix-gw template not supported by this test')
+        if self.template.startswith("whonix-gw"):
+            self.skipTest("whonix-gw template not supported by this test")
         super(TC_20_Evolution, self).setUp()
-        self.frontend.run_service('qubes.WaitForSession', wait=True,
-            input='user')
-        if self.frontend.run('which evolution', wait=True) != 0:
-            self.skipTest('Evolution not installed')
-
-        p = self.frontend.run('gsettings set org.gnome.desktop.interface '
-                              'toolkit-accessibility true', wait=True)
-        assert p == 0, 'Failed to enable accessibility toolkit'
-        if self.frontend.run(
-                'ls {}'.format(self.scriptpath), wait=True):
-            self.skipTest('qubes-gpg-split-tests package not installed')
-
-        # run as root to not deal with /var/mail permission issues
-        self.frontend.run(
-            'mkdir -p Mail/new Mail/cur Mail/tmp',
-            wait=True)
-        self.smtp_server = self.frontend.run(
-            'aiosmtpd -n -c aiosmtpd.handlers.Mailbox /home/user/Mail',
-            passio_popen=True)
+        self.frontend.run_service(
+            "qubes.WaitForSession", wait=True, input="user"
+        )
+        if self.frontend.run("which evolution", wait=True) != 0:
+            self.skipTest("Evolution not installed")
 
         p = self.frontend.run(
-            'python3 {} setup 2>&1'.format(
-                self.scriptpath),
-            passio_popen=True)
-        (stdout, _) = p.communicate()
-        assert p.returncode == 0, 'Evolution setup failed: {}'.format(
-            stdout.decode('ascii', 'ignore'))
+            "gsettings set org.gnome.desktop.interface "
+            "toolkit-accessibility true",
+            wait=True,
+        )
+        assert p == 0, "Failed to enable accessibility toolkit"
+        if self.frontend.run("ls {}".format(self.scriptpath), wait=True):
+            self.skipTest("qubes-gpg-split-tests package not installed")
+
+        # run as root to not deal with /var/mail permission issues
+        self.frontend.run("mkdir -p Mail/new Mail/cur Mail/tmp", wait=True)
+        self.smtp_server = self.frontend.run(
+            "aiosmtpd -n -c aiosmtpd.handlers.Mailbox /home/user/Mail",
+            passio_popen=True,
+        )
+
+        p = self.frontend.run(
+            "python3 {} setup 2>&1".format(self.scriptpath), passio_popen=True
+        )
+        stdout, _ = p.communicate()
+        assert p.returncode == 0, "Evolution setup failed: {}".format(
+            stdout.decode("ascii", "ignore")
+        )
 
     def tearDown(self):
         self.smtp_server.terminate()
@@ -636,41 +778,51 @@ class TC_20_Evolution(SplitGPGBase):
 
     def test_000_send_receive_signed_encrypted(self):
         p = self.frontend.run(
-            'python3 {} send_receive '
-            '--encrypted --signed 2>&1'.format(
-                self.scriptpath),
-            passio_popen=True)
-        (stdout, _) = p.communicate()
-        self.assertEqual(p.returncode, 0,
-            'Evolution send/receive failed: {}'.format(
-                stdout.decode('ascii', 'ignore')))
+            "python3 {} send_receive "
+            "--encrypted --signed 2>&1".format(self.scriptpath),
+            passio_popen=True,
+        )
+        stdout, _ = p.communicate()
+        self.assertEqual(
+            p.returncode,
+            0,
+            "Evolution send/receive failed: {}".format(
+                stdout.decode("ascii", "ignore")
+            ),
+        )
 
     def test_010_send_receive_signed_only(self):
         p = self.frontend.run(
-            'python3 {} send_receive '
-            '--signed 2>&1'.format(
-                self.scriptpath),
-            passio_popen=True)
-        (stdout, _) = p.communicate()
-        self.assertEqual(p.returncode, 0,
-            'Evolution send/receive failed: {}'.format(
-                stdout.decode('ascii', 'ignore')))
+            "python3 {} send_receive " "--signed 2>&1".format(self.scriptpath),
+            passio_popen=True,
+        )
+        stdout, _ = p.communicate()
+        self.assertEqual(
+            p.returncode,
+            0,
+            "Evolution send/receive failed: {}".format(
+                stdout.decode("ascii", "ignore")
+            ),
+        )
 
-    @unittest.skip('handling attachments not done')
+    @unittest.skip("handling attachments not done")
     def test_020_send_receive_with_attachment(self):
         p = self.frontend.run(
-            'python3 {} send_receive '
-            '--encrypted --signed --with-attachment 2>&1'.format(
-                self.scriptpath),
-            passio_popen=True)
-        (stdout, _) = p.communicate()
-        self.assertEqual(p.returncode, 0,
-            'Evolution send/receive failed: {}'.format(
-                stdout.decode('ascii', 'ignore')))
+            "python3 {} send_receive "
+            "--encrypted --signed --with-attachment 2>&1".format(
+                self.scriptpath
+            ),
+            passio_popen=True,
+        )
+        stdout, _ = p.communicate()
+        self.assertEqual(
+            p.returncode,
+            0,
+            "Evolution send/receive failed: {}".format(
+                stdout.decode("ascii", "ignore")
+            ),
+        )
+
 
 def list_tests():
-    return (
-        TC_00_Direct,
-        TC_10_Thunderbird,
-        TC_20_Evolution
-    )
+    return (TC_00_Direct, TC_10_Thunderbird, TC_20_Evolution)
