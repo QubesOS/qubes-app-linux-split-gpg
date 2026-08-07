@@ -1,3 +1,14 @@
+qubes-gpg-split (2.0.86-1) unstable; urgency=medium
+
+  [ Kunal Mehta ]
+  * Allow usage of --skip-verify
+
+  [ Marek Marczykowski-Górecki ]
+  * Format integration tests with black
+  * tests: use --faked-system-time on whonix instead of date -s
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Fri, 07 Aug 2026 12:55:16 +0200
+
 qubes-gpg-split (2.0.85-1) unstable; urgency=medium
 
   [ Frédéric Pierret (fepitre) ]
