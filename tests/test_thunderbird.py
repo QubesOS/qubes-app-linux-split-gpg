@@ -233,8 +233,10 @@ def configure_openpgp_account(tb):
     key_manager.findChild(
         GenericPredicate(name='Import Public Key(s) From File',
                          roleName='menu item')).doActionNamed('click')
-    file_chooser = tb.app.findChild(GenericPredicate(name='Import OpenPGP Key File.*',
-                                                 roleName='file chooser'))
+    file_chooser = tree.root.findChild(
+        GenericPredicate(name='Import OpenPGP Key File.*',
+                         roleName='file chooser')
+    )
     # wait for dialog to completely initialize, otherwise it may try to click
     # on "Home" before it is active.
     time.sleep(1)
