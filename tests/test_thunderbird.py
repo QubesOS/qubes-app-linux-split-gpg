@@ -308,27 +308,14 @@ def attach(tb, compose_window, path):
         compose_window.button('Attach').menuItem('File.*').doActionNamed('click')
     # for some reason on some thunderbird versions do not expose 'Attach File'
     # dialog through accessibility API, use xdotool instead
-    subprocess.check_call(
-        ['xdotool', 'search', '--sync', '--name', 'Attach File.*',
-         'key', '--window', '0', 'ctrl+l',
-         'sleep', '1',
-         'type', '--window', '%1', path])
+    file_chooser = tree.root.findChild(
+        GenericPredicate(name='Attach File.*',
+                         roleName='file chooser'))
+    file_chooser.keyCombo('<Ctrl>l')
+    location = file_chooser.findChild(GenericPredicate(name='Location Layer'))
+    location.children[0].text = path
     time.sleep(1)
-    subprocess.check_call(
-        ['xdotool', 'search', '--name', 'Attach File.*', 'key', 'Return'])
-    time.sleep(1)
-    # select_file = tb.app.dialog('Attach File.*')
-    # places = select_file.child(roleName='table',
-    #    name='Places')
-    # places.child(name='Desktop').click()
-    # location_toggle = select_file.child(roleName='toggle button',
-    #    name='Type a file name')
-    # if not location_toggle.checked:
-    #    location_toggle.doActionNamed('click')
-    # location_label = select_file.child(name='Location:', roleName='label')
-    # location = location_label.parent.children[location_label.indexInParent + 1]
-    # location.text = path
-    # select_file.button('Open').doActionNamed('click')
+    file_chooser.keyCombo('Return')
 
 
 def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
@@ -500,21 +487,27 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
 
     if attachment:
         # it can be either "1 attachment:" or "2 attachments"
-        attachment_label = tb.app.child(name='.* attachment[:s]', roleName='label')
+        attachment_label = tb.app.child(name='.* attachment[:s]?', roleName='label')
         offset = 0
         if attachment_label.name == '1 attachment:':
             offset += 1
+        elif attachment_label.name == '1 attachment':
+            offset += 2
         attachment_size = attachment_label.parent.children[
             attachment_label.indexInParent + 1 + offset]
         assert attachment_size.text[0] != '0'
-        attachment_save_parent = attachment_label.parent.children[
-            attachment_label.indexInParent + 2 + offset]
         try:
-            # TB >= 128
-            attachment_save = attachment_save_parent.child('Save.*', roleName='button')
+            # TB >= 154
+            attachment_save = attachment_label.parent.button('Save')
         except tree.SearchError:
-            # TB < 128
-            attachment_save = attachment_save_parent.button('Save.*')
+            attachment_save_parent = attachment_label.parent.children[
+                attachment_label.indexInParent + 2 + offset]
+            try:
+                # TB >= 128
+                attachment_save = attachment_save_parent.child('Save.*', roleName='button')
+            except tree.SearchError:
+                # TB < 128
+                attachment_save = attachment_save_parent.button('Save.*')
         try:
             # try child button first
             attachment_save.children[1].doActionNamed('press')
@@ -524,25 +517,12 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
             # and choose "Save As..."
             attachment_save.menuItem('Save As.*|Save All.*').doActionNamed(
                 'click')
-        # for some reasons some Thunderbird versions do not expose 'Attach File'
-        # dialog through accessibility API, use xdotool instead
-        save_as = tb.app.findChild(
-            GenericPredicate(name='Save All Attachments|Save Attachment',
+        save_as = tree.root.findChild(
+            GenericPredicate(name='Save All Attachments|Save Attachment.*',
                                 roleName='file chooser'))
         click(*save_as.childNamed('Home').position)
         click(*save_as.childNamed('Desktop').position)
-        if save_as.name == 'Save Attachment':
-            save_as.childNamed('Save').doActionNamed('click')
-        else:
-            save_as.childNamed('Open').doActionNamed('click')
-        # save_as = tb.app.dialog('Save .*Attachment.*')
-        # places = save_as.child(roleName='table',
-        #    name='Places')
-        # places.child(name='Desktop').click()
-        # if 'attachments' in attachment_label.text:
-        #    save_as.button('Open').doActionNamed('click')
-        # else:
-        #    save_as.button('Save').doActionNamed('click')
+        save_as.childNamed('Save').doActionNamed('click')
         time.sleep(1)
         with open(attachment, 'r') as f:
             orig_attachment = f.read()
