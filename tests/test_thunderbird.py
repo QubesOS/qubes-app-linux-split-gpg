@@ -412,16 +412,16 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
         config.searchCutoffCount = 5
         try:
             # TB >= 128
-            tb.app.child(name='user[^,]*, .*, \.\.\..*',
+            tb.app.child(name=r'user[^,]*, .*, \.\.\..*',
                      roleName='table row').doActionNamed('clickAncestor')
         except tree.SearchError:
             try:
                 # TB >= 115
-                tb.app.child(name='user[^,]*, .*, \.\.\..*',
+                tb.app.child(name=r'user[^,]*, .*, \.\.\..*',
                          roleName='tree item').doActionNamed('activate')
             except tree.SearchError:
                 # TB < 115
-                tb.app.child(name='Encrypted Message .*|.*\.\.\. .*',
+                tb.app.child(name=r'Encrypted Message .*|.*\.\.\. .*',
                          roleName='table row').doActionNamed('activate')
         finally:
             config.searchCutoffCount = defaultCutoffCount
