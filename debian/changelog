@@ -1,3 +1,11 @@
+qubes-gpg-split (2.0.87-1) unstable; urgency=medium
+
+  * tests: update how file chooser is searched
+  * tests: update open/save attachment dialog interaction too
+  * tests: fix syntax warning about . escape sequence
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sat, 07 Nov 2026 03:37:39 +0100
+
 qubes-gpg-split (2.0.86-1) unstable; urgency=medium
 
   [ Kunal Mehta ]
