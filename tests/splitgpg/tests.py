@@ -205,6 +205,70 @@ class TC_00_Direct(SplitGPGBase):
         self.assertEqual(decoded_msg.decode(), "")
         self.assertIn("\ngpg: BAD signature from", verification_result.decode())
 
+    def test_032_verify_key_from_the_future(self):
+        """Verify a signature from a key that looks created in the future,
+        as happens when qubes have different clocks"""
+        future = int(time.time()) + 24 * 3600
+        cmd = (
+            f"gpg2 --batch --faked-system-time {future}! "
+            "--pinentry-mode loopback --passphrase '' "
+            "--quick-gen-key 'Qubes future <future@localhost>' "
+            "default default never && "
+            "echo 'Test message' > message && "
+            f"gpg2 --batch --faked-system-time {future + 60}! "
+            "-u future@localhost -a -b message && cat message.asc"
+        )
+        p = self.backend.run(cmd, passio_popen=True, passio_stderr=True)
+        signature, stderr = p.communicate()
+        self.assertEqual(
+            p.returncode, 0, "{} failed: {}".format(cmd, stderr.decode())
+        )
+        p = self.frontend.run("cat > signature.asc", passio_popen=True)
+        p.communicate(signature)
+        self.frontend.run("echo 'Test message' > message", wait=True)
+
+        cmd = "qubes-gpg-client-wrapper --verify signature.asc message"
+        p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
+        stdout, stderr = p.communicate()
+        self.assertNotEqual(
+            p.returncode,
+            0,
+            "{} unexpectedly succeeded: {}".format(cmd, stderr.decode()),
+        )
+        self.assertIn("in the future", stderr.decode())
+
+        cmd = (
+            "qubes-gpg-client-wrapper --ignore-time-conflict "
+            "--verify signature.asc message"
+        )
+        p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
+        stdout, stderr = p.communicate()
+        self.assertEqual(
+            p.returncode, 0, "{} failed: {}".format(cmd, stderr.decode())
+        )
+        self.assertIn("\ngpg: Good signature from", stderr.decode())
+
+    def test_033_ignore_time_conflict_only_verify(self):
+        """--ignore-time-conflict must not be allowed when signing"""
+        self.frontend.run("echo 'Test message' > message", wait=True)
+        for opts in ("-a -b", "--clearsign", "--verify -s", "-d", ""):
+            cmd = (
+                "qubes-gpg-client-wrapper --ignore-time-conflict "
+                f"{opts} message"
+            )
+            p = self.frontend.run(cmd, passio_popen=True, passio_stderr=True)
+            stdout, stderr = p.communicate()
+            self.assertNotEqual(
+                p.returncode,
+                0,
+                "{} unexpectedly succeeded: {}".format(cmd, stderr.decode()),
+            )
+            self.assertEqual(stdout, b"")
+            self.assertIn(
+                "--ignore-time-conflict is only allowed with --verify",
+                stderr.decode(),
+            )
+
     def test_040_import(self):
         # see comment in setUp()
         gpg_time_opts = ""
