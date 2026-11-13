@@ -254,7 +254,7 @@ def configure_openpgp_account(tb):
         # old TB
         pass
     accept_dialog.childNamed('OK|Import').doActionNamed('press')
-    tb.app.childNamed('Success! Keys imported.*').childNamed('OK').doActionNamed(
+    tb.app.childNamed('Success! Keys imported.*').childNamed('OK|Close').doActionNamed(
         'press')
     doubleClick(*key_manager.findChild(
         GenericPredicate(name='Qubes test <user@localhost>.*')).position)
