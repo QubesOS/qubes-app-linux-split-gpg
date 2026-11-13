@@ -805,7 +805,6 @@ class TC_20_Evolution(SplitGPGBase):
             ),
         )
 
-    @unittest.skip("handling attachments not done")
     def test_020_send_receive_with_attachment(self):
         p = self.frontend.run(
             "python3 {} send_receive "
