@@ -717,7 +717,7 @@ user_pref("mail.identity.id1.sign_mail", false);
         p = self.frontend.run(
             "LC_ALL=C.UTF-8 "
             "python3 {} --tbname={} --profile {} --imap_pw {} send_receive "
-            "--encrypted --signed --inline 2>&1".format(
+            "--signed --inline 2>&1".format(
                 self.scriptpath, self.tb_name, self.profile_dir, self.imap_pw
             ),
             passio_popen=True,
