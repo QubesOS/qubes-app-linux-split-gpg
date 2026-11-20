@@ -254,7 +254,7 @@ def configure_openpgp_account(tb):
         # old TB
         pass
     accept_dialog.childNamed('OK|Import').doActionNamed('press')
-    tb.app.childNamed('Success! Keys imported.*').childNamed('OK').doActionNamed(
+    tb.app.childNamed('Success! Keys imported.*').childNamed('OK|Close').doActionNamed(
         'press')
     doubleClick(*key_manager.findChild(
         GenericPredicate(name='Qubes test <user@localhost>.*')).position)
@@ -358,12 +358,13 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
         security = compose.findChild(
             GenericPredicate(name='Security|OpenPGP', roleName='push button'))
     security.doActionNamed('press')
-    sign_button = security.childNamed('Digitally Sign.*')
     encrypt_button = security.childNamed('Require Encryption|Encrypt')
-    if sign_button.checked != sign:
-        sign_button.doActionNamed('click')
     if encrypt_button.checked != encrypt:
         encrypt_button.doActionNamed('click')
+        security.doActionNamed('press')
+    sign_button = security.childNamed('Digitally Sign.*')
+    if sign_button.checked != sign:
+        sign_button.doActionNamed('click')
     if attachment:
         attach(tb, compose, attachment)
     try:

@@ -41,7 +41,7 @@ def run(cmd):
 
 def get_app():
     config.searchCutoffCount = 30
-    app = tree.root.application('evolution')
+    app = tree.root.application('org.gnome.Evolution')
     config.searchCutoffCount = 10
     return app
 
@@ -87,7 +87,12 @@ def add_local_account(app):
     wizard.childLabelled('Email Address:').text = 'user@localhost'
     wizard.button('Next').doActionNamed('click')
     # Receiving Email tab
-    time.sleep(2)
+    server_type = wizard.child('Server Type:')
+    for i in range(60):
+        if server_type.showing:
+            break
+        time.sleep(0.5)
+    assert server_type.showing
     wizard.menuItem('Maildir-format mail directories').doActionNamed('click')
     wizard.childLabelled('Mail Directory:', showingOnly=True).parent.menuItem('Other…').\
         doActionNamed('click')
@@ -130,6 +135,10 @@ def add_local_account(app):
     except tree.SearchError:
         pass
     key_id.text = 'user@localhost'
+
+    ask = account.child('Ask before sending mails with own public key')
+    ask.doActionNamed('click')
+
     account.button('OK').doActionNamed('click')
 
     # "modern" dialogs lack 'Close' button, and dogtail seems to not support
@@ -138,13 +147,10 @@ def add_local_account(app):
 
 
 def attach(app, compose_window, path):
-    compose_window.button('Add Attachment...').doActionNamed('click')
-    # TODO: this fails, for some reason dogtail consider 'app' dead,
-    # while the file chooser dialog can be inspected with sniff without any
-    # problem
+    compose_window.button('Add Attachment.*').click()
     file_chooser = app.child('Add Attachment', roleName='file chooser')
-    file_chooser.child('Home').doActionNamed('click')
-    file_chooser.child(os.path.basename(path)).doActionNamed('activate')
+    file_chooser.child('Home').click()
+    file_chooser.child(os.path.basename(path)).click()
     file_chooser.button('Attach').doActionNamed('click')
 
 def send_email(app, sign=False, encrypt=False, inline=False, attachment=None):
@@ -202,8 +208,9 @@ def receive_message(app, signed=False, encrypted=False, attachment=None):
     if attachment:
         # check if attachment is present
         messages.parent.parent.child(os.path.basename(attachment))
-        messages.parent.parent.button('Save As').doActionNamed('click')
-        save_dialog = app.child('Save Attachment', roleName='frame')
+        messages.parent.parent.button('Save As').click()
+
+        save_dialog = app.child('Save Attachment', roleName='file chooser')
         saved_basepath = os.path.expanduser('~/Desktop/{}'.format(
             os.path.basename(attachment)))
         save_dialog.child(roleName='text').text = saved_basepath
