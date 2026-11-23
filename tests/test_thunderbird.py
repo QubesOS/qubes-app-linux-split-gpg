@@ -23,50 +23,120 @@
 #
 import argparse
 
+import dogtail
 from dogtail import tree, rawinput
-from dogtail.predicate import GenericPredicate, Predicate
+from dogtail.predicate import GenericPredicate
 from dogtail.config import config
 import contextlib
 import subprocess
 import os
+import re
 import time
 import functools
+
+dogtail_1x = dogtail.__version__.startswith(("0.", "1."))
 
 subject = 'Test message {}'.format(os.getpid())
 
 defaultCutoffCount = 10
 
-config.actionDelay = 1.0
-config.defaultDelay = 1.0
-config.searchCutoffCount = defaultCutoffCount
+if not dogtail_1x:
+    config.action_delay = 1.0
+    config.default_delay = 1.0
+    config.search_cut_off_limit = defaultCutoffCount
+else:
+    config.actionDelay = 1.0
+    config.defaultDelay = 1.0
+    config.searchCutoffCount = defaultCutoffCount
 
 
-class orPredicate(Predicate):
+class orPredicate(GenericPredicate):
     def __init__(self, *predicates):
         self.predicates = predicates
-        self.satisfiedByNode = self._genCompareFunc()
+        super().__init__()
+        if not dogtail_1x:
+            # dogtail 2.x
+            self.satisfied_by_node = self._genCompareFunc()
+            self.description = ' or '.join(str(p.description) for p in self.predicates)
+        else:
+            self.satisfiedByNode = self._genCompareFunc()
 
     def _genCompareFunc(self):
-        funcs = [p.satisfiedByNode for p in self.predicates]
+        if dogtail_1x:
+            funcs = [p.satisfiedByNode for p in self.predicates]
+        else:
+            funcs = [p.satisfied_by_node for p in self.predicates]
 
         def satisfiedByNode(node):
             return any(f(node) for f in funcs)
 
         return satisfiedByNode
 
+    # unused in dogtail 2.x
     def describeSearchResult(self):
         return ' or '.join(p.describeSearchResult() for p in self.predicates)
 
+
+class RegexPredicate(GenericPredicate):
+    def __init__(self, name=None, roleName=None):
+        super().__init__(name=name, roleName=roleName)
+
+        # Override TranslatableString of dogtail 1.x, so re.match works
+        self.name = name
+        # set common name
+        self.role_name = roleName
+
+        if not dogtail_1x:
+            # dogtail 2.x
+            self.satisfied_by_node = self._genCompareFunc()
+        else:
+            self.satisfiedByNode = self._genCompareFunc()
+
+    def _genCompareFunc(self):
+        def predicate_satisfied_by_node(node):
+            """
+            Simple comparison function that supports regex for strings.
+
+            :param node: Accessible object.
+            :type node: Atspi.Accessible
+
+            :return: True or False based on given criteria.
+            :rtype: bool
+            """
+
+            try:
+                # Check if user wants to check name, and compare it with the given node.
+                if self.name is not None and not re.fullmatch(self.name, node.name):
+                    return False
+
+                # Check if user wants to check role_name, and compare it with the given node.
+                if self.role_name is not None and not re.fullmatch(self.role_name, node.roleName):
+                    return False
+
+                # There are no conflicting parameters, so the match is a success
+                return True
+
+            except Exception:
+                return False
+
+        return predicate_satisfied_by_node
 
 @contextlib.contextmanager
 def search_cutoff_count(temp_value):
     old_value = defaultCutoffCount
     try:
-        old_value = config.searchCutoffCount
-        config.searchCutoffCount = temp_value
+        if not dogtail_1x:
+            old_value = config.search_cut_off_limit
+            config.search_cut_off_limit = temp_value
+        else:
+            old_value = config.searchCutoffCount
+            config.searchCutoffCount = temp_value
         yield
     finally:
-        config.searchCutoffCount = old_value
+        if not dogtail_1x:
+            config.search_cut_off_limit = old_value
+        else:
+            config.searchCutoffCount = old_value
 
 
 class Thunderbird:
@@ -86,6 +156,7 @@ class Thunderbird:
     def start(self):
         env = os.environ.copy()
         env['GTK_MODULES'] = 'gail:atk-bridge'
+        env['GNOME_ACCESSIBILITY'] = '1'
         null = open(os.devnull, 'r+')
         self.process = subprocess.Popen(
             self.tb_cmd, stdout=null, stdin=null, stderr=null, env=env)
@@ -233,7 +304,7 @@ def configure_openpgp_account(tb):
     key_manager.child(name='Import Public Key(s) From File',
                       roleName='menu item').doActionNamed('click')
     file_chooser = tree.root.findChild(
-        GenericPredicate(name='Import OpenPGP Key File.*',
+        RegexPredicate(name='Import OpenPGP Key File.*',
                          roleName='file chooser')
     )
     # wait for dialog to completely initialize, otherwise it may try to click
@@ -243,21 +314,22 @@ def configure_openpgp_account(tb):
     rawinput.click(*file_chooser.childNamed('pub.asc').position)
     file_chooser.childNamed('Open').doActionNamed('click')
     accept_dialog = tb.app.findChild(orPredicate(
-        GenericPredicate(name='.*(%s).*' % keyid),
-        GenericPredicate(name='.[0-9A-F]*%s' % keyid),
-        GenericPredicate(name='ID: 0x%s' % keyid),
+        RegexPredicate(name='.*(%s).*' % keyid),
+        RegexPredicate(name='.[0-9A-F]*%s' % keyid),
+        RegexPredicate(name='ID: 0x%s' % keyid),
         )).parent.parent
-    accept_dialog.childNamed("Accepted.*").doActionNamed("select")
-    accept_dialog.childNamed('OK|Import').doActionNamed('press')
-    tb.app.childNamed('Success! Keys imported.*').childNamed('OK|Close').doActionNamed(
-        'press')
+    accept_dialog.findChild(RegexPredicate("Accepted.*")).doActionNamed("select")
+    accept_dialog.findChild(RegexPredicate('OK|Import')).doActionNamed('press')
+    tb.app.findChild(
+        RegexPredicate('Success! Keys imported.*')
+    ).findChild(RegexPredicate('OK|Close')).doActionNamed('press')
     rawinput.doubleClick(*key_manager.findChild(
-        GenericPredicate(name='Qubes test <user@localhost>.*')).position)
+        RegexPredicate(name='Qubes test <user@localhost>.*')).position)
     key_property = tb.app.findChild(orPredicate(
-        GenericPredicate(name="Key Properties.*", roleName='frame'),
-        GenericPredicate(name="Key Properties.*", roleName='dialog')))
+        RegexPredicate(name="Key Properties.*", roleName='frame'),
+        RegexPredicate(name="Key Properties.*", roleName='dialog')))
     key_property.findChild(
-        GenericPredicate(name="Yes, I['’]ve verified in person.*",
+        RegexPredicate(name="Yes, I['’]ve verified in person.*",
                          roleName='radio button')).doActionNamed('select')
     key_property.childNamed('OK').doActionNamed('press')
     key_manager.child(name='Close', roleName='menu item').doActionNamed(
@@ -268,17 +340,20 @@ def get_messages(tb, button_only=False):
     tb.app.child('Get Messages', roleName='button').doActionNamed('press')
     if button_only:
         return
-    tb.app.child(name='Inbox.*', roleName='tree item').doActionNamed(
-        'activate')
+    tb.app.findChild(
+        RegexPredicate(name='Inbox.*', roleName='tree item')
+    ).doActionNamed('activate')
 
 
 def attach(tb, compose_window, path):
     compose_window.button('Attach').doActionNamed('press')
-    compose_window.button('Attach').menuItem('File.*').doActionNamed('click')
+    compose_window.button('Attach').findChild(
+        RegexPredicate(name='File.*', roleName='menu item')
+    ).doActionNamed('click')
     # for some reason on some thunderbird versions do not expose 'Attach File'
     # dialog through accessibility API, use xdotool instead
     file_chooser = tree.root.findChild(
-        GenericPredicate(name='Attach File.*',
+        RegexPredicate(name='Attach File.*',
                          roleName='file chooser'))
     rawinput.keyCombo('<Ctrl>l')
     location = file_chooser.child(name='Location Layer')
@@ -291,7 +366,7 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
     with search_cutoff_count(20):
         write = tb.app.button('New Message')
     write.doActionNamed('press')
-    compose = tb.app.child(name='Write: .*', roleName='frame')
+    compose = tb.app.findChild(RegexPredicate(name='Write: .*', roleName='frame'))
     to_entry = compose.findChild(TBEntry(name='To'))
     if not to_entry.focused:
         to_entry.grabFocus()
@@ -314,13 +389,13 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
         compose.child(
             roleName='document frame').text = 'This is test message'
     security = compose.findChild(
-        GenericPredicate(name='Security|OpenPGP', roleName='button'))
+        RegexPredicate(name='Security|OpenPGP', roleName='button'))
     security.doActionNamed('press')
-    encrypt_button = security.childNamed('Require Encryption|Encrypt')
+    encrypt_button = security.findChild(RegexPredicate('Require Encryption|Encrypt'))
     if encrypt_button.checked != encrypt:
         encrypt_button.doActionNamed('click')
         security.doActionNamed('press')
-    sign_button = security.childNamed('Digitally Sign.*')
+    sign_button = security.findChild(RegexPredicate('Digitally Sign.*'))
     if sign_button.checked != sign:
         sign_button.doActionNamed('click')
     if attachment:
@@ -347,7 +422,7 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
             if timeout <= 0:
                 failed_sending = True
             try:
-                dialog =  tb.app.dialog('.*')
+                dialog = tb.app.findChild(RegexPredicate(name='.*', roleName='dialog'))
                 error_message = dialog.child(roleName='label').text
                 if error_message != 'Status:':
                     failed_sending = True
@@ -364,21 +439,21 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
     if encrypted:
         config.searchCutoffCount = 5
         with search_cutoff_count(5):
-            tb.app.child(name=r'user[^,]*, .*, \.\.\..*',
-                     roleName='table row').doActionNamed('clickAncestor')
-    tb.app.child(name='.*{}.*'.format(subject),
-                 roleName='table row').doActionNamed('clickAncestor')
+            tb.app.findChild(RegexPredicate(name=r'user[^,]*, .*, \.\.\..*',
+                     roleName='table row')).doActionNamed('clickAncestor')
+    tb.app.findChild(RegexPredicate(name='.*{}.*'.format(subject),
+                 roleName='table row')).doActionNamed('clickAncestor')
     # wait a little to TB decrypt/check the message
     time.sleep(2)
     # dogtail always add '$' at the end of regexp; and also "Escape all
     # parentheses, since grouping will never be needed here", so it can't be used
     # here either
     try:
-        msg = tb.app.child(roleName='document web',
-                       name=subject + '$|Encrypted Message|\.\.\.')
+        msg = tb.app.findChild(RegexPredicate(roleName='document web',
+                       name=subject + '$|Encrypted Message|\.\.\.'))
     except tree.SearchError:
-        msg = tb.app.child(roleName='document frame',
-                       name=subject + '$|Encrypted Message|\.\.\.')
+        msg = tb.app.findChild(RegexPredicate(roleName='document frame',
+                       name=subject + '$|Encrypted Message|\.\.\.'))
     try:
         msg = msg.child(roleName='section')
         if len(msg.text) < 5 and msg.children:
@@ -395,7 +470,7 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
     with search_cutoff_count(5):
         try:
             if signed or encrypted:
-                tb.app.button('OpenPGP.*').doActionNamed('press')
+                tb.app.findChild(RegexPredicate(name='OpenPGP.*', roleName='push button')).doActionNamed('press')
                 # 'Message Security - OpenPGP' is an internal label,
                 # nested 2 levels into the popup
                 message_security = tb.app.child('Message Security - OpenPGP')
@@ -416,7 +491,7 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
 
     if attachment:
         # it can be either "1 attachment:" or "2 attachments"
-        attachment_label = tb.app.child(name='.* attachment[:s]?', roleName='label')
+        attachment_label = tb.app.findChild(RegexPredicate(name='.* attachment[:s]?', roleName='label'))
         offset = 0
         if attachment_label.name == '1 attachment:':
             offset += 1
@@ -431,7 +506,8 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
         except tree.SearchError:
             attachment_save_parent = attachment_label.parent.children[
                 attachment_label.indexInParent + 2 + offset]
-            attachment_save = attachment_save_parent.button('Save.*')
+            attachment_save = attachment_save_parent.findChild(
+                RegexPredicate(name='Save.*', roleName='push button'))
         try:
             # try child button first
             attachment_save.children[1].doActionNamed('press')
@@ -439,10 +515,11 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
             # otherwise press main button to open the menu
             attachment_save.doActionNamed('press')
             # and choose "Save As..."
-            attachment_save.menuItem('Save As.*|Save All.*').doActionNamed(
-               'click')
+            attachment_save.findChild(
+                RegexPredicate(name='Save As.*|Save All.*', roleName='menu item')
+            ).doActionNamed('click')
         save_as = tree.root.findChild(
-            GenericPredicate(name='Save All Attachments|Save Attachment.*',
+            RegexPredicate(name='Save All Attachments|Save Attachment.*',
                                 roleName='file chooser'))
         rawinput.click(*save_as.childNamed('Home').position)
         rawinput.click(*save_as.childNamed('Desktop').position)
