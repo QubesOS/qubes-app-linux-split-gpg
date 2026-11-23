@@ -254,7 +254,8 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
     int opt, command = 0;
     int longindex;
     int i, ok;
-    bool userid_args = false, mode_verify = false;
+    bool userid_args = false, mode_verify = false, other_command = false;
+    bool seen_ignore_time_conflict = false;
     bool seen_status_fd = false, seen_logger_fd = false, seen_attribute_fd = false;
     char *lastarg = NULL;
     static struct listopt const allowed_list_options[] = {
@@ -394,6 +395,8 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
                 }
                 command = opt;
                 userid_args = gpg_commands[i].userid_args;
+                if (opt != opt_verify)
+                    other_command = true;
                 break;
             }
             i++;
@@ -415,6 +418,8 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
             add_arg_to_fd_list(output_fds, output_fds_count, input_fds, input_fds_count);
         } else if (opt == opt_verify) {
             mode_verify = 1;
+        } else if (opt == opt_ignore_time_conflict) {
+            seen_ignore_time_conflict = true;
         } else if (opt == 'o') {
             if (strcmp(optarg, "-") != 0) {
                 fprintf(stderr, "Only '-' argument supported for --output option\n");
@@ -441,6 +446,11 @@ int parse_options(int argc, char *untrusted_argv[], int *input_fds,
             }
         }
     }
+    // Clocks of different qubes can differ.  Let the caller ignore keys
+    // that seem to be created in the future, but only when verifying:
+    // it must not change how signatures are made.
+    if (seen_ignore_time_conflict && (!mode_verify || other_command))
+        errx(1, "--ignore-time-conflict is only allowed with --verify");
     if (userid_args) {
         // all the arguments are key IDs/user IDs, so do not try to handle them
         // as input files

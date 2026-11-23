@@ -104,6 +104,10 @@ found about their functionality in the gpg2 manpage.
 
 --gnupg
 
+--ignore-time-conflict
+    Only allowed with --verify. Useful when the key looks created in the
+    future because the clocks of the two qubes differ.
+
 --list-config
 
 --list-only
