@@ -23,10 +23,9 @@
 #
 import argparse
 
-from dogtail import tree
+from dogtail import tree, rawinput
 from dogtail.predicate import GenericPredicate, Predicate
 from dogtail.config import config
-from dogtail.rawinput import click, doubleClick, keyCombo
 import subprocess
 import os
 import time
@@ -164,15 +163,12 @@ def enter_imap_passwd(tb):
         GenericPredicate(name='Enter your password for user', roleName='frame'),
         GenericPredicate(name='Enter your password for user', roleName='dialog')
     ))
-    pass_textbox = pass_prompt.findChild(GenericPredicate(roleName='password text'))
-    pass_textbox.typeText(tb.imap_pw)
+    pass_textbox = pass_prompt.child(roleName='password text')
+    rawinput.typeText(tb.imap_pw)
+    time.sleep(0.5)
     pass_prompt.childNamed("Use Password Manager to remember this password.")\
                .doActionNamed('check')
-    pass_prompt.findChild(orPredicate(
-        GenericPredicate(name='OK', roleName='push button'),       # tb < 91
-        GenericPredicate(name='Sign in', roleName='push button'),  # tb >= 91, tb < 128
-        GenericPredicate(name='OK', roleName='button'))  # tb >= 128
-    ).doActionNamed('press')
+    pass_prompt.button('OK').doActionNamed('press')
 
 def accept_qubes_attachments(tb):
     try:
@@ -207,32 +203,24 @@ class TBEntry(GenericPredicate):
 
 def show_menu_bar(tb):
     config.searchCutoffCount = 20
-    app = tb.app.findChild(
-        GenericPredicate(name='Application', roleName='menu bar'))
-    app.findChild(GenericPredicate(
-        name='View', roleName='menu')).doActionNamed('click')
-    app.findChild(GenericPredicate(
-        name='Toolbars', roleName='menu')).doActionNamed('click')
-    app.findChild(GenericPredicate(
-        name='Menu Bar', roleName='check menu item')).doActionNamed('click')
+    app = tb.app.child(name='Application', roleName='menu bar')
+    app.child(name='View', roleName='menu').doActionNamed('click')
+    app.child(name='Toolbars', roleName='menu').doActionNamed('click')
+    app.child(name='Menu Bar', roleName='check menu item').doActionNamed('click')
     config.searchCutoffCount = defaultCutoffCount
 
 @retry_if_failed(max_tries=3)
 def configure_openpgp_account(tb):
     keyid = get_key_fpr()
     export_pub_key()
-    tb.app.findChild(GenericPredicate(
-        name='Tools', roleName='menu')).doActionNamed('click')
-    tb.app.findChild(GenericPredicate(
-        name='OpenPGP Key Manager', roleName='menu item')).doActionNamed('click')
+    tb.app.child(name='Tools', roleName='menu').doActionNamed('click')
+    tb.app.child(name='OpenPGP Key Manager', roleName='menu item').doActionNamed('click')
     key_manager = tb.app.findChild(orPredicate(
         GenericPredicate(name='OpenPGP Key Manager', roleName='dialog'),
         GenericPredicate(name='OpenPGP Key Manager', roleName='frame')))
-    key_manager.findChild(
-        GenericPredicate(name='File', roleName='menu')).doActionNamed('click')
-    key_manager.findChild(
-        GenericPredicate(name='Import Public Key(s) From File',
-                         roleName='menu item')).doActionNamed('click')
+    key_manager.child(name='File', roleName='menu').doActionNamed('click')
+    key_manager.child(name='Import Public Key(s) From File',
+                      roleName='menu item').doActionNamed('click')
     file_chooser = tree.root.findChild(
         GenericPredicate(name='Import OpenPGP Key File.*',
                          roleName='file chooser')
@@ -240,23 +228,19 @@ def configure_openpgp_account(tb):
     # wait for dialog to completely initialize, otherwise it may try to click
     # on "Home" before it is active.
     time.sleep(1)
-    click(*file_chooser.childNamed('Home').position)
-    click(*file_chooser.childNamed('pub.asc').position)
+    rawinput.click(*file_chooser.childNamed('Home').position)
+    rawinput.click(*file_chooser.childNamed('pub.asc').position)
     file_chooser.childNamed('Open').doActionNamed('click')
     accept_dialog = tb.app.findChild(orPredicate(
         GenericPredicate(name='.*(%s).*' % keyid),
         GenericPredicate(name='.[0-9A-F]*%s' % keyid),
         GenericPredicate(name='ID: 0x%s' % keyid),
         )).parent.parent
-    try:
-        accept_dialog.childNamed("Accepted.*").doActionNamed("select")
-    except tree.SearchError:
-        # old TB
-        pass
+    accept_dialog.childNamed("Accepted.*").doActionNamed("select")
     accept_dialog.childNamed('OK|Import').doActionNamed('press')
     tb.app.childNamed('Success! Keys imported.*').childNamed('OK|Close').doActionNamed(
         'press')
-    doubleClick(*key_manager.findChild(
+    rawinput.doubleClick(*key_manager.findChild(
         GenericPredicate(name='Qubes test <user@localhost>.*')).position)
     key_property = tb.app.findChild(orPredicate(
         GenericPredicate(name="Key Properties.*", roleName='frame'),
@@ -265,98 +249,62 @@ def configure_openpgp_account(tb):
         GenericPredicate(name="Yes, I['’]ve verified in person.*",
                          roleName='radio button')).doActionNamed('select')
     key_property.childNamed('OK').doActionNamed('press')
-    key_manager.findChild(
-        GenericPredicate(name='Close', roleName='menu item')).doActionNamed(
+    key_manager.child(name='Close', roleName='menu item').doActionNamed(
         'click')
 
 
 def get_messages(tb, button_only=False):
-    try:
-        # TB >= 115
-        try:
-            # TB >= 128
-            tb.app.child('Get Messages', roleName='button').doActionNamed('press')
-        except tree.SearchError:
-            # TB < 128
-            tb.app.button('Get Messages').doActionNamed('press')
-        if button_only:
-            return
-        tb.app.child(name='Inbox.*', roleName='tree item').doActionNamed(
-            'activate')
-    except tree.SearchError:
-        # TB < 115
-        tb.app.child(name='user@localhost',
-                roleName='table row').doActionNamed('activate')
-        tb.app.button('Get Messages').doActionNamed('press')
-        tb.app.menuItem('Get All New Messages').doActionNamed('click')
-        if button_only:
-            return
-        tb.app.child(name='Inbox.*', roleName='table row').doActionNamed(
-            'activate')
+    tb.app.child('Get Messages', roleName='button').doActionNamed('press')
+    if button_only:
+        return
+    tb.app.child(name='Inbox.*', roleName='tree item').doActionNamed(
+        'activate')
 
 
 def attach(tb, compose_window, path):
-    try:
-        # TB >= 128
-        compose_window.child('Attach', roleName='button').\
-                       doActionNamed('press')
-        compose_window.child('Attach', roleName='button').\
-                       menuItem('File.*').doActionNamed('click')
-    except tree.SearchError:
-        # TB < 128
-        compose_window.button('Attach').button('Attach').doActionNamed('press')
-        compose_window.button('Attach').menuItem('File.*').doActionNamed('click')
+    compose_window.button('Attach').doActionNamed('press')
+    compose_window.button('Attach').menuItem('File.*').doActionNamed('click')
     # for some reason on some thunderbird versions do not expose 'Attach File'
     # dialog through accessibility API, use xdotool instead
     file_chooser = tree.root.findChild(
         GenericPredicate(name='Attach File.*',
                          roleName='file chooser'))
-    file_chooser.keyCombo('<Ctrl>l')
-    location = file_chooser.findChild(GenericPredicate(name='Location Layer'))
+    rawinput.keyCombo('<Ctrl>l')
+    location = file_chooser.child(name='Location Layer')
     location.children[0].text = path
     time.sleep(1)
-    file_chooser.keyCombo('Return')
+    rawinput.keyCombo('Return')
 
 
 def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
     config.searchCutoffCount = 20
-    try:
-        # TB >= 128
-        write = tb.app.child(name='New Message', roleName='button')
-    except tree.SearchError:
-        try:
-            write = tb.app.button('New Message')
-        except tree.SearchError:
-            write = tb.app.button('Write')
+    write = tb.app.button('New Message')
     config.searchCutoffCount = defaultCutoffCount
     write.doActionNamed('press')
     compose = tb.app.child(name='Write: .*', roleName='frame')
     to_entry = compose.findChild(TBEntry(name='To'))
-    to_entry.typeText('user@localhost')
+    if not to_entry.focused:
+        to_entry.grabFocus()
+    rawinput.typeText('user@localhost')
     # lets thunderbird settle down on default values (after filling recipients)
     time.sleep(1)
     subject_entry = compose.findChild(
         orPredicate(GenericPredicate(name='Subject:', roleName='entry'),
                     TBEntry(name='Subject')))
-    subject_entry.typeText(subject)
+    subject_entry.grabFocus()
+    rawinput.typeText(subject)
     try:
         compose_document = compose.child(roleName='document web')
         try:
             compose_document.parent.doActionNamed('click')
         except tree.ActionNotSupported:
-            pass
-        compose_document.typeText('This is test message')
+            compose_document.grabFocus()
+        rawinput.typeText('This is test message')
     except tree.SearchError:
         compose.child(
             roleName='document frame').text = 'This is test message'
-    try:
-        # TB >= 128
-        security = compose.findChild(
-            GenericPredicate(name='Security|OpenPGP', roleName='button'))
-    except tree.SearchError:
-        # TB < 128
-        security = compose.findChild(
-            GenericPredicate(name='Security|OpenPGP', roleName='push button'))
+    security = compose.findChild(
+        GenericPredicate(name='Security|OpenPGP', roleName='button'))
     security.doActionNamed('press')
     encrypt_button = security.childNamed('Require Encryption|Encrypt')
     if encrypt_button.checked != encrypt:
@@ -367,12 +315,7 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
         sign_button.doActionNamed('click')
     if attachment:
         attach(tb, compose, attachment)
-    try:
-        # TB >= 128
-        compose.child('Send', roleName='button').doActionNamed('press')
-    except tree.SearchError:
-        # TB < 128
-        compose.button('Send').doActionNamed('press')
+    compose.button('Send').doActionNamed('press')
     config.searchCutoffCount = 5
     try:
         if encrypt:
@@ -411,34 +354,11 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
     get_messages(tb)
     if encrypted:
         config.searchCutoffCount = 5
-        try:
-            # TB >= 128
-            tb.app.child(name=r'user[^,]*, .*, \.\.\..*',
-                     roleName='table row').doActionNamed('clickAncestor')
-        except tree.SearchError:
-            try:
-                # TB >= 115
-                tb.app.child(name=r'user[^,]*, .*, \.\.\..*',
-                         roleName='tree item').doActionNamed('activate')
-            except tree.SearchError:
-                # TB < 115
-                tb.app.child(name=r'Encrypted Message .*|.*\.\.\. .*',
-                         roleName='table row').doActionNamed('activate')
-        finally:
-            config.searchCutoffCount = defaultCutoffCount
-    try:
-        # TB >= 128
-        tb.app.child(name='.*{}.*'.format(subject),
-                     roleName='table row').doActionNamed('clickAncestor')
-    except tree.SearchError:
-        try:
-            # TB >= 115
-            tb.app.child(name='.*{}.*'.format(subject),
-                         roleName='tree item').doActionNamed('activate')
-        except tree.SearchError:
-            # TB < 115
-            tb.app.child(name='.*{}.*'.format(subject),
-                     roleName='table row').doActionNamed('activate')
+        tb.app.child(name=r'user[^,]*, .*, \.\.\..*',
+                 roleName='table row').doActionNamed('clickAncestor')
+        config.searchCutoffCount = defaultCutoffCount
+    tb.app.child(name='.*{}.*'.format(subject),
+                 roleName='table row').doActionNamed('clickAncestor')
     # wait a little to TB decrypt/check the message
     time.sleep(2)
     # dogtail always add '$' at the end of regexp; and also "Escape all
@@ -472,7 +392,7 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
             message_security = tb.app.child('Message Security - OpenPGP')
     except tree.SearchError:
         # alternative way of opening 'message security'
-        keyCombo('<Control><Alt>s')
+        rawinput.keyCombo('<Control><Alt>s')
         message_security = tb.app.child('Message Security - OpenPGP')
     message_security = message_security.parent.parent
     try:
@@ -503,12 +423,7 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
         except tree.SearchError:
             attachment_save_parent = attachment_label.parent.children[
                 attachment_label.indexInParent + 2 + offset]
-            try:
-                # TB >= 128
-                attachment_save = attachment_save_parent.child('Save.*', roleName='button')
-            except tree.SearchError:
-                # TB < 128
-                attachment_save = attachment_save_parent.button('Save.*')
+            attachment_save = attachment_save_parent.button('Save.*')
         try:
             # try child button first
             attachment_save.children[1].doActionNamed('press')
@@ -517,12 +432,12 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
             attachment_save.doActionNamed('press')
             # and choose "Save As..."
             attachment_save.menuItem('Save As.*|Save All.*').doActionNamed(
-                'click')
+               'click')
         save_as = tree.root.findChild(
             GenericPredicate(name='Save All Attachments|Save Attachment.*',
                                 roleName='file chooser'))
-        click(*save_as.childNamed('Home').position)
-        click(*save_as.childNamed('Desktop').position)
+        rawinput.click(*save_as.childNamed('Home').position)
+        rawinput.click(*save_as.childNamed('Desktop').position)
         save_as.childNamed('Save').doActionNamed('click')
         time.sleep(1)
         with open(attachment, 'r') as f:
