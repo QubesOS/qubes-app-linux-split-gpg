@@ -26,6 +26,7 @@ import argparse
 from dogtail import tree, rawinput
 from dogtail.predicate import GenericPredicate, Predicate
 from dogtail.config import config
+import contextlib
 import subprocess
 import os
 import time
@@ -56,6 +57,18 @@ class orPredicate(Predicate):
     def describeSearchResult(self):
         return ' or '.join(p.describeSearchResult() for p in self.predicates)
 
+
+@contextlib.contextmanager
+def search_cutoff_count(temp_value):
+    old_value = defaultCutoffCount
+    try:
+        old_value = config.searchCutoffCount
+        config.searchCutoffCount = temp_value
+        yield
+    finally:
+        config.searchCutoffCount = old_value
+
+
 class Thunderbird:
     """
     Manages the state of a thunderbird instance
@@ -79,9 +92,8 @@ class Thunderbird:
         self.app = self._get_app()
 
     def _get_app(self):
-        config.searchCutoffCount = 70
-        tb = tree.root.application('Thunderbird|Icedove')
-        config.searchCutoffCount = defaultCutoffCount
+        with search_cutoff_count(70):
+            tb = tree.root.application('Thunderbird')
         return tb
 
     def get_version(self):
@@ -177,13 +189,13 @@ def accept_qubes_attachments(tb):
         time.sleep(3)
         qubes_att.parent.button('Enable').doActionNamed('press')
 
-        qubes_att = tb.app.child(name='Qubes Attachments has been added.*', roleName='label')
+        qubes_att = tb.app.findChild(RegexPredicate(
+            name='Qubes Attachments has been added.*', roleName='label'))
         # give it some time to settle
         time.sleep(3)
         qubes_att.parent.button('Not now').doActionNamed('press')
     except tree.SearchError:
         pass
-    config.searchCutoffCount = defaultCutoffCount
 
 
 def open_account_setup(tb):
@@ -202,12 +214,11 @@ class TBEntry(GenericPredicate):
         super(TBEntry, self).__init__(name=name, roleName='entry')
 
 def show_menu_bar(tb):
-    config.searchCutoffCount = 20
-    app = tb.app.child(name='Application', roleName='menu bar')
-    app.child(name='View', roleName='menu').doActionNamed('click')
-    app.child(name='Toolbars', roleName='menu').doActionNamed('click')
-    app.child(name='Menu Bar', roleName='check menu item').doActionNamed('click')
-    config.searchCutoffCount = defaultCutoffCount
+    with search_cutoff_count(20):
+        app = tb.app.child(name='Application', roleName='menu bar')
+        app.child(name='View', roleName='menu').doActionNamed('click')
+        app.child(name='Toolbars', roleName='menu').doActionNamed('click')
+        app.child(name='Menu Bar', roleName='check menu item').doActionNamed('click')
 
 @retry_if_failed(max_tries=3)
 def configure_openpgp_account(tb):
@@ -277,9 +288,8 @@ def attach(tb, compose_window, path):
 
 
 def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
-    config.searchCutoffCount = 20
-    write = tb.app.button('New Message')
-    config.searchCutoffCount = defaultCutoffCount
+    with search_cutoff_count(20):
+        write = tb.app.button('New Message')
     write.doActionNamed('press')
     compose = tb.app.child(name='Write: .*', roleName='frame')
     to_entry = compose.findChild(TBEntry(name='To'))
@@ -317,46 +327,45 @@ def send_email(tb, sign=False, encrypt=False, inline=False, attachment=None):
         attach(tb, compose, attachment)
     compose.button('Send').doActionNamed('press')
     config.searchCutoffCount = 5
-    try:
-        if encrypt:
-            tb.app.dialog('Enable Protection of Subject?'). \
-                button('Protect subject').doActionNamed('press')
-    except tree.SearchError:
-        pass
-    finally:
-        config.searchCutoffCount = defaultCutoffCount
+    with search_cutoff_count(5):
+        try:
+            if encrypt:
+                tb.app.dialog('Enable Protection of Subject?'). \
+                    button('Protect subject').doActionNamed('press')
+        except tree.SearchError:
+            pass
 
     # Fail if something like a dialog box prevented the compose window to be
     # closed. Means no email was actually sent.
     config.searchCutoffCount = 1
-    timeout = 40 # the "showing" state usually updates after 7 ~ 25 seconds
-    failed_sending = False
-    error_message="unknown"
-    while compose.showing:
-        timeout -= 1
-        if timeout <= 0:
-            failed_sending = True
-        try:
-            dialog = tb.app.dialog('.*')
-            error_message = dialog.child(roleName='label').text
-            if error_message != 'Status:':
+    with search_cutoff_count(1):
+        timeout = 40 # the "showing" state usually updates after 7 ~ 25 seconds
+        failed_sending = False
+        error_message="unknown"
+        while compose.showing:
+            timeout -= 1
+            if timeout <= 0:
                 failed_sending = True
-        except tree.SearchError:
-            pass
-        if failed_sending:
-            raise Exception("Failed to send message with error '{}'"\
-                    .format(error_message))
-        time.sleep(1)
-    config.searchCutoffCount = defaultCutoffCount
+            try:
+                dialog =  tb.app.dialog('.*')
+                error_message = dialog.child(roleName='label').text
+                if error_message != 'Status:':
+                    failed_sending = True
+            except tree.SearchError:
+                pass
+            if failed_sending:
+                raise Exception("Failed to send message with error '{}'"\
+                        .format(error_message))
+            time.sleep(1)
 
 
 def receive_message(tb, signed=False, encrypted=False, attachment=None):
     get_messages(tb)
     if encrypted:
         config.searchCutoffCount = 5
-        tb.app.child(name=r'user[^,]*, .*, \.\.\..*',
-                 roleName='table row').doActionNamed('clickAncestor')
-        config.searchCutoffCount = defaultCutoffCount
+        with search_cutoff_count(5):
+            tb.app.child(name=r'user[^,]*, .*, \.\.\..*',
+                     roleName='table row').doActionNamed('clickAncestor')
     tb.app.child(name='.*{}.*'.format(subject),
                  roleName='table row').doActionNamed('clickAncestor')
     # wait a little to TB decrypt/check the message
@@ -383,28 +392,27 @@ def receive_message(tb, signed=False, encrypted=False, attachment=None):
     #        msg_body = msg.children[0].text
     #    else:
     #        msg_body = msg.text
-    config.searchCutoffCount = 5
-    try:
-        if signed or encrypted:
-            tb.app.button('OpenPGP.*').doActionNamed('press')
-            # 'Message Security - OpenPGP' is an internal label,
-            # nested 2 levels into the popup
+    with search_cutoff_count(5):
+        try:
+            if signed or encrypted:
+                tb.app.button('OpenPGP.*').doActionNamed('press')
+                # 'Message Security - OpenPGP' is an internal label,
+                # nested 2 levels into the popup
+                message_security = tb.app.child('Message Security - OpenPGP')
+        except tree.SearchError:
+            # alternative way of opening 'message security'
+            rawinput.keyCombo('<Control><Alt>s')
             message_security = tb.app.child('Message Security - OpenPGP')
-    except tree.SearchError:
-        # alternative way of opening 'message security'
-        rawinput.keyCombo('<Control><Alt>s')
-        message_security = tb.app.child('Message Security - OpenPGP')
-    message_security = message_security.parent.parent
-    try:
-        if signed:
-            message_security.child('Good Digital Signature')
-        if encrypted:
-            message_security.child('Message Is Encrypted')
-    except tree.SearchError:
-        if signed or encrypted:
-            raise
-    message_security.parent.click()
-    config.searchCutoffCount = defaultCutoffCount
+        message_security = message_security.parent.parent
+        try:
+            if signed:
+                message_security.child('Good Digital Signature')
+            if encrypted:
+                message_security.child('Message Is Encrypted')
+        except tree.SearchError:
+            if signed or encrypted:
+                raise
+        message_security.parent.click()
 
     if attachment:
         # it can be either "1 attachment:" or "2 attachments"
