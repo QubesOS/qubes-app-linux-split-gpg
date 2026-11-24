@@ -35,13 +35,8 @@ class SplitGPGBase(qubes.tests.extra.ExtraTestCase):
         self.backend.start()
         if self.backend.run("ls /etc/qubes-rpc/qubes.Gpg", wait=True) != 0:
             self.skipTest("gpg-split not installed")
-        # Whonix desynchronize time on purpose, so make sure the key is
-        # generated in the past even when the frontend have clock few minutes
-        #  into the future - otherwise new key may look as
-        # generated in the future and be considered not yet valid
-        gpg_time_opts = ""
-        if "whonix" in self.template:
-            gpg_time_opts = f"--faked-system-time {int(time.time()) - 600}!"
+        # backdate the key; other qubes' clocks may lag (minutes on Whonix)
+        gpg_time_opts = f"--faked-system-time {int(time.time()) - 600}!"
         p = self.backend.run(
             f"mkdir -p -m 0700 .gnupg; gpg2 {gpg_time_opts} --gen-key --batch",
             passio_popen=True,
@@ -288,9 +283,7 @@ class TC_00_Direct(SplitGPGBase):
 
     def test_040_import(self):
         # see comment in setUp()
-        gpg_time_opts = ""
-        if "whonix" in self.template:
-            gpg_time_opts = f"--faked-system-time {int(time.time()) - 600}!"
+        gpg_time_opts = f"--faked-system-time {int(time.time()) - 600}!"
         p = self.frontend.run(
             f"mkdir -p -m 0700 .gnupg; gpg2 {gpg_time_opts} --gen-key --batch",
             passio_popen=True
@@ -335,9 +328,7 @@ Expire-Date: 0
 
     def test_041_import_via_wrapper(self):
         # see comment in setUp()
-        gpg_time_opts = ""
-        if "whonix" in self.template:
-            gpg_time_opts = f"--faked-system-time {int(time.time()) - 600}!"
+        gpg_time_opts = f"--faked-system-time {int(time.time()) - 600}!"
         p = self.frontend.run(
             f"mkdir -p -m 0700 .gnupg; gpg2 {gpg_time_opts} --gen-key --batch",
             passio_popen=True,
