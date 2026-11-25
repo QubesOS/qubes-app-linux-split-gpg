@@ -20,16 +20,26 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 import argparse
 
-from dogtail import tree, predicate
+import dogtail
+from dogtail import tree, predicate, rawinput
 from dogtail.config import config
 import subprocess
 import os
+import re
 import time
 
 subject = 'Test message {}'.format(os.getpid())
 
-config.actionDelay = 0.5
-config.searchCutoffCount = 10
+dogtail_1x = dogtail.__version__.startswith(("0.", "1."))
+
+defaultCutoffCount = 10
+
+if not dogtail_1x:
+    config.action_delay = 0.5
+    config.search_cut_off_limit = defaultCutoffCount
+else:
+    config.actionDelay = 0.5
+    config.searchCutoffCount = defaultCutoffCount
 
 
 def run(cmd):
@@ -40,9 +50,7 @@ def run(cmd):
 
 
 def get_app():
-    config.searchCutoffCount = 30
     app = tree.root.application('org.gnome.Evolution')
-    config.searchCutoffCount = 10
     return app
 
 def open_preferences(app):
@@ -51,7 +59,8 @@ def open_preferences(app):
 
 def open_accounts(app):
     open_preferences(app)
-    settings = app.window('Evolution Preferences')
+    settings = app.findChild(lambda node:
+        node.name == 'Evolution Preferences' and node.roleName == 'frame')
     accounts_tab = settings.child('Account Name').parent.parent
     return settings, accounts_tab
 
@@ -94,8 +103,14 @@ def add_local_account(app):
         time.sleep(0.5)
     assert server_type.showing
     wizard.menuItem('Maildir-format mail directories').doActionNamed('click')
-    wizard.childLabelled('Mail Directory:', showingOnly=True).parent.menuItem('Other…').\
-        doActionNamed('click')
+    # showingOnly=True doesn't work in dogtail 2.x
+    #wizard.childLabelled('Mail Directory:', showingOnly=True)
+    m_dir = wizard.findChild(
+        lambda node: node.name == 'Mail Directory:' and
+                     node.roleName == 'label' and
+                     node.showing
+    )
+    m_dir.parent.menuItem('Other…').doActionNamed('click')
     file_chooser = app.child('Choose a Maildir mail directory',
         roleName='file chooser')
     file_chooser.child('File System Root').doActionNamed('click')
@@ -147,7 +162,10 @@ def add_local_account(app):
 
 
 def attach(app, compose_window, path):
-    compose_window.button('Add Attachment.*').click()
+    compose_window.findChild(
+        lambda node: re.match(r'Add Attachment.*', node.name) and
+                     node.roleName == 'button'
+    ).click()
     file_chooser = app.child('Add Attachment', roleName='file chooser')
     file_chooser.child('Home').click()
     file_chooser.child(os.path.basename(path)).click()
@@ -163,12 +181,12 @@ def send_email(app, sign=False, encrypt=False, inline=False, attachment=None):
     compose_document = new_message.child(
         roleName='document web')
     compose_document.click()
-    compose_document.typeText('This is test message')
+    rawinput.typeText('This is test message')
     if encrypt:
-        new_message.menu('Options').menuItem('PGP Encrypt').doActionNamed(
+        new_message.menu('Options').child('PGP Encrypt', roleName='check menu item').doActionNamed(
             'click')
     if sign:
-        new_message.menu('Options').menuItem('PGP Sign').doActionNamed('click')
+        new_message.menu('Options').child('PGP Sign', roleName='check menu item').doActionNamed('click')
     if inline:
         raise NotImplementedError(
             'toggling inline pgp not supported for evolution')
@@ -181,11 +199,14 @@ def receive_message(app, signed=False, encrypted=False, attachment=None):
     send_receive = app.button('Send / Receive')
     send_receive = get_sibling_button_maybe(send_receive)
     send_receive.doActionNamed('click')
-    app.child(name='Inbox .*', roleName='table cell').doActionNamed('edit')
+    app.findChild(lambda node:
+        node.name.startswith('Inbox ') and node.roleName== 'table cell'
+    ).doActionNamed('edit')
     messages = app.child('Messages', roleName='panel')
     messages.child(subject).grabFocus()
     message = app.child('Evolution Mail Display', roleName='document web')
-    msg_body = message.child('.message.*', roleName='document web')\
+    msg_body = message.findChild(lambda node:
+        re.match(r'.message.*', node.name) and node.roleName == 'document web')\
         .children[0].text
     print('Message body: "{}"'.format(msg_body))
     assert msg_body.strip() == 'This is test message'
@@ -249,7 +270,10 @@ def main():
     args = parser.parse_args()
 
     # log only to stdout since logging to file have broken unicode support
-    config.logDebugToFile = False
+    if not dogtail_1x:
+        config.debug_file = "None"
+    else:
+        config.logDebugToFile = False
 
     if args.command == 'setup':
         subprocess.check_call([
